@@ -1,0 +1,111 @@
+<h1>Financial Records</h1>
+
+<h2>Create Financial Record</h2>
+
+<div>
+
+<select [(ngModel)]="recordType">
+
+  <option value="">
+    Select Type
+  </option>
+
+  <option value="Income">
+    Income
+  </option>
+
+  <option value="Expense">
+    Expense
+  </option>
+
+</select>
+
+  <input
+    type="text"
+    placeholder="Category"
+    [(ngModel)]="recordCategory"
+  >
+
+  <input
+    type="number"
+    placeholder="Amount"
+    [(ngModel)]="recordAmount"
+  >
+
+  <input
+    type="text"
+    placeholder="Description"
+    [(ngModel)]="recordDescription"
+  >
+
+  <select [(ngModel)]="selectedFarm">
+
+    <option value="">
+      Select Farm
+    </option>
+
+    <option
+      *ngFor="let farm of farms"
+      [value]="farm._id"
+    >
+      {{ farm.name }}
+    </option>
+
+  </select>
+
+  <button
+      *ngIf="editingRecordId === ''"
+      (click)="createRecord()"
+    >
+      Create Record
+    </button>
+
+    <button
+      *ngIf="editingRecordId !== ''"
+      (click)="updateRecord()"
+    >
+      Update Record
+  </button>
+
+</div>
+
+<hr>
+<div *ngIf="records.length === 0">
+  No financial records found.
+</div>
+
+<div *ngFor="let record of records">
+
+  <h3>{{ record.type }}</h3>
+
+  <p>
+    <strong>Category:</strong>
+    {{ record.category }}
+  </p>
+
+  <p>
+    <strong>Amount:</strong>
+    ${{ record.amount }}
+  </p>
+
+  <p>
+    <strong>Description:</strong>
+    {{ record.description }}
+  </p>
+
+  <p>
+    <strong>Farm:</strong>
+    {{ record.farm?.name }}
+  </p>
+
+  <button (click)="editRecord(record)">
+    Edit
+  </button>
+
+  <button (click)="deleteRecord(record._id)">
+    Delete
+  </button>
+
+  <hr>
+
+</div>

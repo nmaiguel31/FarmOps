@@ -1,0 +1,76 @@
+<h1>Farms</h1>
+
+<h2>Create Farm</h2>
+
+<div>
+
+  <input
+    type="text"
+    placeholder="Farm Name"
+    [(ngModel)]="farmName"
+  >
+
+  <input
+    type="text"
+    placeholder="Location"
+    [(ngModel)]="farmLocation"
+  >
+
+  <input
+    type="number"
+    placeholder="Size"
+    [(ngModel)]="farmSize"
+  >
+
+<button
+  *ngIf="editingFarmId === ''"
+  (click)="createFarm()"
+>
+  Create Farm
+</button>
+
+<button
+  *ngIf="editingFarmId !== ''"
+  (click)="updateFarm()"
+>
+  Update Farm
+</button>
+
+</div>
+
+<hr>
+
+<div *ngIf="farms.length === 0">
+  No farms found.
+</div>
+
+<div *ngFor="let farm of farms">
+
+  <h3>{{ farm.name }}</h3>
+
+  <p>
+    <strong>Location:</strong>
+    {{ farm.location }}
+  </p>
+
+  <p>
+    <strong>Size:</strong>
+    {{ farm.size }}
+  </p>
+
+  <p>
+    <strong>Owner:</strong>
+    {{ farm.owner?.email }}
+  </p>
+
+  <button (click)="editFarm(farm)">
+    Edit
+  </button>
+
+  <button (click)="deleteFarm(farm._id)">
+  Delete
+  </button>
+
+  <hr>
+
+</div>

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.angular/
+coverage/
+
+.env
+.env.*
+
+backend/.env
+frontend/.env
+
+.vscode/

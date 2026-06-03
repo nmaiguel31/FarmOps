@@ -1,0 +1,97 @@
+<h1>Crops</h1>
+
+<h2>Create Crop</h2>
+
+<div>
+
+  <input
+    type="text"
+    placeholder="Crop Name"
+    [(ngModel)]="cropName"
+  >
+
+  <input
+    type="text"
+    placeholder="Type"
+    [(ngModel)]="cropType"
+  >
+
+<select [(ngModel)]="cropSeason">
+
+  <option value="">
+    Select Season
+  </option>
+
+  <option value="Spring">Spring</option>
+  <option value="Summer">Summer</option>
+  <option value="Autumn">Autumn</option>
+  <option value="Winter">Winter</option>
+
+</select>
+
+  <select [(ngModel)]="selectedFarm">
+
+    <option value="">
+      Select Farm
+    </option>
+
+    <option
+      *ngFor="let farm of farms"
+      [value]="farm._id"
+    >
+      {{ farm.name }}
+    </option>
+
+  </select>
+
+  <button
+    *ngIf="editingCropId === ''"
+    (click)="createCrop()"
+  >
+    Create Crop
+  </button>
+
+  <button
+    *ngIf="editingCropId !== ''"
+    (click)="updateCrop()"
+  >
+    Update Crop
+  </button>
+
+</div>
+
+<hr>
+<div *ngIf="crops.length === 0">
+  No crops found.
+</div>
+
+<div *ngFor="let crop of crops">
+
+  <h3>{{ crop.name }}</h3>
+
+  <p>
+    <strong>Type:</strong>
+    {{ crop.type }}
+  </p>
+
+  <p>
+    <strong>Season:</strong>
+    {{ crop.season }}
+  </p>
+
+  <p>
+    <strong>Farm:</strong>
+    {{ crop.farm?.name }}
+  </p>
+
+  <button (click)="editCrop(crop)">
+  Edit
+  </button>
+
+  <button (click)="deleteCrop(crop._id)">
+  Delete
+  </button>
+
+  <hr>
+
+</div>
