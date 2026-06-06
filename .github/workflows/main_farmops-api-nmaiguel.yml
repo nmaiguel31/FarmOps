@@ -60,5 +60,5 @@ jobs:
         with:
           app-name: 'farmops-api-nmaiguel'
           slot-name: 'Production'
-          package: ./capstone-backend
+          package: .
           
