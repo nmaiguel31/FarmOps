@@ -8,7 +8,7 @@ export class FinancialRecord {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:5000/api/financial-records';
+  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/financial-records';
 
   getRecords() {
 
@@ -47,7 +47,7 @@ export class FinancialRecord {
     });
 
     return this.http.get(
-      'http://localhost:5000/api/farms',
+      'https://farmops-api-nmaiguel.azurewebsites.net/api/farms',
       { headers }
     );
 

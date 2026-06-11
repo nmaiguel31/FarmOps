@@ -8,7 +8,7 @@ export class Auth {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/auth';
 
   login(email: string, password: string) {
     return this.http.post(`${this.apiUrl}/login`, {

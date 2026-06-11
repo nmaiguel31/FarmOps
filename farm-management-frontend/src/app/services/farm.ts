@@ -8,7 +8,7 @@ export class Farm {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:5000/api/farms';
+  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/farms';
 
   getFarms() {
 
