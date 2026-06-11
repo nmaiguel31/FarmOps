@@ -12,6 +12,16 @@ const farmSchema = new mongoose.Schema(
       required: true
     },
 
+    latitude: {
+      type: Number,
+      default: null
+    },
+
+    longitude: {
+      type: Number,
+      default: null
+    },
+
     size: {
       type: Number,
       required: true
@@ -21,7 +31,7 @@ const farmSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
-    }
+    },
   },
   {
     timestamps: true

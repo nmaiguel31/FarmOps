@@ -1,18 +1,35 @@
-<h1>Farm Management Dashboard</h1>
+<h1>FarmOps Dashboard</h1>
 
-<p>System Overview</p>
+<div class="dashboard-grid">
 
-<hr>
+  <div class="card">
+    <h3>🚜 Farms</h3>
+    <p>{{ totalFarms }}</p>
+  </div>
 
-<h2>Total Farms</h2>
-<p>{{ totalFarms }}</p>
+  <div class="card">
+    <h3>🌱 Crops</h3>
+    <p>{{ totalCrops }}</p>
+  </div>
 
-<hr>
+  <div class="card">
+    <h3>📋 Financial Records</h3>
+    <p>{{ totalRecords }}</p>
+  </div>
 
-<h2>Total Crops</h2>
-<p>{{ totalCrops }}</p>
+  <div class="card">
+    <h3>💰 Revenue</h3>
+    <p>${{ totalRevenue }}</p>
+  </div>
 
-<hr>
+  <div class="card">
+    <h3>💸 Expenses</h3>
+    <p>${{ totalExpenses }}</p>
+  </div>
 
-<h2>Total Financial Records</h2>
-<p>{{ totalRecords }}</p>
+  <div class="card">
+    <h3>📈 Net Profit</h3>
+    <p>${{ netProfit }}</p>
+  </div>
+
+</div>

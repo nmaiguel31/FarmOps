@@ -22,6 +22,9 @@ export class Dashboard implements OnInit {
   totalFarms = 0;
   totalCrops = 0;
   totalRecords = 0;
+  totalRevenue = 0;
+totalExpenses = 0;
+netProfit = 0;
 
   private farmService = inject(Farm);
   private cropService = inject(Crop);
@@ -66,6 +69,16 @@ export class Dashboard implements OnInit {
       next: (data: any) => {
 
         this.totalRecords = data.length;
+
+        this.totalRevenue = data
+          .filter((record: any) => record.type === 'Income')
+          .reduce((sum: number, record: any) => sum + record.amount, 0);
+
+        this.totalExpenses = data
+          .filter((record: any) => record.type === 'Expense')
+          .reduce((sum: number, record: any) => sum + record.amount, 0);
+
+        this.netProfit = this.totalRevenue - this.totalExpenses;
 
         this.cdr.detectChanges();
 

@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FinancialRecord } from '../../services/financial-record';
+import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-financial-records',
@@ -223,6 +224,154 @@ deleteRecord(id: string) {
     }
 
   });
+
+}
+
+exportCSV() {
+
+  const headers = [
+    'Type',
+    'Category',
+    'Amount',
+    'Description',
+    'Farm'
+  ];
+
+  const rows = this.records.map(record => [
+
+    record.type,
+
+    record.category,
+
+    record.amount,
+
+    record.description || '',
+
+    record.farm?.name || ''
+
+  ]);
+
+  const csvContent =
+    [headers, ...rows]
+      .map(row => row.join(','))
+      .join('\n');
+
+  const blob = new Blob(
+    [csvContent],
+    {
+      type: 'text/csv;charset=utf-8;'
+    }
+  );
+
+  const url = window.URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+
+  link.href = url;
+
+  link.download = 'financial-records.csv';
+
+  link.click();
+
+  window.URL.revokeObjectURL(url);
+
+}
+
+exportPDF() {
+
+  const doc = new jsPDF();
+
+  let revenue = 0;
+  let expenses = 0;
+
+  this.records.forEach(record => {
+
+    if (record.type === 'Income') {
+      revenue += record.amount;
+    }
+
+    if (record.type === 'Expense') {
+      expenses += record.amount;
+    }
+
+  });
+
+  const profit = revenue - expenses;
+
+  doc.setFontSize(18);
+
+  doc.text(
+    'FarmOps Financial Report',
+    20,
+    20
+  );
+
+  doc.setFontSize(12);
+
+  doc.text(
+    `Total Records: ${this.records.length}`,
+    20,
+    40
+  );
+
+  doc.text(
+    `Total Revenue: $${revenue}`,
+    20,
+    50
+  );
+
+  doc.text(
+    `Total Expenses: $${expenses}`,
+    20,
+    60
+  );
+
+  doc.text(
+    `Net Profit: $${profit}`,
+    20,
+    70
+  );
+
+  let yPosition = 90;
+
+  doc.text(
+    'Financial Records:',
+    20,
+    yPosition
+  );
+
+  yPosition += 10;
+
+  this.records.forEach(record => {
+
+    const line =
+
+      `${record.type} | ` +
+      `${record.category} | ` +
+      `$${record.amount} | ` +
+      `${record.farm?.name || 'N/A'}`;
+
+    doc.text(
+      line,
+      20,
+      yPosition
+    );
+
+    yPosition += 10;
+
+    if (yPosition > 270) {
+
+      doc.addPage();
+
+      yPosition = 20;
+
+    }
+
+  });
+
+  doc.save(
+    'FarmOps-Financial-Report.pdf'
+  );
 
 }
 

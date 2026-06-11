@@ -1,0 +1,39 @@
+body {
+  background-color: #f5f7fa;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  transition: transform 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+h1 {
+  margin-bottom: 20px;
+}

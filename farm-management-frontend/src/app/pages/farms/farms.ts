@@ -21,6 +21,8 @@ export class Farms implements OnInit {
   farmName = '';
   farmLocation = '';
   farmSize = 0;
+  farmLatitude = 0;
+  farmLongitude = 0;
   editingFarmId = '';
 
   private farmService = inject(Farm);
@@ -38,8 +40,12 @@ export class Farms implements OnInit {
   const farmData = {
     name: this.farmName,
     location: this.farmLocation,
+    latitude: this.farmLatitude,
+    longitude: this.farmLongitude,
     size: this.farmSize
   };
+
+  console.log(farmData);
 
   this.farmService.createFarm(farmData).subscribe({
 
@@ -50,6 +56,8 @@ export class Farms implements OnInit {
       this.farmName = '';
       this.farmLocation = '';
       this.farmSize = 0;
+      this.farmLatitude = 0;
+      this.farmLongitude = 0;
 
       this.loadFarms();
 
@@ -68,11 +76,11 @@ export class Farms implements OnInit {
 editFarm(farm: any) {
 
   this.editingFarmId = farm._id;
-
   this.farmName = farm.name;
   this.farmLocation = farm.location;
   this.farmSize = farm.size;
-
+  this.farmLatitude = farm.latitude;
+  this.farmLongitude = farm.longitude;
 }
 
 updateFarm() {
@@ -80,6 +88,8 @@ updateFarm() {
   const farmData = {
     name: this.farmName,
     location: this.farmLocation,
+    latitude: this.farmLatitude,
+    longitude: this.farmLongitude,
     size: this.farmSize
   };
 

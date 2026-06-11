@@ -8,19 +8,31 @@
     type="text"
     placeholder="Farm Name"
     [(ngModel)]="farmName"
-  >
+>
 
   <input
     type="text"
     placeholder="Location"
     [(ngModel)]="farmLocation"
-  >
+>
+
+  <input
+  type="number"
+  placeholder="Latitude"
+  [(ngModel)]="farmLatitude"
+>
+
+  <input
+    type="number"
+    placeholder="Longitude"
+    [(ngModel)]="farmLongitude"
+>
 
   <input
     type="number"
     placeholder="Size"
     [(ngModel)]="farmSize"
-  >
+>
 
 <button
   *ngIf="editingFarmId === ''"
@@ -51,6 +63,16 @@
   <p>
     <strong>Location:</strong>
     {{ farm.location }}
+  </p>
+
+  <p>
+  <strong>Latitude:</strong>
+  {{ farm.latitude }}
+  </p>
+
+  <p>
+    <strong>Longitude:</strong>
+    {{ farm.longitude }}
   </p>
 
   <p>
