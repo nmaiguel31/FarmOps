@@ -11,10 +11,19 @@
 >
 
   <input
-    type="text"
-    placeholder="Location"
-    [(ngModel)]="farmLocation"
+  #locationInput
+  type="text"
+  placeholder="Search Location"
+  [(ngModel)]="farmLocation"
 >
+
+<p>
+  Latitude: {{ farmLatitude }}
+</p>
+
+<p>
+  Longitude: {{ farmLongitude }}
+</p>
 
   <input
   type="number"

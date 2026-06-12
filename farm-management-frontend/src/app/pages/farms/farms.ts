@@ -2,8 +2,13 @@ import {
   Component,
   inject,
   OnInit,
-  ChangeDetectorRef
+  ChangeDetectorRef,
+  AfterViewInit,
+  ElementRef,
+  ViewChild
 } from '@angular/core';
+
+declare const google: any;
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Farm } from '../../services/farm';
@@ -14,8 +19,10 @@ import { Farm } from '../../services/farm';
   templateUrl: './farms.html',
   styleUrl: './farms.css',
 })
-export class Farms implements OnInit {
+export class Farms implements OnInit, AfterViewInit {
 
+  @ViewChild('locationInput')
+  locationInput!: ElementRef;
   farms: any[] = [];
 
   farmName = '';
@@ -35,6 +42,38 @@ export class Farms implements OnInit {
     this.loadFarms();
   }
   
+  ngAfterViewInit(): void {
+
+  const autocomplete =
+    new google.maps.places.Autocomplete(
+      this.locationInput.nativeElement
+    );
+
+  autocomplete.addListener('place_changed', () => {
+
+    const place = autocomplete.getPlace();
+
+    this.farmLocation =
+      place.formatted_address || '';
+
+    this.farmLatitude =
+      place.geometry?.location?.lat() || 0;
+
+    this.farmLongitude =
+      place.geometry?.location?.lng() || 0;
+
+    this.cdr.detectChanges();
+
+    console.log(
+      'Coordinates:',
+      this.farmLatitude,
+      this.farmLongitude
+    );
+
+  });
+
+}
+
   createFarm() {
 
   const farmData = {
