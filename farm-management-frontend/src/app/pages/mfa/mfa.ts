@@ -1,18 +1,18 @@
 import {
   Component,
-  inject
+  inject,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { Mfa } from '../../services/mfa';
 
 @Component({
   selector: 'app-mfa',
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
   ],
   templateUrl: './mfa.html',
   styleUrl: './mfa.css'
@@ -23,8 +23,9 @@ export class MfaComponent {
 
   token = '';
 
-  message = '';
 
+  message = '';
+  private cdr = inject(ChangeDetectorRef);
   private mfaService =
     inject(Mfa);
 
@@ -35,8 +36,11 @@ export class MfaComponent {
 
         next: (data: any) => {
 
-          this.qrCode =
-            data.qrCode;
+          console.log('QR recibido:', data);
+
+          this.qrCode = data.qrCode;
+
+          this.cdr.detectChanges();
 
         }
 
@@ -52,15 +56,17 @@ export class MfaComponent {
 
         next: (data: any) => {
 
-          this.message =
-            data.message;
+          this.message = data.message;
+
+          this.cdr.detectChanges();
 
         },
 
         error: () => {
 
-          this.message =
-            'Invalid code';
+          this.message = 'Invalid code';
+
+          this.cdr.detectChanges();
 
         }
 

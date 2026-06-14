@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -12,17 +13,35 @@ export class Mfa {
 
   setupMFA() {
 
+    const token = localStorage.getItem('token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
     return this.http.get(
-      `${this.apiUrl}/setup`
+      `${this.apiUrl}/setup`,
+      { headers }
     );
 
   }
 
-  verifyMFA(token: string) {
+  verifyMFA(tokenCode: string) {
+
+    const token = localStorage.getItem('token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
 
     return this.http.post(
       `${this.apiUrl}/verify`,
-      { token }
+      {
+        token: tokenCode
+      },
+      {
+        headers
+      }
     );
 
   }

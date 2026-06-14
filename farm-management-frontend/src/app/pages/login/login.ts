@@ -27,18 +27,27 @@ export class Login {
 
       next: (response: any) => {
 
-        localStorage.setItem(
-          'token',
-          response.token
-        );
+    localStorage.setItem(
+      'token',
+      response.token
+    );
 
-        localStorage.setItem(
-          'user',
-          JSON.stringify(response.user)
-        );
+    localStorage.setItem(
+      'user',
+      JSON.stringify(response.user)
+    );
 
-        this.router.navigate(['/dashboard']);
-      },
+    if (response.user.mfaEnabled) {
+
+      this.router.navigate(['/mfa']);
+
+    } else {
+
+      this.router.navigate(['/dashboard']);
+
+    }
+
+  },
 
       error: (error) => {
         console.error('Login failed', error);
