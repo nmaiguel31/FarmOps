@@ -12,6 +12,7 @@ declare const google: any;
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Farm } from '../../services/farm';
+import { GoogleMapsLoader } from '../../services/google-maps-loader';
 
 @Component({
   selector: 'app-farms',
@@ -24,7 +25,10 @@ export class Farms implements OnInit, AfterViewInit {
   @ViewChild('locationInput')
   locationInput!: ElementRef;
   farms: any[] = [];
+  filteredFarms: any[] = [];
 
+  searchLocation = '';
+  searchOwner = '';
   farmName = '';
   farmLocation = '';
   farmSize = 0;
@@ -32,6 +36,7 @@ export class Farms implements OnInit, AfterViewInit {
   farmLongitude = 0;
   editingFarmId = '';
 
+  private mapsLoader = inject(GoogleMapsLoader);
   private farmService = inject(Farm);
   private cdr = inject(ChangeDetectorRef);
 
@@ -42,35 +47,31 @@ export class Farms implements OnInit, AfterViewInit {
     this.loadFarms();
   }
   
-  ngAfterViewInit(): void {
+  async ngAfterViewInit(): Promise<void> {
 
-  const autocomplete =
-    new google.maps.places.Autocomplete(
-      this.locationInput.nativeElement
-    );
+    await this.mapsLoader.load();
 
-  autocomplete.addListener('place_changed', () => {
+    const autocomplete =
+      new google.maps.places.Autocomplete(
+        this.locationInput.nativeElement
+      );
 
-    const place = autocomplete.getPlace();
+    autocomplete.addListener('place_changed', () => {
 
-    this.farmLocation =
-      place.formatted_address || '';
+      const place = autocomplete.getPlace();
 
-    this.farmLatitude =
-      place.geometry?.location?.lat() || 0;
+      this.farmLocation =
+        place.formatted_address || '';
 
-    this.farmLongitude =
-      place.geometry?.location?.lng() || 0;
+      this.farmLatitude =
+        place.geometry?.location?.lat() || 0;
 
-    this.cdr.detectChanges();
+      this.farmLongitude =
+        place.geometry?.location?.lng() || 0;
 
-    console.log(
-      'Coordinates:',
-      this.farmLatitude,
-      this.farmLongitude
-    );
+      this.cdr.detectChanges();
 
-  });
+    });
 
 }
 
@@ -180,6 +181,8 @@ updateFarm() {
         console.log('DATA RECIBIDA:', data);
 
         this.farms = [...data];
+        this.filteredFarms = [...data];
+        this.renderMaps();
         this.cdr.detectChanges();
 
         console.log('FARMS ASIGNADAS:', this.farms);
@@ -232,4 +235,96 @@ updateFarm() {
 
   }
   
+  renderMaps() {
+
+    setTimeout(() => {
+
+      this.filteredFarms.forEach((farm) => {
+
+        if (
+          !farm.latitude ||
+          !farm.longitude
+        ) {
+          return;
+        }
+
+        const mapElement = document.getElementById(
+          'map-' + farm._id
+        );
+
+        if (!mapElement) {
+          return;
+        }
+
+        const position = {
+          lat: farm.latitude,
+          lng: farm.longitude
+        };
+
+        const map = new google.maps.Map(
+          mapElement,
+          {
+            center: position,
+            zoom: 12
+          }
+        );
+
+        new google.maps.Marker({
+          position,
+          map,
+          title: farm.name
+        });
+
+      });
+
+    }, 100);
+
+  }
+
+  filterFarms() {
+
+  this.filteredFarms = this.farms.filter((farm) => {
+
+    const matchesLocation =
+      farm.location
+        ?.toLowerCase()
+        .includes(
+          this.searchLocation.toLowerCase()
+        );
+
+    const matchesOwner =
+      farm.owner?.email
+        ?.toLowerCase()
+        .includes(
+          this.searchOwner.toLowerCase()
+        );
+
+    return matchesLocation && matchesOwner;
+
+    
+
+  });
+
+  setTimeout(() => {
+  this.renderMaps();
+}, 100);
+
+}
+
+searchByLocation(location: string) {
+
+  this.searchLocation = location;
+
+  this.filterFarms();
+
+}
+
+searchByOwner(ownerEmail: string) {
+
+  this.searchOwner = ownerEmail;
+
+  this.filterFarms();
+
+}
+
 }

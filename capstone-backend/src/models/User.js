@@ -20,7 +20,15 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm'
   }
-]
+  ],
+  mfaEnabled: {
+  type: Boolean,
+  default: false
+  },
+  mfaSecret: {
+  type: String,
+  default: ''
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

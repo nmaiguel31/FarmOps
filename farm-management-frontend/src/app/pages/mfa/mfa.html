@@ -1,0 +1,32 @@
+<h1>Multi-Factor Authentication</h1>
+
+<button (click)="generateQR()">
+  Generate QR Code
+</button>
+
+<div *ngIf="qrCode">
+
+  <h3>
+    Scan with Google Authenticator
+  </h3>
+
+  <img
+    [src]="qrCode"
+    width="250"
+  >
+
+</div>
+
+<hr>
+
+<input
+  type="text"
+  placeholder="Enter 6-digit code"
+  [(ngModel)]="token"
+>
+
+<button (click)="verifyCode()">
+  Verify Code
+</button>
+
+<p>{{ message }}</p>

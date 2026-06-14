@@ -37,6 +37,10 @@ app.get('/', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+const mfaRoutes =
+require('./routes/mfaRoutes');
+
+app.use('/api/mfa',mfaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/protected', protectedRoutes);
 app.use('/api/farms', farmRoutes);
