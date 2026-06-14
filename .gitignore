@@ -10,3 +10,6 @@ backend/.env
 frontend/.env
 
 .vscode/
+
+farm-management-frontend/src/environments/environment.ts
+farm-management-frontend/src/environments/environment.prod.ts
