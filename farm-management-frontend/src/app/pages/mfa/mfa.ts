@@ -30,6 +30,8 @@ export class MfaComponent
 
   mfaEnabled = false;
   mfaVerified = false;
+  showVerification = false;
+  setupMode = false;
 
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
@@ -45,13 +47,17 @@ export class MfaComponent
 
           console.log('MFA STATUS:', data);
 
-          this.mfaEnabled = data.mfaEnabled;
+        this.mfaEnabled = data.mfaEnabled;
 
-          if (!this.mfaEnabled) {
+        if (!this.mfaEnabled) {
 
-            this.generateQR();
+          this.setupMode = false;
 
-          }
+        } else {
+
+          this.showVerification = true;
+
+        }
 
           console.log(
             'MFA ENABLED:',
@@ -80,15 +86,17 @@ export class MfaComponent
     this.mfaService.setupMFA()
       .subscribe({
 
-        next: (data: any) => {
+      next: (data: any) => {
 
-          console.log('QR recibido:', data);
+        this.setupMode = true;
 
-          this.qrCode = data.qrCode;
+        this.qrCode = data.qrCode;
 
-          this.cdr.detectChanges();
+        this.showVerification = true;
 
-        }
+        this.cdr.detectChanges();
+
+      }
 
       });
 
@@ -105,6 +113,8 @@ export class MfaComponent
         this.message = data.message;
 
         this.mfaEnabled = true;
+
+        this.setupMode = false;
 
         this.mfaVerified = true;
 
@@ -144,6 +154,8 @@ export class MfaComponent
 
           this.mfaEnabled = false;
 
+          this.setupMode = false;
+
           this.mfaVerified = false;
 
           this.qrCode = '';
@@ -167,5 +179,41 @@ export class MfaComponent
       });
 
   }
+
+regenerateQR() {
+
+  this.mfaService
+    .setupMFA()
+    .subscribe({
+
+      next: (data: any) => {
+
+        this.qrCode =
+          data.qrCode;
+
+        this.mfaVerified = false;
+
+        this.showVerification = true;
+
+        this.message =
+          'Scan the new QR code';
+
+        localStorage.removeItem(
+          'mfaVerified'
+        );
+
+        this.cdr.detectChanges();
+
+      },
+
+      error: (error) => {
+
+        console.error(error);
+
+      }
+
+    });
+
+}
 
 }

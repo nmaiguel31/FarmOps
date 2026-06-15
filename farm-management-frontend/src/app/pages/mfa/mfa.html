@@ -2,80 +2,114 @@
 
   <div class="mfa-card">
 
-    <h1>🔐 Security Settings</h1>
+<h1>🔐 Security Settings</h1>
 
-    <p class="subtitle">
-      Protect your FarmOps account using
-      Multi-Factor Authentication (MFA).
-    </p>
+<p class="subtitle">
+  Protect your FarmOps account using
+  Multi-Factor Authentication (MFA).
+</p>
 
-    <div
-      class="status-card"
-      *ngIf="mfaEnabled && !mfaVerified"
-    >
-      🔐 MFA is enabled on this account.
-      Enter your authentication code.
-    </div>
+<!-- MFA ENABLED -->
 
-    <button
-      *ngIf="mfaEnabled"
-      class="verify-btn"
-      (click)="disableMFA()"
-    >
-      Disable MFA
-    </button>
+<div *ngIf="mfaEnabled && !setupMode">
 
-    <button
-      *ngIf="!mfaEnabled"
-      class="primary-btn"
-      (click)="generateQR()"
-    >
-      Generate QR Code
-    </button>
+  <div class="status-card">
+    MFA is enabled on this account. Enter your authentication code.
+  </div>
 
-    <div *ngIf="qrCode && !mfaEnabled">
+  <input
+    type="text"
+    placeholder="Enter 6-digit code"
+    [(ngModel)]="token"
+  >
 
-      <h3>
-        Scan with Google Authenticator
-      </h3>
+  <button
+    class="verify-btn"
+    (click)="verifyCode()"
+  >
+    Verify Code
+  </button>
 
-      <img
-        [src]="qrCode"
-        alt="QR Code"
-      >
+  <br><br>
 
-    </div>
+  <button
+    class="verify-btn"
+    (click)="disableMFA()"
+  >
+    Disable MFA
+  </button>
 
-    <hr>
+</div>
 
-    <input
-      *ngIf="mfaEnabled && !mfaVerified"
-      type="text"
-      placeholder="Enter 6-digit code"
-      [(ngModel)]="token"
-    >
+<!-- MFA DISABLED -->
 
-    <button
-      *ngIf="mfaEnabled && !mfaVerified"
-      class="verify-btn"
-      (click)="verifyCode()"
-    >
-      Verify Code
-    </button>
+<div *ngIf="!mfaEnabled && !setupMode">
 
-    <p
-      class="success-message"
-      *ngIf="message === 'MFA enabled successfully'"
-    >
-      ✅ MFA Enabled Successfully
-    </p>
+  <div class="status-card">
+    ⚠ MFA Disabled
+  </div>
 
-    <p
-      class="error-message"
-      *ngIf="message === 'Invalid code'"
-    >
-      ❌ Invalid Code
-    </p>
+  <button
+    class="primary-btn"
+    (click)="generateQR()"
+  >
+    Generate New QR Code
+  </button>
+
+</div>
+
+<!-- QR SETUP MODE -->
+
+<div *ngIf="setupMode">
+
+  <h3>
+    Scan with Google Authenticator
+  </h3>
+
+  <img
+    [src]="qrCode"
+    alt="QR Code"
+  >
+
+  <br><br>
+
+  <button
+    class="primary-btn"
+    (click)="generateQR()"
+  >
+    Regenerate QR Code
+  </button>
+
+  <hr>
+
+  <input
+    type="text"
+    placeholder="Enter 6-digit code"
+    [(ngModel)]="token"
+  >
+
+  <button
+    class="verify-btn"
+    (click)="verifyCode()"
+  >
+    Verify
+  </button>
+
+</div>
+
+<p
+  class="success-message"
+  *ngIf="message === 'MFA enabled successfully'"
+>
+  ✅ MFA Enabled Successfully
+</p>
+
+<p
+  class="error-message"
+  *ngIf="message === 'Invalid code'"
+>
+  ❌ Invalid Code
+</p>
 
   </div>
 
