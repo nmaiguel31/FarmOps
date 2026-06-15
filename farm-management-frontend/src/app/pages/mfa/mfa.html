@@ -18,6 +18,14 @@
     </div>
 
     <button
+      *ngIf="mfaEnabled"
+      class="verify-btn"
+      (click)="disableMFA()"
+    >
+      Disable MFA
+    </button>
+
+    <button
       *ngIf="!mfaEnabled"
       class="primary-btn"
       (click)="generateQR()"

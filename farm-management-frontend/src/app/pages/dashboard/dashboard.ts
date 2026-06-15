@@ -6,7 +6,8 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-
+import { GoogleMapsLoader }
+from '../../services/google-maps-loader';
 import { Farm } from '../../services/farm';
 import { Crop } from '../../services/crop';
 import { FinancialRecord } from '../../services/financial-record';
@@ -32,10 +33,12 @@ export class Dashboard implements OnInit {
   private farmService = inject(Farm);
   private cropService = inject(Crop);
   private financialService = inject(FinancialRecord);
-
+  private mapsLoader = inject(GoogleMapsLoader);
   private cdr = inject(ChangeDetectorRef);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+
+    await this.mapsLoader.load();
 
     this.loadDashboardData();
 

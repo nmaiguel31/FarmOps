@@ -106,6 +106,8 @@ export class MfaComponent
 
         this.mfaEnabled = true;
 
+        this.mfaVerified = true;
+
         localStorage.setItem(
           'mfaVerified',
           'true'
@@ -122,6 +124,43 @@ export class MfaComponent
           this.message = 'Invalid code';
 
           this.cdr.detectChanges();
+
+        }
+
+      });
+
+  }
+
+  disableMFA() {
+
+    this.mfaService
+      .disableMFA()
+      .subscribe({
+
+        next: (data: any) => {
+
+          this.message =
+            data.message;
+
+          this.mfaEnabled = false;
+
+          this.mfaVerified = false;
+
+          this.qrCode = '';
+
+          localStorage.removeItem(
+            'mfaVerified'
+          );
+
+          this.generateQR();
+
+          this.cdr.detectChanges();
+
+        },
+
+        error: (error) => {
+
+          console.error(error);
 
         }
 

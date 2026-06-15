@@ -87,4 +87,25 @@ loginVerify(tokenCode: string) {
 
 }
 
+disableMFA() {
+
+  const token =
+    localStorage.getItem('token');
+
+  const headers =
+    new HttpHeaders({
+      Authorization:
+        `Bearer ${token}`
+    });
+
+  return this.http.post(
+    `${this.apiUrl}/disable`,
+    {},
+    {
+      headers
+    }
+  );
+
+}
+
 }

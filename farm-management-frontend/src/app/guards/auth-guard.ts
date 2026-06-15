@@ -9,16 +9,34 @@ export const authGuard: CanActivateFn = () => {
 
   const router = inject(Router);
 
-  const token = localStorage.getItem('token');
+  const token =
+    localStorage.getItem('token');
 
-  if (token) {
+  const mfaVerified =
+    localStorage.getItem('mfaVerified');
 
-    return true;
+  if (!token) {
+
+    console.log('NO TOKEN');
+
+    router.navigate(['/']);
+
+    return false;
 
   }
 
-  router.navigate(['/']);
+  if (mfaVerified !== 'true') {
 
-  return false;
+    console.log('MFA NOT VERIFIED');
+
+    router.navigate(['/mfa']);
+
+    return false;
+
+  }
+
+  console.log('ACCESS GRANTED');
+
+  return true;
 
 };

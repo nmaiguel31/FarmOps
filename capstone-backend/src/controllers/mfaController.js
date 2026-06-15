@@ -99,6 +99,35 @@ const getMFAStatus = async (req, res) => {
 
 };
 
+const disableMFA = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(
+      req.user.id
+    );
+
+    user.mfaEnabled = false;
+
+    user.mfaSecret = '';
+
+    await user.save();
+
+    res.json({
+      message: 'MFA disabled'
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
+
 const loginVerifyMFA = async (req, res) => {
 
   try {
@@ -142,5 +171,6 @@ module.exports = {
   setupMFA,
   verifyMFA,
   getMFAStatus,
-  loginVerifyMFA
+  loginVerifyMFA,
+  disableMFA
 };

@@ -13,7 +13,14 @@ export class App {
 
   get isLoggedIn() {
 
-  return !!localStorage.getItem('token');
+  const token =
+    localStorage.getItem('token');
+
+  const mfaVerified =
+    localStorage.getItem('mfaVerified');
+
+  return !!token &&
+         mfaVerified === 'true';
 
 }
 

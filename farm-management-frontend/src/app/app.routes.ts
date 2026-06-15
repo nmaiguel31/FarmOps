@@ -17,7 +17,7 @@ export const routes: Routes = [
     component: Dashboard,
     canActivate: [authGuard]
   },
-
+  
   {
     path: 'farms',
     component: Farms,

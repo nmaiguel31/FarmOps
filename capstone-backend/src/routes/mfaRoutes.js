@@ -6,7 +6,8 @@ const {
   setupMFA,
   verifyMFA,
   getMFAStatus,
-  loginVerifyMFA
+  loginVerifyMFA,
+  disableMFA
 } = require('../controllers/mfaController');
 
 const authMiddleware =
@@ -31,6 +32,12 @@ router.get(
   '/status',
   authMiddleware,
   getMFAStatus
+);
+
+router.post(
+  '/disable',
+  authMiddleware,
+  disableMFA
 );
 
 module.exports = router;
