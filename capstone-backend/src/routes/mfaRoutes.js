@@ -14,7 +14,8 @@ const authMiddleware =
 router.get(
   '/setup',
   authMiddleware,
-  setupMFA
+  setupMFA,
+  getMFAStatus
 );
 
 router.post(
