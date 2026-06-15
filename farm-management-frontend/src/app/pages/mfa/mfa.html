@@ -1,32 +1,73 @@
-<h1>Multi-Factor Authentication</h1>
+<div class="mfa-container">
 
-<button (click)="generateQR()">
-  Generate QR Code
-</button>
+  <div class="mfa-card">
 
-<div *ngIf="qrCode">
+    <h1>🔐 Security Settings</h1>
 
-  <h3>
-    Scan with Google Authenticator
-  </h3>
+    <p class="subtitle">
+      Protect your FarmOps account using
+      Multi-Factor Authentication (MFA).
+    </p>
 
-  <img
-    [src]="qrCode"
-    width="250"
-  >
+    <div
+      class="status-card"
+      *ngIf="mfaEnabled"
+    >
+      ✅ MFA Status: Enabled
+    </div>
+
+    <button
+      *ngIf="!mfaEnabled"
+      class="primary-btn"
+      (click)="generateQR()"
+    >
+      Generate QR Code
+    </button>
+
+    <div *ngIf="qrCode && !mfaEnabled">
+
+      <h3>
+        Scan with Google Authenticator
+      </h3>
+
+      <img
+        [src]="qrCode"
+        alt="QR Code"
+      >
+
+    </div>
+
+    <hr>
+
+    <input
+      *ngIf="!mfaEnabled"
+      type="text"
+      placeholder="Enter 6-digit code"
+      [(ngModel)]="token"
+    >
+
+    <button
+      *ngIf="!mfaEnabled"
+      class="verify-btn"
+      (click)="verifyCode()"
+    >
+      Verify Code
+    </button>
+
+    <p
+      class="success-message"
+      *ngIf="message === 'MFA enabled successfully'"
+    >
+      ✅ MFA Enabled Successfully
+    </p>
+
+    <p
+      class="error-message"
+      *ngIf="message === 'Invalid code'"
+    >
+      ❌ Invalid Code
+    </p>
+
+  </div>
 
 </div>
-
-<hr>
-
-<input
-  type="text"
-  placeholder="Enter 6-digit code"
-  [(ngModel)]="token"
->
-
-<button (click)="verifyCode()">
-  Verify Code
-</button>
-
-<p>{{ message }}</p>

@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Mfa } from '../../services/mfa';
@@ -25,7 +26,11 @@ export class MfaComponent {
 
 
   message = '';
+
+  mfaEnabled = false;
+
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
   private mfaService =
     inject(Mfa);
 
@@ -58,6 +63,10 @@ export class MfaComponent {
 
           this.message = data.message;
 
+          this.mfaEnabled = true;
+
+          this.router.navigate(['/dashboard']);
+          
           this.cdr.detectChanges();
 
         },
