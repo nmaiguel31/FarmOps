@@ -25,4 +25,10 @@ router.post(
   getMFAStatus
 );
 
+router.get(
+  '/status',
+  authMiddleware,
+  getMFAStatus
+);
+
 module.exports = router;
