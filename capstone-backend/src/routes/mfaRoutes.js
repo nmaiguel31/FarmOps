@@ -5,7 +5,8 @@ const router = express.Router();
 const {
   setupMFA,
   verifyMFA,
-  getMFAStatus
+  getMFAStatus,
+  loginVerifyMFA
 } = require('../controllers/mfaController');
 
 const authMiddleware =
@@ -22,7 +23,8 @@ router.post(
   '/verify',
   authMiddleware,
   verifyMFA,
-  getMFAStatus
+  getMFAStatus,
+  loginVerifyMFA
 );
 
 router.get(

@@ -64,4 +64,27 @@ export class Mfa {
 
 }
 
+loginVerify(tokenCode: string) {
+
+  const token =
+    localStorage.getItem('token');
+
+  const headers =
+    new HttpHeaders({
+      Authorization:
+        `Bearer ${token}`
+    });
+
+  return this.http.post(
+    `${this.apiUrl}/login-verify`,
+    {
+      token: tokenCode
+    },
+    {
+      headers
+    }
+  );
+
+}
+
 }

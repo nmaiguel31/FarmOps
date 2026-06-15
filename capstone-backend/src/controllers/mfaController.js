@@ -99,8 +99,48 @@ const getMFAStatus = async (req, res) => {
 
 };
 
+const loginVerifyMFA = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(
+      req.user.id
+    );
+
+    const verified =
+      speakeasy.totp.verify({
+
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: req.body.token
+
+      });
+
+    if (!verified) {
+
+      return res.status(400).json({
+        message: 'Invalid code'
+      });
+
+    }
+
+    res.json({
+      message: 'MFA verified'
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
 module.exports = {
   setupMFA,
   verifyMFA,
-  getMFAStatus
+  getMFAStatus,
+  loginVerifyMFA
 };

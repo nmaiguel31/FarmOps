@@ -11,9 +11,10 @@
 
     <div
       class="status-card"
-      *ngIf="mfaEnabled"
+      *ngIf="mfaEnabled && !mfaVerified"
     >
-      ✅ MFA Status: Enabled
+      🔐 MFA is enabled on this account.
+      Enter your authentication code.
     </div>
 
     <button
@@ -40,14 +41,14 @@
     <hr>
 
     <input
-      *ngIf="!mfaEnabled"
+      *ngIf="mfaEnabled && !mfaVerified"
       type="text"
       placeholder="Enter 6-digit code"
       [(ngModel)]="token"
     >
 
     <button
-      *ngIf="!mfaEnabled"
+      *ngIf="mfaEnabled && !mfaVerified"
       class="verify-btn"
       (click)="verifyCode()"
     >

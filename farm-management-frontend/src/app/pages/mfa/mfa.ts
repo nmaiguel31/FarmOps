@@ -26,10 +26,10 @@ export class MfaComponent
 
   token = '';
 
-
   message = '';
 
   mfaEnabled = false;
+  mfaVerified = false;
 
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
@@ -45,8 +45,13 @@ export class MfaComponent
 
           console.log('MFA STATUS:', data);
 
-          this.mfaEnabled =
-            data.mfaEnabled;
+          this.mfaEnabled = data.mfaEnabled;
+
+          if (!this.mfaEnabled) {
+
+            this.generateQR();
+
+          }
 
           console.log(
             'MFA ENABLED:',
@@ -99,7 +104,7 @@ export class MfaComponent
 
           this.message = data.message;
 
-          this.mfaEnabled = true;
+          this.mfaVerified = true;
 
           this.router.navigate(['/dashboard']);
           

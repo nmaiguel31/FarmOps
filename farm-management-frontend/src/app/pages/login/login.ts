@@ -39,6 +39,11 @@ export class Login {
 
     if (response.user.mfaEnabled) {
 
+        localStorage.setItem(
+        'pendingMfa',
+        'true'
+        );
+
       this.router.navigate(['/mfa']);
 
     } else {
