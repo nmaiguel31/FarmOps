@@ -1,7 +1,8 @@
 import {
   Component,
   inject,
-  ChangeDetectorRef
+  ChangeDetectorRef,
+  OnInit
 } from '@angular/core';
 
 import { Router } from '@angular/router';
@@ -18,7 +19,8 @@ import { Mfa } from '../../services/mfa';
   templateUrl: './mfa.html',
   styleUrl: './mfa.css'
 })
-export class MfaComponent {
+export class MfaComponent
+  implements OnInit {
 
   qrCode = '';
 
@@ -31,8 +33,26 @@ export class MfaComponent {
 
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
-  private mfaService =
-    inject(Mfa);
+  private mfaService = inject(Mfa);
+
+  ngOnInit(): void {
+
+    this.mfaService
+      .getStatus()
+      .subscribe({
+
+        next: (data: any) => {
+
+          this.mfaEnabled =
+            data.mfaEnabled;
+
+          this.cdr.detectChanges();
+
+        }
+
+      });
+
+  }
 
   generateQR() {
 

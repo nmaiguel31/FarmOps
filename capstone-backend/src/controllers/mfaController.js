@@ -77,7 +77,30 @@ const verifyMFA = async (req, res) => {
 
 };
 
+const getMFAStatus = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(
+      req.user.id
+    );
+
+    res.json({
+      mfaEnabled: user.mfaEnabled
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
 module.exports = {
   setupMFA,
-  verifyMFA
+  verifyMFA,
+  getMFAStatus
 };

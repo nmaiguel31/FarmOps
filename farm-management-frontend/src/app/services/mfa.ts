@@ -46,4 +46,22 @@ export class Mfa {
 
   }
 
+  getStatus() {
+
+  const token =
+    localStorage.getItem('token');
+
+  const headers =
+    new HttpHeaders({
+      Authorization:
+        `Bearer ${token}`
+    });
+
+  return this.http.get(
+    `${this.apiUrl}/status`,
+    { headers }
+  );
+
+}
+
 }
