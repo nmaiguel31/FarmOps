@@ -33,25 +33,29 @@ export class Login {
     );
 
     localStorage.setItem(
-      'user',
-      JSON.stringify(response.user)
+      'mfaVerified',
+      'false'
     );
 
     if (response.user.mfaEnabled) {
 
-        localStorage.setItem(
-        'pendingMfa',
-        'true'
-        );
+      localStorage.setItem(
+        'mfaVerified',
+        'false'
+      );
 
       this.router.navigate(['/mfa']);
 
     } else {
 
+      localStorage.setItem(
+        'mfaVerified',
+        'true'
+      );
+
       this.router.navigate(['/dashboard']);
 
     }
-
   },
 
       error: (error) => {

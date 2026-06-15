@@ -100,17 +100,22 @@ export class MfaComponent
       .verifyMFA(this.token)
       .subscribe({
 
-        next: (data: any) => {
+      next: (data: any) => {
 
-          this.message = data.message;
+        this.message = data.message;
 
-          this.mfaVerified = true;
+        this.mfaEnabled = true;
 
-          this.router.navigate(['/dashboard']);
-          
-          this.cdr.detectChanges();
+        localStorage.setItem(
+          'mfaVerified',
+          'true'
+        );
 
-        },
+        this.router.navigate(['/dashboard']);
+
+        this.cdr.detectChanges();
+
+      },
 
         error: () => {
 
