@@ -11,6 +11,8 @@ from '../../services/google-maps-loader';
 import { Farm } from '../../services/farm';
 import { Crop } from '../../services/crop';
 import { FinancialRecord } from '../../services/financial-record';
+import {Chart,registerables} from 'chart.js';
+Chart.register(...registerables);
 
 declare const google: any;
 @Component({
@@ -22,6 +24,9 @@ declare const google: any;
 export class Dashboard implements OnInit {
 
   farms: any[] = [];
+  farmNames: string[] = [];
+  farmSizes: number[] = [];
+  recentRecords: any[] = [];
 
   totalFarms = 0;
   totalCrops = 0;
@@ -29,6 +34,14 @@ export class Dashboard implements OnInit {
   totalRevenue = 0;
   totalExpenses = 0;
   netProfit = 0;
+  seasonCounts = {
+  Spring: 0,
+  Summer: 0,
+  Autumn: 0,
+  Winter: 0
+  };
+  
+
 
   private farmService = inject(Farm);
   private cropService = inject(Crop);
@@ -54,7 +67,19 @@ export class Dashboard implements OnInit {
 
         this.totalFarms = data.length;
 
+        this.farmNames = data.map(
+        (farm: any) => farm.name
+        );
+
+        this.farmSizes = data.map(
+        (farm: any) => farm.size
+        );
+
         this.renderFarmMap();
+
+        setTimeout(() => { 
+          this.renderFarmSizeChart();
+        }, 200);
 
         this.cdr.detectChanges();
 
@@ -64,13 +89,46 @@ export class Dashboard implements OnInit {
 
     this.cropService.getCrops().subscribe({
 
-      next: (data: any) => {
+    next: (data: any) => {
 
-        this.totalCrops = data.length;
+    this.totalCrops = data.length;
 
-        this.cdr.detectChanges();
+    this.seasonCounts = {
+    Spring: 0,
+    Summer: 0,
+    Autumn: 0,
+    Winter: 0
+    };
 
-      }
+    data.forEach((crop: any) => {
+
+    if (
+      this.seasonCounts.hasOwnProperty(
+        crop.season
+      )
+    ) {
+
+      this.seasonCounts[
+        crop.season as keyof typeof this.seasonCounts
+      ]++;
+
+    }
+
+
+    });
+
+    setTimeout(() => {
+
+
+    this.renderSeasonChart();
+
+
+    }, 200);
+
+    this.cdr.detectChanges();
+
+    }
+
 
     });
 
@@ -79,6 +137,11 @@ export class Dashboard implements OnInit {
       next: (data: any) => {
 
         this.totalRecords = data.length;
+
+        this.recentRecords = data
+          .slice()
+          .reverse()
+          .slice(0, 5);
 
         this.totalRevenue = data
           .filter((record: any) => record.type === 'Income')
@@ -89,6 +152,12 @@ export class Dashboard implements OnInit {
           .reduce((sum: number, record: any) => sum + record.amount, 0);
 
         this.netProfit = this.totalRevenue - this.totalExpenses;
+
+        setTimeout(() => {
+
+        this.renderFinancialChart();
+
+        }, 200);
 
         this.cdr.detectChanges();
 
@@ -171,5 +240,181 @@ export class Dashboard implements OnInit {
   }, 300);
 
 }
+
+    renderFinancialChart() {
+
+    const canvas =
+    document.getElementById(
+    'financeChart'
+    ) as HTMLCanvasElement;
+
+    if (!canvas) {
+    return;
+    }
+
+    Chart.getChart(canvas)?.destroy();
+
+    new Chart(canvas, {
+
+    type: 'bar',
+
+    data: {
+
+      labels: [
+        'Revenue',
+        'Expenses',
+        'Profit'
+      ],
+
+      datasets: [
+
+        {
+
+          label: 'Amount',
+
+          data: [
+
+            this.totalRevenue,
+            this.totalExpenses,
+            this.netProfit
+
+          ]
+
+        }
+
+      ]
+
+ },
+
+    options: {
+
+      responsive: true,
+
+      plugins: {
+
+        legend: {
+          display: false
+        }
+
+      }
+
+    }
+
+    });
+
+    }
+
+    renderSeasonChart() {
+
+    const canvas =
+    document.getElementById(
+    'seasonChart'
+    ) as HTMLCanvasElement;
+
+    if (!canvas) {
+    return;
+    }
+
+    Chart.getChart(canvas)?.destroy();
+
+    new Chart(canvas, {
+
+
+    type: 'pie',
+
+    data: {
+
+      labels: [
+        'Spring',
+        'Summer',
+        'Autumn',
+        'Winter'
+      ],
+
+      datasets: [
+
+        {
+
+          data: [
+
+            this.seasonCounts.Spring,
+            this.seasonCounts.Summer,
+            this.seasonCounts.Autumn,
+            this.seasonCounts.Winter
+
+          ]
+
+        }
+
+      ]
+
+    },
+
+    options: {
+
+      responsive: true
+
+    }
+
+
+    });
+
+ }
+
+ renderFarmSizeChart() {
+
+const canvas =
+document.getElementById(
+'farmSizeChart'
+) as HTMLCanvasElement;
+
+if (!canvas) {
+return;
+}
+
+Chart.getChart(canvas)?.destroy();
+
+new Chart(canvas, {
+
+type: 'bar',
+
+data: {
+
+  labels: this.farmNames,
+
+  datasets: [
+
+    {
+
+      label: 'Farm Size',
+
+      data: this.farmSizes
+
+    }
+
+  ]
+
+},
+
+options: {
+
+  responsive: true,
+
+  scales: {
+
+    y: {
+
+      beginAtZero: true
+
+    }
+
+  }
+
+}
+
+});
+
+}
+
 
 }

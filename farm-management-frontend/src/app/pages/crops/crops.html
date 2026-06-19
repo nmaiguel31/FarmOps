@@ -1,20 +1,24 @@
-<h1>Crops</h1>
+<div class="crops-container">
 
-<h2>Create Crop</h2>
+  <h1>🌱 Crops</h1>
 
-<div>
+  <h2>
+    {{ editingCropId ? 'Edit Crop' : 'Create Crop' }}
+  </h2>
 
-  <input
-    type="text"
-    placeholder="Crop Name"
-    [(ngModel)]="cropName"
-  >
+  <div class="crop-form">
 
-  <input
-    type="text"
-    placeholder="Type"
-    [(ngModel)]="cropType"
-  >
+    <input
+  type="text"
+  placeholder="Crop Name"
+  [(ngModel)]="cropName"
+>
+
+<input
+  type="text"
+  placeholder="Type"
+  [(ngModel)]="cropType"
+>
 
 <select [(ngModel)]="cropSeason">
 
@@ -22,76 +26,111 @@
     Select Season
   </option>
 
-  <option value="Spring">Spring</option>
-  <option value="Summer">Summer</option>
-  <option value="Autumn">Autumn</option>
-  <option value="Winter">Winter</option>
+  <option value="Spring">
+    Spring
+  </option>
+
+  <option value="Summer">
+    Summer
+  </option>
+
+  <option value="Autumn">
+    Autumn
+  </option>
+
+  <option value="Winter">
+    Winter
+  </option>
 
 </select>
 
-  <select [(ngModel)]="selectedFarm">
+<select [(ngModel)]="selectedFarm">
 
-    <option value="">
-      Select Farm
-    </option>
+  <option value="">
+    Select Farm
+  </option>
 
-    <option
-      *ngFor="let farm of farms"
-      [value]="farm._id"
-    >
-      {{ farm.name }}
-    </option>
-
-  </select>
-
-  <button
-    *ngIf="editingCropId === ''"
-    (click)="createCrop()"
+  <option
+    *ngFor="let farm of farms"
+    [value]="farm._id"
   >
-    Create Crop
-  </button>
+    {{ farm.name }}
+  </option>
 
-  <button
-    *ngIf="editingCropId !== ''"
-    (click)="updateCrop()"
-  >
-    Update Crop
-  </button>
+</select>
 
-</div>
+<button
+  *ngIf="editingCropId === ''"
+  class="edit-btn"
+  (click)="createCrop()"
+>
+  Create Crop
+</button>
 
-<hr>
-<div *ngIf="crops.length === 0">
-  No crops found.
-</div>
+<button
+  *ngIf="editingCropId !== ''"
+  class="edit-btn"
+  (click)="updateCrop()"
+>
+  Update Crop
+</button>
 
-<div *ngFor="let crop of crops">
+  </div>
 
-  <h3>{{ crop.name }}</h3>
+  <hr>
+
+  <div *ngIf="crops.length === 0">
+
+
+No crops found.
+
+
+  </div>
+
+  <div class="crop-grid">
+
+
+<div
+  class="crop-card"
+  *ngFor="let crop of crops"
+>
+
+  <h3>
+    🌱 {{ crop.name }}
+  </h3>
 
   <p>
-    <strong>Type:</strong>
+    <strong>📦 Type:</strong>
     {{ crop.type }}
   </p>
 
   <p>
-    <strong>Season:</strong>
+    <strong>🗓 Season:</strong>
     {{ crop.season }}
   </p>
 
   <p>
-    <strong>Farm:</strong>
+    <strong>🚜 Farm:</strong>
     {{ crop.farm?.name }}
   </p>
 
-  <button (click)="editCrop(crop)">
-  Edit
+  <button
+    class="edit-btn"
+    (click)="editCrop(crop)"
+  >
+    Edit
   </button>
 
-  <button (click)="deleteCrop(crop._id)">
-  Delete
+  <button
+    class="delete-btn"
+    (click)="deleteCrop(crop._id)"
+  >
+    Delete
   </button>
 
-  <hr>
+</div>
+
+
+  </div>
 
 </div>

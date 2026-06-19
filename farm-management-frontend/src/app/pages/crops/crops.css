@@ -1,0 +1,133 @@
+.crops-container {
+
+padding: 30px;
+
+background: #f3f4f6;
+
+min-height: 100vh;
+
+}
+
+.crop-form {
+
+background: white;
+
+padding: 25px;
+
+border-radius: 18px;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,.08);
+
+margin-bottom: 30px;
+
+}
+
+.crop-grid {
+
+display: grid;
+
+grid-template-columns:
+repeat(auto-fit, minmax(320px, 1fr));
+
+gap: 25px;
+
+}
+
+.crop-card {
+
+background: white;
+
+padding: 25px;
+
+border-radius: 18px;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,.08);
+
+transition: .3s;
+
+}
+
+.crop-card:hover {
+
+transform: translateY(-5px);
+
+}
+
+.crop-card h3 {
+
+margin-top: 0;
+
+color: #111827;
+
+}
+
+.crop-card p {
+
+color: #4b5563;
+
+}
+
+input,
+select {
+
+width: 100%;
+
+padding: 12px;
+
+margin-bottom: 12px;
+
+border-radius: 10px;
+
+border: 1px solid #d1d5db;
+
+box-sizing: border-box;
+
+}
+
+button {
+
+border: none;
+
+padding: 10px 16px;
+
+border-radius: 10px;
+
+cursor: pointer;
+
+font-weight: 600;
+
+margin-right: 8px;
+
+margin-top: 8px;
+
+}
+
+.edit-btn {
+
+background: #2563eb;
+
+color: white;
+
+}
+
+.delete-btn {
+
+background: #dc2626;
+
+color: white;
+
+}
+
+h1 {
+
+margin-bottom: 20px;
+
+}
+
+h2 {
+
+margin-bottom: 20px;
+
+}

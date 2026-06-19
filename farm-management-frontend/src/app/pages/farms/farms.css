@@ -1,0 +1,131 @@
+.farms-container {
+
+padding: 30px;
+
+background: #f3f4f6;
+
+min-height: 100vh;
+
+}
+
+.farm-grid {
+
+display: grid;
+
+grid-template-columns:
+repeat(auto-fit, minmax(400px, 1fr));
+
+gap: 25px;
+
+margin-top: 30px;
+
+}
+
+.farm-card {
+
+background: white;
+
+border-radius: 18px;
+
+padding: 25px;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,.08);
+
+transition: .3s;
+
+}
+
+.farm-card:hover {
+
+transform: translateY(-5px);
+
+}
+
+.farm-card h3 {
+
+margin-top: 0;
+
+color: #111827;
+
+}
+
+.farm-card p {
+
+color: #374151;
+
+}
+
+input {
+
+width: 100%;
+
+padding: 12px;
+
+margin-bottom: 12px;
+
+border-radius: 10px;
+
+border: 1px solid #d1d5db;
+
+box-sizing: border-box;
+
+}
+
+button {
+
+border: none;
+
+padding: 10px 16px;
+
+border-radius: 10px;
+
+cursor: pointer;
+
+font-weight: 600;
+
+margin-right: 8px;
+
+margin-top: 8px;
+
+}
+
+.secondary-btn {
+
+background: #e5e7eb;
+
+}
+
+.edit-btn {
+
+background: #2563eb;
+
+color: white;
+
+}
+
+.delete-btn {
+
+background: #dc2626;
+
+color: white;
+
+}
+
+#create-map {
+
+border-radius: 12px;
+
+}
+
+h1 {
+
+margin-bottom: 20px;
+
+}
+
+h2 {
+
+margin-top: 25px;
+
+}

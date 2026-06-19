@@ -1,25 +1,49 @@
-<nav>
+<div class="sidebar">
 
-  <a routerLink="/dashboard">
-    Dashboard
-  </a>
+  <div class="logo">
 
-  <a routerLink="/farms">
-    Farms
-  </a>
+```
+<h2>🌱 FarmOps</h2>
 
-  <a routerLink="/crops">
-    Crops
-  </a>
+<span>Farm Management</span>
+```
 
-  <a routerLink="/financial-records">
-    Financial Records
-  </a>
+  </div>
 
-  <button (click)="logout()">
-    Logout
-  </button>
+  <div class="menu">
 
-</nav>
+```
+<a routerLink="/dashboard">
+  📊 Dashboard
+</a>
 
-<hr>
+<a routerLink="/farms">
+  🚜 Farms
+</a>
+
+<a routerLink="/crops">
+  🌾 Crops
+</a>
+
+<a routerLink="/financial-records">
+  💰 Financial Records
+</a>
+
+<a routerLink="/mfa">
+  🔐 Security
+</a>
+```
+
+  </div>
+
+  <div class="bottom-section">
+
+```
+<button (click)="logout()">
+  Logout
+</button>
+```
+
+  </div>
+
+</div>

@@ -1,34 +1,30 @@
-<h1>Farms</h1>
+<h1> 🚜 Farms</h1> 
 
 <h2>Search Farms</h2>
 
 <input
-  type="text"
-  placeholder="Search by Location"
-  [(ngModel)]="searchLocation"
-  (input)="filterFarms()"
+type="text"
+placeholder="Search by Location"
+[(ngModel)]="searchLocation"
+(input)="filterFarms()"
+
+>
+
+<input
+type="text"
+placeholder="Search by Owner"
+[(ngModel)]="searchOwner"
+(input)="filterFarms()"
+
 >
 
 <input
   type="text"
-  placeholder="Search by Owner"
-  [(ngModel)]="searchOwner"
-  (input)="filterFarms()"
+  placeholder="Farm Name"
+  [(ngModel)]="farmName"
 >
 
-<hr>
-
-<h2>Create Farm</h2>
-
-<div>
-
-  <input
-    type="text"
-    placeholder="Farm Name"
-    [(ngModel)]="farmName"
->
-
-  <input
+<input
   #locationInput
   type="text"
   placeholder="Search Location"
@@ -43,26 +39,27 @@
   Longitude: {{ farmLongitude }}
 </p>
 
-  <input
+<input
   type="number"
   placeholder="Latitude"
   [(ngModel)]="farmLatitude"
 >
 
-  <input
-    type="number"
-    placeholder="Longitude"
-    [(ngModel)]="farmLongitude"
+<input
+  type="number"
+  placeholder="Longitude"
+  [(ngModel)]="farmLongitude"
 >
 
-  <input
-    type="number"
-    placeholder="Size"
-    [(ngModel)]="farmSize"
+<input
+  type="number"
+  placeholder="Size"
+  [(ngModel)]="farmSize"
 >
 
 <button
   *ngIf="editingFarmId === ''"
+  class="edit-btn"
   (click)="createFarm()"
 >
   Create Farm
@@ -70,80 +67,85 @@
 
 <button
   *ngIf="editingFarmId !== ''"
+  class="edit-btn"
   (click)="updateFarm()"
 >
   Update Farm
 </button>
 
-</div>
+No farms found.
 
-<hr>
+<div
+  class="farm-card"
+  *ngFor="let farm of filteredFarms"
+>
 
-<div *ngIf="farms.length === 0">
-  No farms found.
-</div>
-
-<div *ngFor="let farm of filteredFarms">
-
-  <h3>{{ farm.name }}</h3>
+  <h3>
+    🚜 {{ farm.name }}
+  </h3>
 
   <p>
-    <strong>Location:</strong>
+    <strong>📍 Location:</strong>
     {{ farm.location }}
   </p>
 
-  <button
-    (click)="searchByLocation(farm.location)"
-  >
-    Find Similar Farms
-  </button>
-
   <p>
-  <strong>Latitude:</strong>
-  {{ farm.latitude }}
+    <strong>🌎 Latitude:</strong>
+    {{ farm.latitude }}
   </p>
 
   <p>
-    <strong>Longitude:</strong>
+    <strong>🌎 Longitude:</strong>
     {{ farm.longitude }}
   </p>
 
-  <div
-  *ngIf="farm.latitude && farm.longitude"
-  [id]="'map-' + farm._id"
-  style="
-    width: 100%;
-    height: 300px;
-    margin-top: 10px;
-    margin-bottom: 20px;
-  "
->
-</div>
-
   <p>
-    <strong>Size:</strong>
+    <strong>📏 Size:</strong>
     {{ farm.size }}
   </p>
 
   <p>
-    <strong>Owner:</strong>
+    <strong>👤 Owner:</strong>
     {{ farm.owner?.email }}
   </p>
 
   <button
-  (click)="searchByOwner(farm.owner?.email)"
+    class="secondary-btn"
+    (click)="searchByLocation(farm.location)"
   >
-    View Owner Farms
+    Similar Farms
   </button>
 
-  <button (click)="editFarm(farm)">
+  <button
+    class="secondary-btn"
+    (click)="searchByOwner(farm.owner?.email)"
+  >
+    Owner Farms
+  </button>
+
+  <button
+    class="edit-btn"
+    (click)="editFarm(farm)"
+  >
     Edit
   </button>
 
-  <button (click)="deleteFarm(farm._id)">
-  Delete
+  <button
+    class="delete-btn"
+    (click)="deleteFarm(farm._id)"
+  >
+    Delete
   </button>
 
-  <hr>
-
+  <div
+    *ngIf="farm.latitude && farm.longitude"
+    [id]="'map-' + farm._id"
+    style="
+      width:100%;
+      height:300px;
+      margin-top:20px;
+      border-radius:12px;
+    "
+  >
+  </div>
 </div>

@@ -1,46 +1,144 @@
-<h1>FarmOps Dashboard</h1>
+<div>
+  <h1>📊 Dashboard</h1>
 
-<div class="dashboard-grid">
+  <p>
+    Overview of your farms, crops and financial performance.
+  </p>
+</div>
+<div class="card farms">
 
-  <div class="card">
-    <h3>🚜 Farms</h3>
-    <p>{{ totalFarms }}</p>
-  </div>
+  <span class="card-icon">🚜</span>
 
-  <div class="card">
-    <h3>🌱 Crops</h3>
-    <p>{{ totalCrops }}</p>
-  </div>
+  <h3>Farms</h3>
 
-  <div class="card">
-    <h3>📋 Financial Records</h3>
-    <p>{{ totalRecords }}</p>
-  </div>
-
-  <div class="card">
-    <h3>💰 Revenue</h3>
-    <p>${{ totalRevenue }}</p>
-  </div>
-
-  <div class="card">
-    <h3>💸 Expenses</h3>
-    <p>${{ totalExpenses }}</p>
-  </div>
-
-  <div class="card">
-    <h3>📈 Net Profit</h3>
-    <p>${{ netProfit }}</p>
-  </div>
+  <p>{{ totalFarms }}</p>
 
 </div>
 
-<h2>Farm Locations</h2>
+<div class="card crops">
+
+  <span class="card-icon">🌾</span>
+
+  <h3>Crops</h3>
+
+  <p>{{ totalCrops }}</p>
+
+</div>
+
+<div class="card records">
+
+  <span class="card-icon">📋</span>
+
+  <h3>Records</h3>
+
+  <p>{{ totalRecords }}</p>
+
+</div>
+
+<div class="card revenue">
+
+  <span class="card-icon">💰</span>
+
+  <h3>Revenue</h3>
+
+  <p>${{ totalRevenue }}</p>
+
+</div>
+
+<div class="card expenses">
+
+  <span class="card-icon">💸</span>
+
+  <h3>Expenses</h3>
+
+  <p>${{ totalExpenses }}</p>
+
+</div>
+
+<div class="card profit">
+
+  <span class="card-icon">📈</span>
+
+  <h3>Net Profit</h3>
+
+  <p>${{ netProfit }}</p>
+
+</div>
+
+<h2>📊 Financial Overview</h2>
+
+  <div class="chart-container">
+
+  <canvas id="financeChart"></canvas>
+
+  </div>
+
+  <h2>🌱 Crops by Season</h2>
+
+  <div class="chart-container">
+
+  <canvas id="seasonChart"></canvas>
+
+  </div>
+
+  <h2>🚜 Farm Size Distribution</h2>
+
+  <div class="chart-container">
+
+  <canvas id="farmSizeChart"></canvas>
+
+</div>
+
+<h2>📋 Recent Activity</h2>
+
+  <div class="activity-container">
+
+    <div
+      class="activity-card"
+      *ngFor="let record of recentRecords"
+    >
+
+  <div
+    class="activity-type"
+    [class.income]="record.type === 'Income'"
+    [class.expense]="record.type === 'Expense'"
+  >
+
+    {{ record.type === 'Income'
+        ? '📈 Income'
+        : '💸 Expense' }}
+
+  </div>
+
+  <h4>
+    {{ record.category }}
+  </h4>
+
+  <p>
+    {{ record.description }}
+  </p>
+
+  <strong>
+    ${{ record.amount }}
+  </strong>
+    </div>
+
+</div>
+
+
+<h2>🗺 Farm Locations</h2>
 
 <div
   id="all-farms-map"
+  class="dashboard-map"
   style="
     width:100%;
     height:500px;
     border-radius:12px;
   "
+></div>
+
+<div
+  id="all-farms-map"
+  class="dashboard-map"
 ></div>

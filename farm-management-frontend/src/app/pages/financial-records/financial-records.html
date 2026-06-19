@@ -1,16 +1,31 @@
-<h1>Financial Records</h1>
+<div class="financial-container">
 
-<button (click)="exportCSV()">
-  Export CSV
+  <h1>💰 Financial Records</h1>
+
+  <div class="action-bar">
+
+<button
+  class="export-btn"
+  (click)="exportCSV()"
+>
+  📊 Export CSV
 </button>
 
-<button (click)="exportPDF()">
-  Export PDF
+<button
+  class="export-btn"
+  (click)="exportPDF()"
+>
+  📄 Export PDF
 </button>
 
-<h2>Create Financial Record</h2>
+  </div>
 
-<div>
+  <h2>
+    {{ editingRecordId ? 'Edit Financial Record' : 'Create Financial Record' }}
+  </h2>
+
+  <div class="financial-form">
+
 
 <select [(ngModel)]="recordType">
 
@@ -28,92 +43,132 @@
 
 </select>
 
-  <input
-    type="text"
-    placeholder="Category"
-    [(ngModel)]="recordCategory"
+<input
+  type="text"
+  placeholder="Category"
+  [(ngModel)]="recordCategory"
+>
+
+<input
+  type="number"
+  placeholder="Amount"
+  [(ngModel)]="recordAmount"
+>
+
+<input
+  type="text"
+  placeholder="Description"
+  [(ngModel)]="recordDescription"
+>
+
+<select [(ngModel)]="selectedFarm">
+
+  <option value="">
+    Select Farm
+  </option>
+
+  <option
+    *ngFor="let farm of farms"
+    [value]="farm._id"
   >
+    {{ farm.name }}
+  </option>
 
-  <input
-    type="number"
-    placeholder="Amount"
-    [(ngModel)]="recordAmount"
-  >
+</select>
 
-  <input
-    type="text"
-    placeholder="Description"
-    [(ngModel)]="recordDescription"
-  >
+<button
+  *ngIf="editingRecordId === ''"
+  class="income-btn"
+  (click)="createRecord()"
+>
+  Create Record
+</button>
 
-  <select [(ngModel)]="selectedFarm">
+<button
+  *ngIf="editingRecordId !== ''"
+  class="income-btn"
+  (click)="updateRecord()"
+>
+  Update Record
+</button>
 
-    <option value="">
-      Select Farm
-    </option>
 
-    <option
-      *ngFor="let farm of farms"
-      [value]="farm._id"
-    >
-      {{ farm.name }}
-    </option>
+  </div>
 
-  </select>
+  <hr>
+
+  <div *ngIf="records.length === 0">
+
+
+No financial records found.
+
+
+  </div>
+
+  <div class="records-grid">
+
+
+<div
+  class="record-card"
+  *ngFor="let record of records"
+  [class.income-card]="record.type === 'Income'"
+  [class.expense-card]="record.type === 'Expense'"
+>
+
+  <h3>
+
+    {{ record.type === 'Income' ? '📈 Income' : '📉 Expense' }}
+
+  </h3>
+
+  <p>
+
+    <strong>Category:</strong>
+
+    {{ record.category }}
+
+  </p>
+
+  <p>
+
+    <strong>Amount:</strong>
+
+    ${{ record.amount }}
+
+  </p>
+
+  <p>
+
+    <strong>Description:</strong>
+
+    {{ record.description }}
+
+  </p>
+
+  <p>
+
+    <strong>Farm:</strong>
+
+    {{ record.farm?.name }}
+
+  </p>
 
   <button
-      *ngIf="editingRecordId === ''"
-      (click)="createRecord()"
-    >
-      Create Record
-    </button>
-
-    <button
-      *ngIf="editingRecordId !== ''"
-      (click)="updateRecord()"
-    >
-      Update Record
-  </button>
-
-</div>
-
-<hr>
-<div *ngIf="records.length === 0">
-  No financial records found.
-</div>
-
-<div *ngFor="let record of records">
-
-  <h3>{{ record.type }}</h3>
-
-  <p>
-    <strong>Category:</strong>
-    {{ record.category }}
-  </p>
-
-  <p>
-    <strong>Amount:</strong>
-    ${{ record.amount }}
-  </p>
-
-  <p>
-    <strong>Description:</strong>
-    {{ record.description }}
-  </p>
-
-  <p>
-    <strong>Farm:</strong>
-    {{ record.farm?.name }}
-  </p>
-
-  <button (click)="editRecord(record)">
+    class="edit-btn"
+    (click)="editRecord(record)"
+  >
     Edit
   </button>
 
-  <button (click)="deleteRecord(record._id)">
+  <button
+    class="delete-btn"
+    (click)="deleteRecord(record._id)"
+  >
     Delete
   </button>
 
-  <hr>
+</div>
+
+  </div>
 
 </div>
