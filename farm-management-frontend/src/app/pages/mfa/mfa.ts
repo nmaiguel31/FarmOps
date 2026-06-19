@@ -123,6 +123,11 @@ export class MfaComponent
           'true'
         );
 
+        localStorage.setItem(
+          'mfaVerifiedAt',
+          Date.now().toString()
+        );
+
         this.router.navigate(['/dashboard']);
 
         this.cdr.detectChanges();

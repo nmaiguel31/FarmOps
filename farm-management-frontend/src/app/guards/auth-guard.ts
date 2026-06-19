@@ -1,42 +1,77 @@
 import { inject } from '@angular/core';
 
 import {
-  CanActivateFn,
-  Router
+CanActivateFn,
+Router
 } from '@angular/router';
 
 export const authGuard: CanActivateFn = () => {
 
-  const router = inject(Router);
+const router = inject(Router);
 
-  const token =
-    localStorage.getItem('token');
+const token =
+localStorage.getItem('token');
 
-  const mfaVerified =
-    localStorage.getItem('mfaVerified');
+const mfaVerified =
+localStorage.getItem('mfaVerified');
 
-  if (!token) {
+const verifiedAt =
+localStorage.getItem(
+'mfaVerifiedAt'
+);
 
-    console.log('NO TOKEN');
+const HOURS_24 =
+24 * 60 * 60 * 1000;
 
-    router.navigate(['/']);
+if (
+verifiedAt &&
+Date.now() - Number(verifiedAt) > HOURS_24
+) {
 
-    return false;
+console.log(
+  'MFA SESSION EXPIRED'
+);
 
-  }
+localStorage.removeItem(
+  'mfaVerified'
+);
 
-  if (mfaVerified !== 'true') {
+localStorage.removeItem(
+  'mfaVerifiedAt'
+);
 
-    console.log('MFA NOT VERIFIED');
+}
 
-    router.navigate(['/mfa']);
+if (!token) {
 
-    return false;
+console.log('NO TOKEN');
 
-  }
+router.navigate(['/']);
 
-  console.log('ACCESS GRANTED');
+return false;
 
-  return true;
+}
+
+if (
+localStorage.getItem(
+'mfaVerified'
+) !== 'true'
+) {
+
+console.log(
+  'MFA NOT VERIFIED'
+);
+
+router.navigate(['/mfa']);
+
+return false;
+
+}
+
+console.log(
+'ACCESS GRANTED'
+);
+
+return true;
 
 };

@@ -14,6 +14,10 @@ export class Navbar {
 
     localStorage.removeItem('token');
 
+    localStorage.removeItem('mfaVerified');
+
+    localStorage.removeItem('mfaVerifiedAt');
+
     this.router.navigate(['/']);
 
   }
