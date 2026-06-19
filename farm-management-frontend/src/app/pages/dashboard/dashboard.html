@@ -1,144 +1,167 @@
-<div>
-  <h1>📊 Dashboard</h1>
-
-  <p>
-    Overview of your farms, crops and financial performance.
-  </p>
-</div>
-<div class="card farms">
-
-  <span class="card-icon">🚜</span>
-
-  <h3>Farms</h3>
-
-  <p>{{ totalFarms }}</p>
-
-</div>
-
-<div class="card crops">
-
-  <span class="card-icon">🌾</span>
-
-  <h3>Crops</h3>
-
-  <p>{{ totalCrops }}</p>
-
-</div>
-
-<div class="card records">
-
-  <span class="card-icon">📋</span>
-
-  <h3>Records</h3>
-
-  <p>{{ totalRecords }}</p>
-
-</div>
-
-<div class="card revenue">
-
-  <span class="card-icon">💰</span>
-
-  <h3>Revenue</h3>
-
-  <p>${{ totalRevenue }}</p>
-
-</div>
-
-<div class="card expenses">
-
-  <span class="card-icon">💸</span>
-
-  <h3>Expenses</h3>
-
-  <p>${{ totalExpenses }}</p>
-
-</div>
-
-<div class="card profit">
-
-  <span class="card-icon">📈</span>
-
-  <h3>Net Profit</h3>
-
-  <p>${{ netProfit }}</p>
-
-</div>
-
-<h2>📊 Financial Overview</h2>
-
-  <div class="chart-container">
-
-  <canvas id="financeChart"></canvas>
-
-  </div>
-
-  <h2>🌱 Crops by Season</h2>
-
-  <div class="chart-container">
-
-  <canvas id="seasonChart"></canvas>
-
-  </div>
-
-  <h2>🚜 Farm Size Distribution</h2>
-
-  <div class="chart-container">
-
-  <canvas id="farmSizeChart"></canvas>
-
-</div>
-
-<h2>📋 Recent Activity</h2>
-
-  <div class="activity-container">
-
-    <div
-      class="activity-card"
-      *ngFor="let record of recentRecords"
-    >
-
-  <div
-    class="activity-type"
-    [class.income]="record.type === 'Income'"
-    [class.expense]="record.type === 'Expense'"
-  >
-
-    {{ record.type === 'Income'
-        ? '📈 Income'
-        : '💸 Expense' }}
-
-  </div>
-
-  <h4>
-    {{ record.category }}
-  </h4>
-
-  <p>
-    {{ record.description }}
-  </p>
-
-  <strong>
-    ${{ record.amount }}
-  </strong>
+<main class="dashboard-page">
+  <section class="dashboard-hero">
+    <div>
+      <p class="eyebrow">FarmOps Command Center</p>
+      <h1>Good morning.</h1>
+      <p class="hero-copy">
+        Monitor farm performance, crop activity, finances, and field locations from one operational view.
+      </p>
     </div>
 
-</div>
+    <div class="hero-actions" aria-label="Dashboard actions">
+      <button type="button" class="ghost-button">This Month</button>
+      <button type="button" class="primary-button">Export</button>
+    </div>
+  </section>
 
+  <section class="summary-grid" aria-label="Dashboard summary">
+    <article class="metric-card farms">
+      <div class="metric-icon">F</div>
+      <span>Farms</span>
+      <strong>{{ totalFarms }}</strong>
+      <p>Active properties in your portfolio</p>
+    </article>
 
-<h2>🗺 Farm Locations</h2>
+    <article class="metric-card crops">
+      <div class="metric-icon">C</div>
+      <span>Crops</span>
+      <strong>{{ totalCrops }}</strong>
+      <p>Crop records grouped across seasons</p>
+    </article>
 
-<div
-  id="all-farms-map"
-  class="dashboard-map"
-  style="
-    width:100%;
-    height:500px;
-    border-radius:12px;
-  "
-></div>
+    <article class="metric-card records">
+      <div class="metric-icon">R</div>
+      <span>Records</span>
+      <strong>{{ totalRecords }}</strong>
+      <p>Financial entries tracked to date</p>
+    </article>
 
-<div
-  id="all-farms-map"
-  class="dashboard-map"
-></div>
+    <article class="metric-card profit">
+      <div class="metric-icon">P</div>
+      <span>Net Profit</span>
+      <strong>{{ netProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
+      <p>Revenue less operating expenses</p>
+    </article>
+  </section>
+
+  <section class="insights-grid">
+    <article class="panel financial-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Financial Overview</span>
+          <h2>Revenue health</h2>
+        </div>
+        <span class="panel-pill">{{ totalRecords }} records</span>
+      </div>
+
+      <div class="money-strip">
+        <div>
+          <span>Revenue</span>
+          <strong>{{ totalRevenue | currency:'USD':'symbol':'1.0-0' }}</strong>
+        </div>
+        <div>
+          <span>Expenses</span>
+          <strong>{{ totalExpenses | currency:'USD':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="financeChart"></canvas>
+      </div>
+    </article>
+
+    <article class="panel season-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Crop Planning</span>
+          <h2>Crops by season</h2>
+        </div>
+        <span class="panel-pill">{{ totalCrops }} crops</span>
+      </div>
+
+      <div class="season-layout">
+        <div class="chart-container compact">
+          <canvas id="seasonChart"></canvas>
+        </div>
+
+        <div class="season-list">
+          <div>
+            <span>Spring</span>
+            <strong>{{ seasonCounts.Spring }}</strong>
+          </div>
+          <div>
+            <span>Summer</span>
+            <strong>{{ seasonCounts.Summer }}</strong>
+          </div>
+          <div>
+            <span>Autumn</span>
+            <strong>{{ seasonCounts.Autumn }}</strong>
+          </div>
+          <div>
+            <span>Winter</span>
+            <strong>{{ seasonCounts.Winter }}</strong>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel farm-size-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Land Utilization</span>
+          <h2>Farm size distribution</h2>
+        </div>
+        <span class="panel-pill">{{ totalFarms }} farms</span>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="farmSizeChart"></canvas>
+      </div>
+    </article>
+
+    <article class="panel activity-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Recent Activity</span>
+          <h2>Latest financial records</h2>
+        </div>
+        <span class="panel-pill">Live</span>
+      </div>
+
+      <div class="activity-list">
+        <article class="activity-card" *ngFor="let record of recentRecords">
+          <div
+            class="activity-type"
+            [class.income]="record.type === 'Income'"
+            [class.expense]="record.type === 'Expense'"
+          >
+            {{ record.type }}
+          </div>
+
+          <div>
+            <h3>{{ record.category }}</h3>
+            <p>{{ record.description || 'No description provided' }}</p>
+          </div>
+
+          <strong>{{ record.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
+        </article>
+
+        <div class="empty-state" *ngIf="recentRecords.length === 0">
+          No recent records yet.
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel map-panel">
+    <div class="panel-header">
+      <div>
+        <span class="panel-kicker">Farm Locations</span>
+        <h2>Operational map</h2>
+      </div>
+      <span class="panel-pill">Google Maps</span>
+    </div>
+
+    <div id="all-farms-map" class="dashboard-map"></div>
+  </section>
+</main>
