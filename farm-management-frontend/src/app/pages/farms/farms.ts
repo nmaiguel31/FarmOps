@@ -35,6 +35,7 @@ export class Farms implements OnInit, AfterViewInit {
   farmLatitude = 0;
   farmLongitude = 0;
   editingFarmId = '';
+  farmFormOpen = false;
 
   private mapsLoader = inject(GoogleMapsLoader);
   private farmService = inject(Farm);
@@ -94,6 +95,7 @@ export class Farms implements OnInit, AfterViewInit {
       this.farmLongitude = 0;
 
       this.loadFarms();
+      this.farmFormOpen = false;
 
     },
 
@@ -111,6 +113,7 @@ editFarm(farm: any) {
   this.farmSize = farm.size;
   this.farmLatitude = farm.latitude;
   this.farmLongitude = farm.longitude;
+  this.farmFormOpen = true;
 }
 
 updateFarm() {
@@ -137,6 +140,7 @@ updateFarm() {
       this.farmSize = 0;
 
       this.loadFarms();
+      this.farmFormOpen = false;
 
       this.cdr.detectChanges();
 
@@ -290,6 +294,20 @@ searchByOwner(ownerEmail: string) {
 
   this.filterFarms();
 
+}
+
+openCreateFarm() {
+  this.editingFarmId = '';
+  this.farmName = '';
+  this.farmLocation = '';
+  this.farmSize = 0;
+  this.farmLatitude = 0;
+  this.farmLongitude = 0;
+  this.farmFormOpen = true;
+}
+
+closeFarmForm() {
+  this.farmFormOpen = false;
 }
 
 }
