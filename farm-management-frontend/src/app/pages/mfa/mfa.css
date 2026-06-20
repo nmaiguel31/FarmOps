@@ -1,114 +1,287 @@
-.mfa-container {
+:host {
+  display: block;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-page);
+}
+
+.security-page {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 42px;
+}
+
+.security-hero,
+.settings-card,
+.guidance-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.security-hero {
   display: flex;
-  justify-content: center;
-  padding: 40px 20px;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 28px;
+  padding: 34px;
 }
 
-.mfa-card {
-  width: 100%;
-  max-width: 600px;
-
-  background: white;
-
-  padding: 30px;
-
-  border-radius: 20px;
-
-  box-shadow:
-    0 10px 30px rgba(0,0,0,.08);
+.eyebrow,
+.panel-kicker,
+.status-panel span,
+.verify-panel label {
+  display: block;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
-.mfa-card h1 {
-  margin-bottom: 10px;
+.security-hero h1 {
+  max-width: 780px;
+  margin: 8px 0 12px;
+  font-size: clamp(36px, 4vw, 64px);
+  line-height: .96;
 }
 
-.subtitle {
-  color: #6b7280;
-  margin-bottom: 25px;
+.security-hero p,
+.helper-text,
+.guide-step p,
+.security-note p,
+.notice-card p,
+.status-panel p {
+  margin: 0;
+  color: var(--color-muted-strong);
+  line-height: 1.65;
 }
 
-.qr-section {
-  text-align: center;
-  margin-top: 25px;
-  margin-bottom: 25px;
+.status-panel {
+  min-width: 280px;
+  padding: 18px;
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(20,145,95,.12);
+  border-radius: var(--radius-lg);
 }
 
-.qr-section img {
-  width: 250px;
-  border-radius: 12px;
-  background: white;
-  padding: 10px;
+.status-panel.disabled {
+  background: #fbecd3;
+  border-color: rgba(200,137,31,.16);
 }
 
-input {
-  width: 100%;
-  padding: 12px;
+.status-panel strong {
+  display: block;
+  margin: 6px 0 8px;
+  color: var(--color-primary-strong);
+  font-size: 34px;
+}
 
-  border: 1px solid #d1d5db;
+.status-panel.disabled strong {
+  color: var(--color-warning);
+}
 
-  border-radius: 10px;
+.security-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+  gap: 28px;
+  align-items: start;
+}
 
-  margin-top: 15px;
-  margin-bottom: 15px;
+.settings-card,
+.guidance-card {
+  padding: 28px;
+}
 
-  font-size: 16px;
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.panel-header h2,
+.guidance-card h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.state-badge {
+  padding: 8px 11px;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.state-badge.disabled {
+  color: var(--color-warning);
+  background: #fbecd3;
+}
+
+.enabled-flow,
+.disabled-flow,
+.setup-flow {
+  display: grid;
+  gap: 18px;
+}
+
+.code-input {
+  max-width: 360px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .primary-btn,
-.verify-btn {
-
-  border: none;
-
-  background: #22c55e;
-
-  color: white;
-
-  padding: 12px 18px;
-
-  border-radius: 10px;
-
+.secondary-btn,
+.danger-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
   cursor: pointer;
-
-  font-weight: 600;
-
-  transition: .3s;
 }
 
-.primary-btn:hover,
-.verify-btn:hover {
-  transform: translateY(-2px);
+.primary-btn {
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.secondary-btn {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.danger-btn {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.notice-card,
+.security-note {
+  padding: 16px;
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-sm);
+}
+
+.notice-card.warning {
+  background: #fbecd3;
+  border-color: rgba(200,137,31,.18);
+}
+
+.notice-card strong,
+.security-note strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.qr-panel {
+  display: grid;
+  width: min(100%, 340px);
+  min-height: 340px;
+  place-items: center;
+  padding: 22px;
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-lg);
+}
+
+.qr-panel img {
+  width: min(260px, 100%);
+  border-radius: var(--radius-sm);
+}
+
+.verify-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.success-message,
+.error-message {
+  margin: 18px 0 0;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
 }
 
 .success-message {
-  margin-top: 20px;
-  color: #16a34a;
-  font-weight: 600;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
 }
 
 .error-message {
-  margin-top: 20px;
-  color: #dc2626;
-  font-weight: 600;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
-hr {
-  margin: 25px 0;
-  border: none;
-  border-top: 1px solid #e5e7eb;
+.guidance-card {
+  display: grid;
+  gap: 16px;
 }
 
-.status-card {
+.guide-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
 
-  background: #dcfce7;
+.guide-step span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 999px;
+  font-weight: 800;
+}
 
-  color: #166534;
+@media (max-width: 980px) {
+  .security-hero,
+  .security-grid {
+    grid-template-columns: 1fr;
+  }
 
-  padding: 12px;
+  .security-hero {
+    flex-direction: column;
+  }
 
-  border-radius: 10px;
+  .status-panel {
+    min-width: 0;
+  }
+}
 
-  margin-bottom: 20px;
+@media (max-width: 760px) {
+  .security-page {
+    padding: 18px;
+  }
 
-  font-weight: 600;
+  .security-hero,
+  .settings-card,
+  .guidance-card {
+    padding: 22px;
+  }
 
+  .panel-header,
+  .action-row {
+    flex-direction: column;
+  }
+
+  .code-input {
+    max-width: 100%;
+  }
 }

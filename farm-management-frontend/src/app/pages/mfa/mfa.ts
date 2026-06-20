@@ -45,8 +45,6 @@ export class MfaComponent
 
         next: (data: any) => {
 
-          console.log('MFA STATUS:', data);
-
         this.mfaEnabled = data.mfaEnabled;
 
         if (!this.mfaEnabled) {
@@ -59,21 +57,13 @@ export class MfaComponent
 
         }
 
-          console.log(
-            'MFA ENABLED:',
-            this.mfaEnabled
-          );
-
           this.cdr.detectChanges();
 
         },
 
         error: (error) => {
 
-          console.log(
-            'STATUS ERROR:',
-            error
-          );
+          console.error(error);
 
         }
 

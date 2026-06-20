@@ -1,116 +1,106 @@
-<div class="mfa-container">
+<main class="security-page">
+  <section class="security-hero">
+    <div>
+      <p class="eyebrow">Security Settings</p>
+      <h1>Protect FarmOps with multi-factor authentication.</h1>
+      <p>Use Google Authenticator or another compatible app to secure access to farm operations.</p>
+    </div>
 
-  <div class="mfa-card">
+    <div class="status-panel" [class.disabled]="!mfaEnabled">
+      <span>Current Status</span>
+      <strong>{{ mfaEnabled ? 'Enabled' : 'Disabled' }}</strong>
+      <p>{{ mfaEnabled ? 'MFA is active for this account.' : 'Set up MFA to add a second sign-in step.' }}</p>
+    </div>
+  </section>
 
-<h1>🔐 Security Settings</h1>
+  <section class="security-grid">
+    <article class="settings-card">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Authentication</span>
+          <h2>{{ setupMode ? 'Scan QR code' : 'MFA controls' }}</h2>
+        </div>
+        <span class="state-badge" [class.disabled]="!mfaEnabled">
+          {{ mfaEnabled ? 'Enabled' : 'Disabled' }}
+        </span>
+      </div>
 
-<p class="subtitle">
-  Protect your FarmOps account using
-  Multi-Factor Authentication (MFA).
-</p>
+      <div class="enabled-flow" *ngIf="mfaEnabled && !setupMode">
+        <p class="helper-text">
+          Enter the 6-digit code from your authenticator app to verify this security session.
+        </p>
 
-<!-- MFA ENABLED -->
+        <input class="farmops-field code-input" type="text" placeholder="Enter 6-digit code" [(ngModel)]="token">
 
-<div *ngIf="mfaEnabled && !setupMode">
+        <div class="action-row">
+          <button type="button" class="primary-btn" (click)="verifyCode()">Verify Code</button>
+          <button type="button" class="danger-btn" (click)="disableMFA()">Disable MFA</button>
+        </div>
+      </div>
 
-  <div class="status-card">
-    MFA is enabled on this account. Enter your authentication code.
-  </div>
+      <div class="disabled-flow" *ngIf="!mfaEnabled && !setupMode">
+        <div class="notice-card warning">
+          <strong>MFA Disabled</strong>
+          <p>Your account is missing an additional verification step.</p>
+        </div>
 
-  <input
-    type="text"
-    placeholder="Enter 6-digit code"
-    [(ngModel)]="token"
-  >
+        <button type="button" class="primary-btn" (click)="generateQR()">Generate New QR Code</button>
+      </div>
 
-  <button
-    class="verify-btn"
-    (click)="verifyCode()"
-  >
-    Verify Code
-  </button>
+      <div class="setup-flow" *ngIf="setupMode">
+        <p class="helper-text">
+          Open Google Authenticator, tap add account, scan this QR code, then enter the generated 6-digit code.
+        </p>
 
-  <br><br>
+        <div class="qr-panel">
+          <img [src]="qrCode" alt="QR Code">
+        </div>
 
-  <button
-    class="verify-btn"
-    (click)="disableMFA()"
-  >
-    Disable MFA
-  </button>
+        <div class="action-row">
+          <button type="button" class="secondary-btn" (click)="generateQR()">Regenerate QR Code</button>
+        </div>
 
-</div>
+        <div class="verify-panel">
+          <label>
+            Verification code
+            <input class="farmops-field code-input" type="text" placeholder="Enter 6-digit code" [(ngModel)]="token">
+          </label>
+          <button type="button" class="primary-btn" (click)="verifyCode()">Verify</button>
+        </div>
+      </div>
 
-<!-- MFA DISABLED -->
+      <p class="success-message" *ngIf="message === 'MFA enabled successfully'">
+        MFA Enabled Successfully
+      </p>
 
-<div *ngIf="!mfaEnabled && !setupMode">
+      <p class="error-message" *ngIf="message === 'Invalid code'">
+        Invalid Code
+      </p>
+    </article>
 
-  <div class="status-card">
-    ⚠ MFA Disabled
-  </div>
+    <aside class="guidance-card">
+      <span class="panel-kicker">Authenticator Guide</span>
+      <h2>Recommended setup</h2>
 
-  <button
-    class="primary-btn"
-    (click)="generateQR()"
-  >
-    Generate New QR Code
-  </button>
+      <div class="guide-step">
+        <span>1</span>
+        <p>Install Google Authenticator or a compatible time-based code app.</p>
+      </div>
 
-</div>
+      <div class="guide-step">
+        <span>2</span>
+        <p>Generate a QR code and scan it from the authenticator app.</p>
+      </div>
 
-<!-- QR SETUP MODE -->
+      <div class="guide-step">
+        <span>3</span>
+        <p>Enter the 6-digit code before it expires to complete setup.</p>
+      </div>
 
-<div *ngIf="setupMode">
-
-  <h3>
-    Scan with Google Authenticator
-  </h3>
-
-  <img
-    [src]="qrCode"
-    alt="QR Code"
-  >
-
-  <br><br>
-
-  <button
-    class="primary-btn"
-    (click)="generateQR()"
-  >
-    Regenerate QR Code
-  </button>
-
-  <hr>
-
-  <input
-    type="text"
-    placeholder="Enter 6-digit code"
-    [(ngModel)]="token"
-  >
-
-  <button
-    class="verify-btn"
-    (click)="verifyCode()"
-  >
-    Verify
-  </button>
-
-</div>
-
-<p
-  class="success-message"
-  *ngIf="message === 'MFA enabled successfully'"
->
-  ✅ MFA Enabled Successfully
-</p>
-
-<p
-  class="error-message"
-  *ngIf="message === 'Invalid code'"
->
-  ❌ Invalid Code
-</p>
-
-  </div>
-
-</div>
+      <div class="security-note">
+        <strong>Operational safety</strong>
+        <p>Keep MFA enabled for users who manage farm, crop, finance, and map data.</p>
+      </div>
+    </aside>
+  </section>
+</main>
