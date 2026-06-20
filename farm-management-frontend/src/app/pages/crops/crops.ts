@@ -25,13 +25,12 @@ export class Crops implements OnInit {
   cropSeason = '';
   selectedFarm = '';
   editingCropId = '';
+  cropFormOpen = false;
   
   private cropService = inject(Crop);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-
-    console.log('Crops component loaded');
 
     this.loadCrops();
     this.loadFarms();
@@ -75,12 +74,11 @@ export class Crops implements OnInit {
 
     next: () => {
 
-      console.log('Crop created');
-
       this.cropName = '';
       this.cropType = '';
       this.cropSeason = '';
       this.selectedFarm = '';
+      this.cropFormOpen = false;
 
       this.loadCrops();
 
@@ -90,7 +88,7 @@ export class Crops implements OnInit {
 
     error: (error) => {
 
-      console.error('Error creating crop:', error);
+      console.error(error);
 
     }
 
@@ -110,6 +108,8 @@ export class Crops implements OnInit {
       this.selectedFarm = crop.farm._id;
     }
 
+    this.cropFormOpen = true;
+
   }
 
   loadCrops() {
@@ -117,8 +117,6 @@ export class Crops implements OnInit {
     this.cropService.getCrops().subscribe({
 
       next: (data: any) => {
-
-        console.log('CROPS RECIBIDOS:', data);
 
         this.crops = [...data];
 
@@ -128,7 +126,7 @@ export class Crops implements OnInit {
 
       error: (error) => {
 
-        console.error('ERROR LOADING CROPS:', error);
+        console.error(error);
 
       }
 
@@ -150,8 +148,6 @@ deleteCrop(id: string) {
 
     next: () => {
 
-      console.log('Crop deleted');
-
       this.loadCrops();
 
       setTimeout(() => {
@@ -162,10 +158,7 @@ deleteCrop(id: string) {
 
     error: (error) => {
 
-      console.error(
-        'Error deleting crop:',
-        error
-      );
+        console.error(error);
 
     }
 
@@ -191,14 +184,13 @@ deleteCrop(id: string) {
 
       next: () => {
 
-        console.log('Crop updated');
-
         this.editingCropId = '';
 
         this.cropName = '';
         this.cropType = '';
         this.cropSeason = '';
         this.selectedFarm = '';
+        this.cropFormOpen = false;
 
         this.loadCrops();
 
@@ -208,15 +200,33 @@ deleteCrop(id: string) {
 
       error: (error) => {
 
-        console.error(
-          'Error updating crop:',
-          error
-        );
+        console.error(error);
 
       }
 
     });
 
+  }
+
+  openCreateCrop() {
+    this.editingCropId = '';
+    this.cropName = '';
+    this.cropType = '';
+    this.cropSeason = '';
+    this.selectedFarm = '';
+    this.cropFormOpen = true;
+  }
+
+  closeCropForm() {
+    this.cropFormOpen = false;
+  }
+
+  getCropStatus(crop: any) {
+    return crop.farm ? 'Assigned' : 'Unassigned';
+  }
+
+  getSeasonClass(season: string) {
+    return (season || 'unknown').toLowerCase();
   }
 
 }
