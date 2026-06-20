@@ -232,6 +232,8 @@ export class Dashboard implements OnInit {
     const bounds =
       new google.maps.LatLngBounds();
 
+    let mappedFarmCount = 0;
+
     this.farms.forEach((farm) => {
 
       if (
@@ -268,10 +270,11 @@ export class Dashboard implements OnInit {
       });
 
       bounds.extend(position);
+      mappedFarmCount++;
 
     });
 
-    if (this.farms.length > 0) {
+    if (mappedFarmCount > 0) {
       map.fitBounds(bounds);
     }
 
