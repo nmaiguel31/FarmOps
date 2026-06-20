@@ -1,174 +1,150 @@
-<div class="financial-container">
+<main class="finance-page">
+  <section class="finance-hero">
+    <div>
+      <p class="eyebrow">Farm Finance</p>
+      <h1>Track income, expenses, and farm profitability.</h1>
+      <p>Review financial activity across farm operations with export-ready records.</p>
+    </div>
 
-  <h1>💰 Financial Records</h1>
+    <div class="hero-actions">
+      <button type="button" class="export-btn" (click)="exportCSV()">Export CSV</button>
+      <button type="button" class="export-btn" (click)="exportPDF()">Export PDF</button>
+      <button type="button" class="primary-btn" (click)="openCreateRecord()">Create Record</button>
+    </div>
+  </section>
 
-  <div class="action-bar">
+  <section class="summary-grid" aria-label="Financial summary">
+    <article class="summary-card income-summary">
+      <span>Total Income</span>
+      <strong>{{ totalIncome | currency:'USD':'symbol':'1.0-0' }}</strong>
+      <p>Revenue logged from farm operations</p>
+    </article>
 
-<button
-  class="export-btn"
-  (click)="exportCSV()"
->
-  📊 Export CSV
-</button>
+    <article class="summary-card expense-summary">
+      <span>Total Expenses</span>
+      <strong>{{ totalExpenses | currency:'USD':'symbol':'1.0-0' }}</strong>
+      <p>Operating costs and outgoing records</p>
+    </article>
 
-<button
-  class="export-btn"
-  (click)="exportPDF()"
->
-  📄 Export PDF
-</button>
+    <article class="summary-card profit-summary">
+      <span>Net Profit</span>
+      <strong>{{ netProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
+      <p>Income minus expenses</p>
+    </article>
 
-  </div>
+    <article class="summary-card records-summary">
+      <span>Records</span>
+      <strong>{{ records.length }}</strong>
+      <p>Total financial entries</p>
+    </article>
+  </section>
 
-  <h2>
-    {{ editingRecordId ? 'Edit Financial Record' : 'Create Financial Record' }}
-  </h2>
+  <section class="records-panel">
+    <div class="panel-header">
+      <div>
+        <span class="panel-kicker">Transactions</span>
+        <h2>Financial records</h2>
+      </div>
+      <span class="panel-pill">{{ records.length }} entries</span>
+    </div>
 
-  <div class="financial-form">
+    <div class="transaction-list" *ngIf="records.length > 0; else noRecords">
+      <article
+        class="transaction-row"
+        *ngFor="let record of records"
+        [class.income-row]="record.type === 'Income'"
+        [class.expense-row]="record.type === 'Expense'"
+      >
+        <div class="transaction-type">
+          <span class="type-badge" [class.expense]="record.type === 'Expense'">
+            {{ record.type }}
+          </span>
+        </div>
 
+        <div class="transaction-main">
+          <h3>{{ record.category }}</h3>
+          <p>{{ record.description || 'No description provided' }}</p>
+        </div>
 
-<select [(ngModel)]="recordType">
+        <div class="transaction-farm">
+          <span>Farm</span>
+          <strong>{{ record.farm?.name || '-' }}</strong>
+        </div>
 
-  <option value="">
-    Select Type
-  </option>
+        <strong class="transaction-amount">
+          {{ record.amount | currency:'USD':'symbol':'1.0-0' }}
+        </strong>
 
-  <option value="Income">
-    Income
-  </option>
+        <div class="row-actions">
+          <button type="button" class="edit-btn" (click)="editRecord(record)">Edit</button>
+          <button type="button" class="delete-btn" (click)="deleteRecord(record._id)">Delete</button>
+        </div>
+      </article>
+    </div>
 
-  <option value="Expense">
-    Expense
-  </option>
+    <ng-template #noRecords>
+      <div class="empty-state">No financial records found.</div>
+    </ng-template>
+  </section>
 
-</select>
+  <div class="drawer-backdrop" [class.visible]="recordFormOpen" (click)="closeRecordForm()"></div>
 
-<input
-  type="text"
-  placeholder="Category"
-  [(ngModel)]="recordCategory"
->
+  <aside class="finance-drawer" [class.open]="recordFormOpen">
+    <div class="drawer-header">
+      <div>
+        <span class="panel-kicker">Financial Form</span>
+        <h2>{{ editingRecordId ? 'Update Record' : 'Create Record' }}</h2>
+      </div>
+      <button type="button" class="icon-close" (click)="closeRecordForm()" aria-label="Close form"></button>
+    </div>
 
-<input
-  type="number"
-  placeholder="Amount"
-  [(ngModel)]="recordAmount"
->
+    <form class="finance-form">
+      <label>
+        Type
+        <select class="farmops-field" [(ngModel)]="recordType" name="recordType">
+          <option value="">Select Type</option>
+          <option value="Income">Income</option>
+          <option value="Expense">Expense</option>
+        </select>
+      </label>
 
-<input
-  type="text"
-  placeholder="Description"
-  [(ngModel)]="recordDescription"
->
+      <label>
+        Category
+        <input class="farmops-field" type="text" placeholder="Category" [(ngModel)]="recordCategory" name="recordCategory">
+      </label>
 
-<select [(ngModel)]="selectedFarm">
+      <label>
+        Amount
+        <input class="farmops-field" type="number" placeholder="Amount" [(ngModel)]="recordAmount" name="recordAmount">
+      </label>
 
-  <option value="">
-    Select Farm
-  </option>
+      <label>
+        Description
+        <input class="farmops-field" type="text" placeholder="Description" [(ngModel)]="recordDescription" name="recordDescription">
+      </label>
 
-  <option
-    *ngFor="let farm of farms"
-    [value]="farm._id"
-  >
-    {{ farm.name }}
-  </option>
+      <label>
+        Farm
+        <select class="farmops-field" [(ngModel)]="selectedFarm" name="selectedFarm">
+          <option value="">Select Farm</option>
+          <option *ngFor="let farm of farms" [value]="farm._id">
+            {{ farm.name }}
+          </option>
+        </select>
+      </label>
 
-</select>
+      <div class="form-preview" [class.expense]="recordType === 'Expense'">
+        <span>{{ recordType || 'Record' }}</span>
+        <strong>{{ recordAmount | currency:'USD':'symbol':'1.0-0' }}</strong>
+      </div>
 
-<button
-  *ngIf="editingRecordId === ''"
-  class="income-btn"
-  (click)="createRecord()"
->
-  Create Record
-</button>
+      <button *ngIf="editingRecordId === ''" class="primary-btn" type="button" (click)="createRecord()">
+        Create Record
+      </button>
 
-<button
-  *ngIf="editingRecordId !== ''"
-  class="income-btn"
-  (click)="updateRecord()"
->
-  Update Record
-</button>
-
-
-  </div>
-
-  <hr>
-
-  <div *ngIf="records.length === 0">
-
-
-No financial records found.
-
-
-  </div>
-
-  <div class="records-grid">
-
-
-<div
-  class="record-card"
-  *ngFor="let record of records"
-  [class.income-card]="record.type === 'Income'"
-  [class.expense-card]="record.type === 'Expense'"
->
-
-  <h3>
-
-    {{ record.type === 'Income' ? '📈 Income' : '📉 Expense' }}
-
-  </h3>
-
-  <p>
-
-    <strong>Category:</strong>
-
-    {{ record.category }}
-
-  </p>
-
-  <p>
-
-    <strong>Amount:</strong>
-
-    ${{ record.amount }}
-
-  </p>
-
-  <p>
-
-    <strong>Description:</strong>
-
-    {{ record.description }}
-
-  </p>
-
-  <p>
-
-    <strong>Farm:</strong>
-
-    {{ record.farm?.name }}
-
-  </p>
-
-  <button
-    class="edit-btn"
-    (click)="editRecord(record)"
-  >
-    Edit
-  </button>
-
-  <button
-    class="delete-btn"
-    (click)="deleteRecord(record._id)"
-  >
-    Delete
-  </button>
-
-</div>
-
-  </div>
-
-</div>
+      <button *ngIf="editingRecordId !== ''" class="primary-btn" type="button" (click)="updateRecord()">
+        Update Record
+      </button>
+    </form>
+  </aside>
+</main>

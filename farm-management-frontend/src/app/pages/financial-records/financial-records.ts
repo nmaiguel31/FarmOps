@@ -27,13 +27,12 @@ export class FinancialRecords implements OnInit {
   recordDescription = '';
   selectedFarm = '';
   editingRecordId = '';
+  recordFormOpen = false;
 
   private financialService = inject(FinancialRecord);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-
-    console.log('Financial Records component loaded');
 
     this.loadRecords();
     this.loadFarms();
@@ -77,13 +76,12 @@ export class FinancialRecords implements OnInit {
 
       next: () => {
 
-        console.log('Record created');
-
         this.recordType = '';
         this.recordCategory = '';
         this.recordAmount = 0;
         this.recordDescription = '';
         this.selectedFarm = '';
+        this.recordFormOpen = false;
 
         this.loadRecords();
 
@@ -94,7 +92,7 @@ export class FinancialRecords implements OnInit {
 
       error: (error) => {
 
-        console.error('Error creating record:', error);
+        console.error(error);
 
       }
 
@@ -114,6 +112,8 @@ export class FinancialRecords implements OnInit {
     if (record.farm) {
       this.selectedFarm = record.farm._id;
     }
+
+    this.recordFormOpen = true;
 
   }
 
@@ -136,8 +136,6 @@ export class FinancialRecords implements OnInit {
 
         next: () => {
 
-          console.log('Financial record updated');
-
           this.editingRecordId = '';
 
           this.recordType = '';
@@ -145,6 +143,7 @@ export class FinancialRecords implements OnInit {
           this.recordAmount = 0;
           this.recordDescription = '';
           this.selectedFarm = '';
+          this.recordFormOpen = false;
 
           this.loadRecords();
 
@@ -156,10 +155,7 @@ export class FinancialRecords implements OnInit {
 
         error: (error) => {
 
-          console.error(
-            'Error updating record:',
-            error
-          );
+          console.error(error);
 
         }
 
@@ -172,8 +168,6 @@ export class FinancialRecords implements OnInit {
 
       next: (data: any) => {
 
-        console.log('RECORDS RECIBIDOS:', data);
-
         this.records = [...data];
 
         this.cdr.detectChanges();
@@ -182,7 +176,7 @@ export class FinancialRecords implements OnInit {
 
       error: (error) => {
 
-        console.error('ERROR LOADING RECORDS:', error);
+        console.error(error);
 
       }
 
@@ -204,8 +198,6 @@ deleteRecord(id: string) {
 
     next: () => {
 
-      console.log('Financial record deleted');
-
       this.loadRecords();
 
       setTimeout(() => {
@@ -216,10 +208,7 @@ deleteRecord(id: string) {
 
     error: (error) => {
 
-      console.error(
-        'Error deleting record:',
-        error
-      );
+      console.error(error);
 
     }
 
@@ -373,6 +362,36 @@ exportPDF() {
     'FarmOps-Financial-Report.pdf'
   );
 
+}
+
+get totalIncome() {
+  return this.records
+    .filter(record => record.type === 'Income')
+    .reduce((sum, record) => sum + record.amount, 0);
+}
+
+get totalExpenses() {
+  return this.records
+    .filter(record => record.type === 'Expense')
+    .reduce((sum, record) => sum + record.amount, 0);
+}
+
+get netProfit() {
+  return this.totalIncome - this.totalExpenses;
+}
+
+openCreateRecord() {
+  this.editingRecordId = '';
+  this.recordType = '';
+  this.recordCategory = '';
+  this.recordAmount = 0;
+  this.recordDescription = '';
+  this.selectedFarm = '';
+  this.recordFormOpen = true;
+}
+
+closeRecordForm() {
+  this.recordFormOpen = false;
 }
 
 }
