@@ -1,17 +1,89 @@
 <main class="dashboard-page">
-  <section class="dashboard-hero">
+  <section class="dashboard-intro">
     <div>
       <p class="eyebrow">FarmOps Command Center</p>
-      <h1>Good morning.</h1>
-      <p class="hero-copy">
-        Monitor farm performance, crop activity, finances, and field locations from one operational view.
-      </p>
+      <h1>Manage every field from one live operations map.</h1>
     </div>
 
-    <div class="hero-actions" aria-label="Dashboard actions">
-      <button type="button" class="ghost-button">This Month</button>
-      <button type="button" class="primary-button">Export</button>
+    <div class="quick-actions" aria-label="Quick actions">
+      <a routerLink="/farms" class="action-button primary-action">
+        <span class="plus-icon"></span>
+        Create Farm
+      </a>
+      <a routerLink="/crops" class="action-button">
+        <span class="sprout-icon"></span>
+        Create Crop
+      </a>
     </div>
+  </section>
+
+  <section class="hero-grid">
+    <article class="map-hero panel">
+      <div class="map-copy">
+        <div>
+          <span class="panel-kicker">Farm Locations</span>
+          <h2>Operational map</h2>
+          <p>Track active farms, field coverage, and regional distribution across your portfolio.</p>
+        </div>
+        <span class="panel-pill">Google Maps</span>
+      </div>
+
+      <div id="all-farms-map" class="dashboard-map"></div>
+
+      <div class="map-stats" aria-label="Map summary">
+        <div>
+          <span>Farms</span>
+          <strong>{{ totalFarms }}</strong>
+        </div>
+        <div>
+          <span>Crops</span>
+          <strong>{{ totalCrops }}</strong>
+        </div>
+        <div>
+          <span>Records</span>
+          <strong>{{ totalRecords }}</strong>
+        </div>
+      </div>
+    </article>
+
+    <aside class="hero-side">
+      <article class="weather-card panel">
+        <div class="weather-top">
+          <div>
+            <span class="panel-kicker">Weather</span>
+            <h2>Field conditions</h2>
+          </div>
+          <span class="weather-sun"></span>
+        </div>
+
+        <div class="temperature-row">
+          <strong>24 C</strong>
+          <span>Partly cloudy</span>
+        </div>
+
+        <div class="weather-metrics">
+          <div>
+            <span>Humidity</span>
+            <strong>62%</strong>
+          </div>
+          <div>
+            <span>Wind</span>
+            <strong>8 mph</strong>
+          </div>
+          <div>
+            <span>Rain</span>
+            <strong>12%</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="imagery-card">
+        <div>
+          <span>Smart agriculture</span>
+          <strong>Monitor yields, inputs, and seasonal growth with one modern workspace.</strong>
+        </div>
+      </article>
+    </aside>
   </section>
 
   <section class="summary-grid" aria-label="Dashboard summary">
@@ -42,6 +114,31 @@
       <strong>{{ netProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
       <p>Revenue less operating expenses</p>
     </article>
+  </section>
+
+  <section class="recent-farms panel">
+    <div class="panel-header">
+      <div>
+        <span class="panel-kicker">Recent Farms</span>
+        <h2>Latest farm entries</h2>
+      </div>
+      <a routerLink="/farms" class="text-link">View farms</a>
+    </div>
+
+    <div class="farm-list">
+      <article class="farm-card" *ngFor="let farm of recentFarms">
+        <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
+        <div>
+          <h3>{{ farm.name }}</h3>
+          <p>{{ farm.location || 'Location not specified' }}</p>
+        </div>
+        <strong>{{ farm.size || 0 }} acres</strong>
+      </article>
+
+      <div class="empty-state" *ngIf="recentFarms.length === 0">
+        No farms have been added yet.
+      </div>
+    </div>
   </section>
 
   <section class="insights-grid">
@@ -151,17 +248,5 @@
         </div>
       </div>
     </article>
-  </section>
-
-  <section class="panel map-panel">
-    <div class="panel-header">
-      <div>
-        <span class="panel-kicker">Farm Locations</span>
-        <h2>Operational map</h2>
-      </div>
-      <span class="panel-pill">Google Maps</span>
-    </div>
-
-    <div id="all-farms-map" class="dashboard-map"></div>
   </section>
 </main>

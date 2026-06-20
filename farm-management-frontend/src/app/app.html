@@ -1,7 +1,9 @@
 @if (isLoggedIn) {
-
   <app-navbar></app-navbar>
 
+  <main class="app-shell-content">
+    <router-outlet></router-outlet>
+  </main>
+} @else {
+  <router-outlet></router-outlet>
 }
-
-<router-outlet></router-outlet>

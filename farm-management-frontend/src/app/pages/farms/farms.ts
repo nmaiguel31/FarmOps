@@ -42,8 +42,6 @@ export class Farms implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
 
-    console.log('ngOnInit ejecutado');
-
     this.loadFarms();
   }
   
@@ -85,13 +83,9 @@ export class Farms implements OnInit, AfterViewInit {
     size: this.farmSize
   };
 
-  console.log(farmData);
-
   this.farmService.createFarm(farmData).subscribe({
 
     next: () => {
-
-      console.log('Farm created');
 
       this.farmName = '';
       this.farmLocation = '';
@@ -103,11 +97,7 @@ export class Farms implements OnInit, AfterViewInit {
 
     },
 
-    error: (error) => {
-
-      console.error('Error creating farm:', error);
-
-    }
+    error: (error) => console.error(error)
 
   });
 
@@ -140,8 +130,6 @@ updateFarm() {
 
     next: () => {
 
-      console.log('Farm updated');
-
       this.editingFarmId = '';
       
       this.farmName = '';
@@ -158,42 +146,25 @@ updateFarm() {
 
     },
 
-    error: (error) => {
-
-      console.error(
-        'Error updating farm:',
-        error
-      );
-
-    }
+    error: (error) => console.error(error)
 
   });
 
 }
   loadFarms() {
 
-    console.log('loadFarms ejecutado');
-
     this.farmService.getFarms().subscribe({
 
       next: (data: any) => {
-
-        console.log('DATA RECIBIDA:', data);
 
         this.farms = [...data];
         this.filteredFarms = [...data];
         this.renderMaps();
         this.cdr.detectChanges();
 
-        console.log('FARMS ASIGNADAS:', this.farms);
-
       },
 
-      error: (error) => {
-
-        console.error('ERROR:', error);
-
-      }
+      error: (error) => console.error(error)
 
     });
 
@@ -212,8 +183,6 @@ updateFarm() {
 
       next: () => {
 
-        console.log('Farm deleted');
-
         this.loadFarms();
 
         setTimeout(() => {
@@ -222,14 +191,7 @@ updateFarm() {
 
       },
 
-      error: (error) => {
-
-        console.error(
-          'Error deleting farm:',
-          error
-        );
-
-      }
+      error: (error) => console.error(error)
 
     });
 
@@ -265,7 +227,10 @@ updateFarm() {
           mapElement,
           {
             center: position,
-            zoom: 12
+            zoom: 12,
+            disableDefaultUI: true,
+            zoomControl: true,
+            fullscreenControl: true
           }
         );
 

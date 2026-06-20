@@ -1,1 +1,153 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --sidebar-width: 280px;
+  --topbar-height: 72px;
+
+  --color-page: #f6f8f3;
+  --color-surface: #ffffff;
+  --color-sidebar: #fbfdf8;
+  --color-text: #142018;
+  --color-muted-strong: #53645a;
+  --color-muted: #7a897f;
+  --color-border: #dfe8dc;
+  --color-primary: #14915f;
+  --color-primary-strong: #0e6f49;
+  --color-primary-soft: #e2f6e9;
+  --color-leaf: #79ad32;
+  --color-soil: #8b6a3f;
+  --color-sky: #4f83a8;
+  --color-warning: #c8891f;
+  --color-danger: #b44435;
+  --color-danger-soft: #fae8e4;
+
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --shadow-card: 0 10px 26px rgba(31, 54, 40, 0.06);
+  --shadow-soft: 0 16px 40px rgba(20, 145, 95, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--color-page);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-page);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  letter-spacing: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.farmops-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.farmops-field {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: 0;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.farmops-field:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(20, 145, 95, 0.55);
+  box-shadow: 0 0 0 4px rgba(20, 145, 95, 0.12);
+}
+
+.farmops-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  color: #ffffff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+.farmops-button.secondary {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-color: rgba(20, 145, 95, 0.12);
+  box-shadow: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  color: var(--color-muted-strong);
+  background: #f4f8f1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+th,
+td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --topbar-height: 64px;
+  }
+}

@@ -1,49 +1,70 @@
-<div class="sidebar">
+<aside class="sidebar" aria-label="Primary navigation">
+  <a class="brand" routerLink="/dashboard" aria-label="FarmOps dashboard">
+    <span class="brand-mark">Fo</span>
+    <span>
+      <strong>FarmOps</strong>
+      <small>Agriculture SaaS</small>
+    </span>
+  </a>
 
-  <div class="logo">
+  <nav class="menu" aria-label="Application pages">
+    <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <span class="nav-icon dashboard-icon"></span>
+      <span>Dashboard</span>
+    </a>
 
-```
-<h2>🌱 FarmOps</h2>
+    <a routerLink="/farms" routerLinkActive="active">
+      <span class="nav-icon farms-icon"></span>
+      <span>Farms</span>
+    </a>
 
-<span>Farm Management</span>
-```
+    <a routerLink="/crops" routerLinkActive="active">
+      <span class="nav-icon crops-icon"></span>
+      <span>Crops</span>
+    </a>
 
+    <a routerLink="/financial-records" routerLinkActive="active">
+      <span class="nav-icon finance-icon"></span>
+      <span>Financial Records</span>
+    </a>
+
+    <a routerLink="/mfa" routerLinkActive="active">
+      <span class="nav-icon security-icon"></span>
+      <span>Security</span>
+    </a>
+  </nav>
+
+  <section class="farm-status" aria-label="Farm status">
+    <span class="status-dot"></span>
+    <div>
+      <strong>Operations Online</strong>
+      <small>Farm data synced</small>
+    </div>
+  </section>
+
+  <button type="button" class="logout-button" (click)="logout()">
+    <span class="nav-icon logout-icon"></span>
+    <span>Logout</span>
+  </button>
+</aside>
+
+<header class="topbar">
+  <div class="topbar-search" role="search">
+    <span class="search-icon"></span>
+    <input type="search" placeholder="Search farms, crops, records..." aria-label="Search FarmOps" />
   </div>
 
-  <div class="menu">
+  <div class="topbar-actions" aria-label="Account controls">
+    <button type="button" class="icon-button" aria-label="Notifications">
+      <span class="notification-dot"></span>
+    </button>
 
-```
-<a routerLink="/dashboard">
-  📊 Dashboard
-</a>
-
-<a routerLink="/farms">
-  🚜 Farms
-</a>
-
-<a routerLink="/crops">
-  🌾 Crops
-</a>
-
-<a routerLink="/financial-records">
-  💰 Financial Records
-</a>
-
-<a routerLink="/mfa">
-  🔐 Security
-</a>
-```
-
+    <div class="profile-chip">
+      <span class="avatar">FO</span>
+      <span>
+        <strong>Farm Manager</strong>
+        <small>Workspace</small>
+      </span>
+    </div>
   </div>
-
-  <div class="bottom-section">
-
-```
-<button (click)="logout()">
-  Logout
-</button>
-```
-
-  </div>
-
-</div>
+</header>

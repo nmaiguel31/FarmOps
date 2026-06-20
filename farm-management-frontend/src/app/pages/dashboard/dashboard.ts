@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { GoogleMapsLoader }
 from '../../services/google-maps-loader';
 import { Farm } from '../../services/farm';
@@ -17,7 +18,7 @@ Chart.register(...registerables);
 declare const google: any;
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -40,6 +41,13 @@ export class Dashboard implements OnInit {
   Autumn: 0,
   Winter: 0
   };
+
+  get recentFarms() {
+    return this.farms
+      .slice()
+      .reverse()
+      .slice(0, 4);
+  }
   
 
 
@@ -184,10 +192,40 @@ export class Dashboard implements OnInit {
       mapElement,
       {
         zoom: 5,
+        disableDefaultUI: true,
+        zoomControl: true,
+        fullscreenControl: true,
         center: {
           lat: 4.5709,
           lng: -74.2973
-        }
+        },
+        styles: [
+          {
+            featureType: 'administrative',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#53645a' }]
+          },
+          {
+            featureType: 'landscape',
+            elementType: 'geometry',
+            stylers: [{ color: '#eef4e9' }]
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'geometry',
+            stylers: [{ color: '#d8efd9' }]
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry',
+            stylers: [{ color: '#ffffff' }]
+          },
+          {
+            featureType: 'water',
+            elementType: 'geometry',
+            stylers: [{ color: '#b9d8df' }]
+          }
+        ]
       }
     );
 
@@ -271,6 +309,14 @@ export class Dashboard implements OnInit {
         {
 
           label: 'Amount',
+          backgroundColor: [
+            '#14915f',
+            '#b44435',
+            '#4f83a8'
+          ],
+          borderRadius: 12,
+          borderSkipped: false,
+          maxBarThickness: 58,
 
           data: [
 
@@ -289,11 +335,47 @@ export class Dashboard implements OnInit {
     options: {
 
       responsive: true,
+      maintainAspectRatio: false,
 
       plugins: {
 
         legend: {
           display: false
+        },
+
+        tooltip: {
+          backgroundColor: '#142018',
+          padding: 12,
+          cornerRadius: 8
+        }
+
+      },
+
+      scales: {
+
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#53645a',
+            font: {
+              weight: 700
+            }
+          }
+        },
+
+        y: {
+          beginAtZero: true,
+          border: {
+            display: false
+          },
+          grid: {
+            color: '#e4ece1'
+          },
+          ticks: {
+            color: '#7a897f'
+          }
         }
 
       }
@@ -335,6 +417,16 @@ export class Dashboard implements OnInit {
 
         {
 
+          backgroundColor: [
+            '#14915f',
+            '#79ad32',
+            '#c8891f',
+            '#4f83a8'
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 4,
+          hoverOffset: 8,
+
           data: [
 
             this.seasonCounts.Spring,
@@ -352,7 +444,27 @@ export class Dashboard implements OnInit {
 
     options: {
 
-      responsive: true
+      responsive: true,
+      maintainAspectRatio: false,
+
+      plugins: {
+
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            boxWidth: 8,
+            color: '#53645a'
+          }
+        },
+
+        tooltip: {
+          backgroundColor: '#142018',
+          padding: 12,
+          cornerRadius: 8
+        }
+
+      }
 
     }
 
@@ -387,6 +499,12 @@ data: {
     {
 
       label: 'Farm Size',
+      backgroundColor: '#dfeedd',
+      borderColor: '#14915f',
+      borderWidth: 2,
+      borderRadius: 12,
+      borderSkipped: false,
+      maxBarThickness: 46,
 
       data: this.farmSizes
 
@@ -399,12 +517,48 @@ data: {
 options: {
 
   responsive: true,
+  maintainAspectRatio: false,
+
+  plugins: {
+
+    legend: {
+      display: false
+    },
+
+    tooltip: {
+      backgroundColor: '#142018',
+      padding: 12,
+      cornerRadius: 8
+    }
+
+  },
 
   scales: {
 
+    x: {
+      grid: {
+        display: false
+      },
+      ticks: {
+        color: '#53645a',
+        font: {
+          weight: 700
+        }
+      }
+    },
+
     y: {
 
-      beginAtZero: true
+      beginAtZero: true,
+      border: {
+        display: false
+      },
+      grid: {
+        color: '#e4ece1'
+      },
+      ticks: {
+        color: '#7a897f'
+      }
 
     }
 

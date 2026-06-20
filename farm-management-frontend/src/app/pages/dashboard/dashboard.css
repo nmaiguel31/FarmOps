@@ -1,107 +1,306 @@
 :host {
   display: block;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(38, 166, 91, 0.12), transparent 34rem),
-    linear-gradient(180deg, #f7f9f5 0%, #eef3ed 100%);
-  color: #142018;
+  color: var(--color-text);
+  background: radial-gradient(circle at 12% 0%, rgba(20,145,95,.13), transparent 30rem), var(--color-page);
 }
 
 .dashboard-page {
-  width: min(100%, 1440px);
+  width: min(100%, 1500px);
   margin: 0 auto;
-  padding: 32px;
-  box-sizing: border-box;
+  padding: var(--space-8);
 }
 
-.dashboard-hero,
-.panel,
-.metric-card {
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(27, 48, 35, 0.08);
-  box-shadow: 0 18px 50px rgba(31, 54, 40, 0.08);
-  backdrop-filter: blur(18px);
+.dashboard-intro,
+.hero-grid,
+.summary-grid,
+.recent-farms,
+.insights-grid {
+  margin-bottom: var(--space-5);
 }
 
-.dashboard-hero {
+.dashboard-intro,
+.map-copy,
+.panel-header,
+.weather-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 18px;
-  padding: 28px;
-  border-radius: 8px;
+  gap: var(--space-4);
+}
+
+.dashboard-intro {
+  align-items: flex-end;
 }
 
 .eyebrow,
 .panel-kicker,
-.metric-card span {
+.metric-card span,
+.imagery-card span {
   display: block;
-  color: #627266;
+  color: var(--color-muted-strong);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.dashboard-hero h1 {
-  margin: 8px 0 8px;
-  color: #101812;
-  font-size: clamp(32px, 4vw, 54px);
-  line-height: 0.96;
-  letter-spacing: 0;
+.dashboard-intro h1 {
+  max-width: 780px;
+  margin: var(--space-2) 0 0;
+  font-size: clamp(34px, 4.5vw, 62px);
+  line-height: .96;
 }
 
-.hero-copy {
-  max-width: 650px;
-  margin: 0;
-  color: #526157;
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.hero-actions {
+.quick-actions {
   display: flex;
-  gap: 10px;
-  flex-shrink: 0;
+  gap: var(--space-3);
+  flex: 0 0 auto;
 }
 
-button {
+.action-button,
+.text-link {
+  display: inline-flex;
   min-height: 42px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0 16px;
-  cursor: pointer;
-  font: inherit;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  color: var(--color-primary-strong);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
+  text-decoration: none;
 }
 
-.ghost-button {
-  color: #29372d;
-  background: #ffffff;
-  border: 1px solid #dbe5db;
+.primary-action {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.primary-button {
-  color: #ffffff;
-  background: #139b55;
-  box-shadow: 0 10px 24px rgba(19, 155, 85, 0.2);
+.plus-icon,
+.sprout-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 
-.summary-grid {
+.plus-icon {
+  background: linear-gradient(currentColor,currentColor) center / 12px 2px no-repeat, linear-gradient(currentColor,currentColor) center / 2px 12px no-repeat;
+}
+
+.sprout-icon {
+  border: 2px solid currentColor;
+  border-radius: 999px 999px 5px 999px;
+  transform: rotate(-35deg);
+}
+
+.hero-grid,
+.insights-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, .85fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.panel,
+.metric-card {
+  background: #fff;
+  border: 1px solid rgba(27,48,35,.08);
+  border-radius: var(--radius-lg);
+}
+
+.map-hero,
+.recent-farms,
+.panel {
+  padding: var(--space-5);
+}
+
+.map-hero {
+  position: relative;
+  min-height: 610px;
+  overflow: hidden;
+}
+
+.map-copy {
+  margin-bottom: var(--space-4);
+}
+
+.map-copy h2,
+.panel-header h2,
+.weather-top h2 {
+  margin: var(--space-1) 0 0;
+  color: #101812;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.map-copy p {
+  max-width: 520px;
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted-strong);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.panel-pill {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dashboard-map {
+  width: 100%;
+  height: 470px;
+  overflow: hidden;
+  background: #e5ece4;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.map-stats {
+  position: absolute;
+  right: var(--space-8);
+  bottom: var(--space-8);
+  left: var(--space-8);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.map-stats div,
+.money-strip div,
+.season-list div,
+.weather-metrics div,
+.farm-card,
+.activity-card {
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-sm);
+}
+
+.map-stats div,
+.money-strip div,
+.season-list div,
+.weather-metrics div,
+.farm-card,
+.activity-card {
+  padding: var(--space-3);
+}
+
+.map-stats span,
+.money-strip span,
+.season-list span,
+.weather-metrics span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.map-stats strong,
+.weather-metrics strong,
+.season-list strong {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.map-stats strong {
+  font-size: 26px;
+}
+
+.hero-side {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.weather-card {
+  min-height: 300px;
+}
+
+.weather-sun {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  background: #f6c343;
+  border-radius: 999px;
+  box-shadow: -18px 23px 0 -10px #dfe8ec, -32px 28px 0 -14px #ecf2f4, 0 0 0 10px rgba(246,195,67,.14);
+}
+
+.temperature-row {
+  margin: var(--space-8) 0 var(--space-5);
+}
+
+.temperature-row strong {
+  display: block;
+  color: #101812;
+  font-size: 54px;
+  line-height: .9;
+}
+
+.temperature-row span {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-muted-strong);
+  font-weight: 800;
+}
+
+.weather-metrics,
+.money-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.imagery-card {
+  display: flex;
+  min-height: 288px;
+  align-items: flex-end;
+  padding: var(--space-5);
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(16,24,18,.05), rgba(16,24,18,.72)), url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80") center / cover;
+  border-radius: var(--radius-lg);
+}
+
+.imagery-card span {
+  color: rgba(255,255,255,.78);
+}
+
+.imagery-card strong {
+  display: block;
+  max-width: 340px;
+  margin-top: var(--space-2);
+  font-size: 23px;
+  line-height: 1.12;
+}
+
+.summary-grid,
+.farm-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: var(--space-4);
 }
 
 .metric-card {
   position: relative;
-  min-height: 154px;
-  padding: 20px;
+  min-height: 158px;
+  padding: var(--space-5);
   overflow: hidden;
-  border-radius: 8px;
 }
 
 .metric-card::after {
@@ -111,194 +310,133 @@ button {
   width: 120px;
   height: 120px;
   content: "";
-  border-radius: 999px;
   background: var(--accent-soft);
+  border-radius: 999px;
 }
 
 .metric-icon {
   display: grid;
   width: 38px;
   height: 38px;
-  margin-bottom: 22px;
+  margin-bottom: var(--space-5);
   place-items: center;
   color: var(--accent);
   background: var(--accent-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 800;
 }
 
 .metric-card strong {
   display: block;
-  margin-top: 6px;
-  color: #101812;
+  margin-top: var(--space-1);
   font-size: 32px;
-  line-height: 1;
 }
 
-.metric-card p {
-  max-width: 210px;
-  margin: 12px 0 0;
-  color: #67746b;
+.metric-card p,
+.farm-card p,
+.activity-card p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-.farms {
-  --accent: #0d8f61;
-  --accent-soft: #dcf8e7;
-}
-
-.crops {
-  --accent: #5a8f12;
-  --accent-soft: #ecf7d7;
-}
-
-.records {
-  --accent: #4c6f98;
-  --accent-soft: #e2ecf6;
-}
-
-.profit {
-  --accent: #9a6a1d;
-  --accent-soft: #fbecd3;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.panel {
-  padding: 20px;
-  border-radius: 8px;
-}
+.farms { --accent: #0d8f61; --accent-soft: #dcf8e7; }
+.crops { --accent: #5a8f12; --accent-soft: #ecf7d7; }
+.records { --accent: #4c6f98; --accent-soft: #e2ecf6; }
+.profit { --accent: #9a6a1d; --accent-soft: #fbecd3; }
 
 .panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
 }
 
-.panel-header h2 {
-  margin: 4px 0 0;
-  color: #101812;
-  font-size: 18px;
-  line-height: 1.2;
+.text-link {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  box-shadow: none;
 }
 
-.panel-pill {
-  display: inline-flex;
-  min-height: 30px;
+.farm-card,
+.activity-card {
+  display: grid;
   align-items: center;
-  padding: 0 10px;
-  color: #44604d;
-  background: #f2f7f1;
-  border: 1px solid #dce7dc;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
+  gap: var(--space-3);
 }
 
-.financial-panel,
-.farm-size-panel,
-.map-panel {
-  grid-column: span 1;
+.farm-card {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.farm-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-leaf));
+  border-radius: 999px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.farm-card h3,
+.activity-card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.farm-card strong {
+  grid-column: 2;
+  font-size: 13px;
 }
 
 .money-strip {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.money-strip div {
-  padding: 14px;
-  background: #f8faf7;
-  border: 1px solid #e5ece4;
-  border-radius: 8px;
-}
-
-.money-strip span,
-.season-list span {
-  display: block;
-  color: #67746b;
-  font-size: 12px;
-  font-weight: 700;
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: var(--space-4);
 }
 
 .money-strip strong {
   display: block;
-  margin-top: 4px;
-  color: #101812;
+  margin-top: var(--space-1);
   font-size: 22px;
 }
 
-.chart-container {
-  position: relative;
-  min-height: 310px;
-}
-
+.chart-container,
 .chart-container canvas {
+  position: relative;
+  min-height: 320px;
+  height: 320px !important;
   width: 100% !important;
-  max-height: 330px;
 }
 
 .season-layout {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.65fr);
-  gap: 16px;
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, .65fr);
+  gap: var(--space-4);
   align-items: center;
 }
 
-.chart-container.compact {
-  min-height: 240px;
-}
-
+.chart-container.compact,
 .chart-container.compact canvas {
-  max-height: 250px;
+  min-height: 250px;
+  height: 250px !important;
 }
 
-.season-list {
+.season-list,
+.activity-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .season-list div {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  background: #f8faf7;
-  border: 1px solid #e5ece4;
-  border-radius: 8px;
-}
-
-.season-list strong {
-  color: #101812;
-  font-size: 18px;
-}
-
-.activity-list {
-  display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .activity-card {
-  display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  background: #f8faf7;
-  border: 1px solid #e5ece4;
-  border-radius: 8px;
 }
 
 .activity-type {
@@ -325,19 +463,6 @@ button {
   background: #fae6df;
 }
 
-.activity-card h3 {
-  margin: 0;
-  color: #142018;
-  font-size: 14px;
-}
-
-.activity-card p {
-  margin: 4px 0 0;
-  color: #67746b;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
 .activity-card strong {
   color: #101812;
   font-size: 14px;
@@ -345,89 +470,83 @@ button {
 }
 
 .empty-state {
-  padding: 22px;
-  color: #67746b;
+  padding: var(--space-5);
+  color: var(--color-muted);
   background: #f8faf7;
   border: 1px dashed #cfdccd;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-align: center;
 }
 
-.map-panel {
-  margin-top: 14px;
-}
-
-.dashboard-map {
-  width: 100%;
-  height: min(56vh, 520px);
-  min-height: 360px;
-  overflow: hidden;
-  background: #e5ece4;
-  border: 1px solid #dce7dc;
-  border-radius: 8px;
-}
-
-@media (max-width: 1180px) {
-  .summary-grid,
+@media (max-width: 1260px) {
+  .hero-grid,
   .insights-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .hero-side,
+  .summary-grid,
+  .farm-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 860px) {
   .dashboard-page {
-    padding: 22px;
+    padding: var(--space-5);
   }
 
-  .dashboard-hero {
+  .dashboard-intro,
+  .map-copy,
+  .panel-header {
     flex-direction: column;
   }
 
-  .hero-actions {
-    width: 100%;
-  }
-
-  .hero-actions button {
-    flex: 1;
-  }
-
+  .quick-actions,
+  .hero-side,
   .summary-grid,
-  .insights-grid,
+  .farm-list,
   .season-layout,
   .money-strip {
+    display: grid;
+    width: 100%;
     grid-template-columns: 1fr;
   }
 
-  .chart-container,
-  .chart-container.compact {
-    min-height: 260px;
+  .map-hero {
+    min-height: auto;
+  }
+
+  .dashboard-map {
+    height: 420px;
+  }
+
+  .map-stats {
+    position: static;
+    margin-top: var(--space-3);
   }
 }
 
 @media (max-width: 640px) {
-  :host {
-    margin-left: -260px;
-  }
-
-  .dashboard-page {
-    padding: 16px;
-  }
-
-  .dashboard-hero,
+  .dashboard-page,
+  .map-hero,
   .panel,
+  .recent-farms,
   .metric-card {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
-  .dashboard-hero h1 {
+  .dashboard-intro h1 {
     font-size: 34px;
   }
 
-  .activity-card {
-    grid-template-columns: 1fr;
+  .dashboard-map {
+    height: 340px;
   }
 
-  .activity-type {
-    justify-content: flex-start;
+  .map-stats,
+  .weather-metrics,
+  .activity-card {
+    grid-template-columns: 1fr;
   }
 }

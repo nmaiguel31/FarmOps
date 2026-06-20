@@ -1,151 +1,174 @@
-<h1> 🚜 Farms</h1> 
+<main class="farms-page">
+  <section class="farms-hero">
+    <div>
+      <p class="eyebrow">Farm Registry</p>
+      <h1>Manage farms and land assets.</h1>
+      <p>
+        Keep each farm mapped, searchable, and ready for parcels and zoning.
+      </p>
+    </div>
 
-<h2>Search Farms</h2>
+    <div class="hero-metrics">
+      <div>
+        <span>Farms</span>
+        <strong>{{ farms.length }}</strong>
+      </div>
+      <div>
+        <span>Shown</span>
+        <strong>{{ filteredFarms.length }}</strong>
+      </div>
+    </div>
+  </section>
 
-<input
-type="text"
-placeholder="Search by Location"
-[(ngModel)]="searchLocation"
-(input)="filterFarms()"
+  <section class="farm-workspace">
+    <aside class="farm-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Farm Form</span>
+          <h2>{{ editingFarmId === '' ? 'Add' : 'Update' }}</h2>
+        </div>
+        <span class="mode-pill">{{ editingFarmId === '' ? 'New' : 'Edit' }}</span>
+      </div>
 
->
+      <form class="farm-form">
+        <label>
+          Farm name
+          <input class="farmops-field" type="text" placeholder="Farm Name" [(ngModel)]="farmName" name="farmName">
+        </label>
 
-<input
-type="text"
-placeholder="Search by Owner"
-[(ngModel)]="searchOwner"
-(input)="filterFarms()"
+        <label>
+          Location
+          <input
+            #locationInput
+            class="farmops-field"
+            type="text"
+            placeholder="Search Location"
+            [(ngModel)]="farmLocation"
+            name="farmLocation"
+          >
+        </label>
 
->
+        <div class="coordinate-grid">
+          <label>
+            Latitude
+            <input class="farmops-field" type="number" placeholder="Latitude" [(ngModel)]="farmLatitude" name="farmLatitude">
+          </label>
 
-<input
-  type="text"
-  placeholder="Farm Name"
-  [(ngModel)]="farmName"
->
+          <label>
+            Longitude
+            <input class="farmops-field" type="number" placeholder="Longitude" [(ngModel)]="farmLongitude" name="farmLongitude">
+          </label>
+        </div>
 
-<input
-  #locationInput
-  type="text"
-  placeholder="Search Location"
-  [(ngModel)]="farmLocation"
->
+        <label>
+          Size
+          <input class="farmops-field" type="number" placeholder="Size" [(ngModel)]="farmSize" name="farmSize">
+        </label>
 
-<p>
-  Latitude: {{ farmLatitude }}
-</p>
+        <div class="coordinate-preview">
+          <span>Coords</span>
+          <strong>{{ farmLatitude || 0 }}, {{ farmLongitude || 0 }}</strong>
+        </div>
 
-<p>
-  Longitude: {{ farmLongitude }}
-</p>
+        <button *ngIf="editingFarmId === ''" class="primary-btn" type="button" (click)="createFarm()">
+          Create Farm
+        </button>
 
-<input
-  type="number"
-  placeholder="Latitude"
-  [(ngModel)]="farmLatitude"
->
+        <button *ngIf="editingFarmId !== ''" class="primary-btn" type="button" (click)="updateFarm()">
+          Update Farm
+        </button>
+      </form>
+    </aside>
 
-<input
-  type="number"
-  placeholder="Longitude"
-  [(ngModel)]="farmLongitude"
->
+    <section class="farm-main">
+      <div class="filters-card">
+        <div>
+          <span class="panel-kicker">Search Farms</span>
+          <h2>Find by region or owner</h2>
+        </div>
 
-<input
-  type="number"
-  placeholder="Size"
-  [(ngModel)]="farmSize"
->
+        <div class="filter-grid">
+          <input
+            class="farmops-field"
+            type="text"
+            placeholder="Location"
+            [(ngModel)]="searchLocation"
+            (input)="filterFarms()"
+          >
 
-<button
-  *ngIf="editingFarmId === ''"
-  class="edit-btn"
-  (click)="createFarm()"
->
-  Create Farm
-</button>
+          <input
+            class="farmops-field"
+            type="text"
+            placeholder="Owner"
+            [(ngModel)]="searchOwner"
+            (input)="filterFarms()"
+          >
+        </div>
+      </div>
 
-<button
-  *ngIf="editingFarmId !== ''"
-  class="edit-btn"
-  (click)="updateFarm()"
->
-  Update Farm
-</button>
+      <div class="farm-grid" *ngIf="filteredFarms.length > 0; else noFarms">
+        <article class="farm-card" *ngFor="let farm of filteredFarms">
+          <div class="farm-card-header">
+            <div>
+              <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
+            </div>
+            <div>
+              <span class="panel-kicker">Farm Asset</span>
+              <h3>{{ farm.name }}</h3>
+              <p>{{ farm.location }}</p>
+            </div>
+          </div>
 
-No farms found.
+          <div class="farm-stats">
+            <div>
+              <span>Latitude</span>
+              <strong>{{ farm.latitude || 0 }}</strong>
+            </div>
+            <div>
+              <span>Longitude</span>
+              <strong>{{ farm.longitude || 0 }}</strong>
+            </div>
+            <div>
+              <span>Size</span>
+              <strong>{{ farm.size || 0 }}</strong>
+            </div>
+          </div>
 
-<div
-  class="farm-card"
-  *ngFor="let farm of filteredFarms"
->
+          <div class="owner-row">
+            <span>Owner</span>
+            <strong>{{ farm.owner?.email || '-' }}</strong>
+          </div>
 
-  <h3>
-    🚜 {{ farm.name }}
-  </h3>
+          <div class="zoning-strip">
+            <span>Parcels</span>
+            <span>Zone</span>
+            <span>Soil</span>
+          </div>
 
-  <p>
-    <strong>📍 Location:</strong>
-    {{ farm.location }}
-  </p>
+          <div *ngIf="farm.latitude && farm.longitude" [id]="'map-' + farm._id" class="farm-map"></div>
 
-  <p>
-    <strong>🌎 Latitude:</strong>
-    {{ farm.latitude }}
-  </p>
+          <div class="card-actions">
+            <button type="button" class="secondary-btn" (click)="searchByLocation(farm.location)">
+              Similar Farms
+            </button>
+            <button type="button" class="secondary-btn" (click)="searchByOwner(farm.owner?.email)">
+              Owner Farms
+            </button>
+            <button type="button" class="edit-btn" (click)="editFarm(farm)">
+              Edit
+            </button>
+            <button type="button" class="delete-btn" (click)="deleteFarm(farm._id)">
+              Delete
+            </button>
+          </div>
+        </article>
+      </div>
 
-  <p>
-    <strong>🌎 Longitude:</strong>
-    {{ farm.longitude }}
-  </p>
-
-  <p>
-    <strong>📏 Size:</strong>
-    {{ farm.size }}
-  </p>
-
-  <p>
-    <strong>👤 Owner:</strong>
-    {{ farm.owner?.email }}
-  </p>
-
-  <button
-    class="secondary-btn"
-    (click)="searchByLocation(farm.location)"
-  >
-    Similar Farms
-  </button>
-
-  <button
-    class="secondary-btn"
-    (click)="searchByOwner(farm.owner?.email)"
-  >
-    Owner Farms
-  </button>
-
-  <button
-    class="edit-btn"
-    (click)="editFarm(farm)"
-  >
-    Edit
-  </button>
-
-  <button
-    class="delete-btn"
-    (click)="deleteFarm(farm._id)"
-  >
-    Delete
-  </button>
-
-  <div
-    *ngIf="farm.latitude && farm.longitude"
-    [id]="'map-' + farm._id"
-    style="
-      width:100%;
-      height:300px;
-      margin-top:20px;
-      border-radius:12px;
-    "
-  >
-  </div>
-</div>
+      <ng-template #noFarms>
+        <div class="empty-state">
+          No farms found.
+        </div>
+      </ng-template>
+    </section>
+  </section>
+</main>
