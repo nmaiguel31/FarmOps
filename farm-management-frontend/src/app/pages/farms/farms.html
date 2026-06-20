@@ -1,9 +1,9 @@
 <main class="farms-page">
   <section class="farms-hero">
     <div>
-      <p class="eyebrow">Farm Registry</p>
-      <h1>Mapped land assets with room for parcels and zones.</h1>
-      <p>Browse farm locations, inspect map coverage, and keep field data ready for future boundary layers.</p>
+      <p class="eyebrow">Farm Operations</p>
+      <h1>Field Operations</h1>
+      <p>Real-time farm, field and crop lifecycle hub.</p>
     </div>
 
     <div class="hero-actions">
@@ -13,76 +13,302 @@
           <strong>{{ farms.length }}</strong>
         </div>
         <div>
-          <span>Shown</span>
-          <strong>{{ filteredFarms.length }}</strong>
+          <span>Fields</span>
+          <strong>{{ fields.length }}</strong>
         </div>
       </div>
 
-      <button type="button" class="primary-btn" (click)="openCreateFarm()">
-        Create Farm
-      </button>
-    </div>
-  </section>
-
-  <section class="filters-card">
-    <div>
-      <span class="panel-kicker">Search Farms</span>
-      <h2>Find by region or owner</h2>
-    </div>
-
-    <div class="filter-grid">
-      <input class="farmops-field" type="text" placeholder="Location" [(ngModel)]="searchLocation" (input)="filterFarms()">
-      <input class="farmops-field" type="text" placeholder="Owner" [(ngModel)]="searchOwner" (input)="filterFarms()">
-    </div>
-  </section>
-
-  <section class="farm-grid" *ngIf="filteredFarms.length > 0; else noFarms">
-    <article class="farm-card" *ngFor="let farm of filteredFarms">
-      <div class="farm-map-wrap">
-        <div *ngIf="farm.latitude && farm.longitude" [id]="'map-' + farm._id" class="farm-map"></div>
-        <div class="map-layer-strip">
-          <span>Parcels</span>
-          <span>Zone</span>
-          <span>Soil</span>
-        </div>
+      <div class="hero-cta-row">
+        <button type="button" class="secondary-btn" (click)="openCreateFarm()">Add Farm</button>
+        <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
+        <button type="button" class="secondary-btn" (click)="openAddMapArea()">Add Map Area</button>
       </div>
+    </div>
+  </section>
 
-      <div class="farm-content">
-        <div class="farm-heading">
-          <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
-          <div>
-            <span class="panel-kicker">Farm Asset</span>
-            <h3>{{ farm.name }}</h3>
-            <p>{{ farm.location }}</p>
-          </div>
-        </div>
+  <section class="operations-layout">
+    <aside class="farm-list-panel">
+      <section class="selected-farm-summary" *ngIf="selectedFarm">
+        <span class="panel-kicker">Selected Farm</span>
+        <h2>{{ selectedFarm.name }}</h2>
+        <p>{{ selectedFarm.location || 'No location saved' }}</p>
 
         <div class="farm-summary">
           <div>
-            <span>Size</span>
-            <strong>{{ farm.size || 0 }}</strong>
+            <span>Total Area</span>
+            <strong>{{ selectedFarm.size || 0 }}</strong>
           </div>
           <div>
-            <span>Owner</span>
-            <strong>{{ farm.owner?.email || '-' }}</strong>
+            <span>Fields</span>
+            <strong>{{ selectedFarmFields.length }}</strong>
+          </div>
+          <div>
+            <span>Field Area</span>
+            <strong>{{ totalSelectedFieldArea }}</strong>
+          </div>
+          <div>
+            <span>Health</span>
+            <strong>{{ selectedFieldHealthIndex }}%</strong>
           </div>
         </div>
+      </section>
 
-        <div class="card-actions">
-          <button type="button" class="secondary-btn" (click)="searchByLocation(farm.location)">Similar</button>
-          <button type="button" class="secondary-btn" (click)="searchByOwner(farm.owner?.email)">Owner</button>
-          <button type="button" class="edit-btn" (click)="editFarm(farm)">Edit</button>
-          <button type="button" class="delete-btn" (click)="deleteFarm(farm._id)">Delete</button>
+      <div class="filters-card">
+        <div>
+          <span class="panel-kicker">Search Workspace</span>
+          <h2>Farms and fields</h2>
+        </div>
+
+        <div class="filter-grid">
+          <input class="farmops-field" type="text" placeholder="Search farm location" [(ngModel)]="searchLocation" (input)="filterFarms()">
+          <input class="farmops-field" type="text" placeholder="Search field" [(ngModel)]="fieldSearch">
+        </div>
+
+        <div class="filter-chips">
+          <button type="button" [class.active]="fieldFilter === 'All'" (click)="setFieldFilter('All')">All</button>
+          <button type="button" [class.active]="fieldFilter === 'Active'" (click)="setFieldFilter('Active')">Active</button>
+          <button type="button" [class.active]="fieldFilter === 'Planned'" (click)="setFieldFilter('Planned')">Planned</button>
+          <button type="button" [class.active]="fieldFilter === 'Harvested'" (click)="setFieldFilter('Harvested')">Harvested</button>
         </div>
       </div>
-    </article>
+
+      <div class="farm-list" *ngIf="filteredFarms.length > 0; else noFarms">
+        <article class="farm-group" *ngFor="let farm of filteredFarms">
+          <button
+            type="button"
+            class="farm-list-item"
+            [class.active]="selectedFarm?._id === farm._id"
+            (click)="toggleFarm(farm)"
+          >
+            <span class="expand-indicator">{{ isFarmExpanded(farm) ? '-' : '+' }}</span>
+
+            <div class="farm-heading">
+              <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
+              <div>
+                <span class="panel-kicker">Farm Asset</span>
+                <h3>{{ farm.name }}</h3>
+                <p>{{ farm.location }}</p>
+              </div>
+            </div>
+
+            <div class="farm-summary">
+              <div>
+                <span>Size</span>
+                <strong>{{ farm.size || 0 }}</strong>
+              </div>
+              <div>
+                <span>Fields</span>
+                <strong>{{ getFieldCountForFarm(farm) }}</strong>
+              </div>
+            </div>
+          </button>
+
+          <div class="farm-row-actions">
+            <button type="button" class="secondary-btn" (click)="searchByLocation(farm.location)">Similar</button>
+            <button type="button" class="edit-btn" (click)="editFarm(farm)">Edit Farm</button>
+            <button type="button" class="delete-btn" (click)="deleteFarm(farm._id)">Delete</button>
+          </div>
+
+          <div class="field-list nested" *ngIf="isFarmExpanded(farm)">
+            <button
+              type="button"
+              class="field-row"
+              *ngFor="let field of getFieldsForFarm(farm)"
+              [class.active]="selectedField?._id === field._id"
+              (click)="selectField(field)"
+            >
+              <div>
+                <strong>{{ field.name }}</strong>
+                <span>{{ getFieldCropLabel(field) }} | {{ field.area || 0 }} ac</span>
+              </div>
+              <small [ngClass]="getBadgeClass(field.status)">{{ field.status }}</small>
+            </button>
+
+            <div class="empty-state compact" *ngIf="getFieldsForFarm(farm).length === 0">No matching fields.</div>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #noFarms>
+        <div class="empty-state">No farms found.</div>
+      </ng-template>
+    </aside>
+
+    <section class="farm-operations" *ngIf="selectedFarm; else noSelectedFarm">
+      <header class="operation-header">
+        <div>
+          <p class="eyebrow">Operational Dashboard</p>
+          <h2>{{ selectedField?.name || selectedFarm.name }}</h2>
+          <span>{{ selectedFarm.name }} | {{ selectedFieldCropLabel }}</span>
+        </div>
+
+        <div class="operation-actions">
+          <button type="button" class="secondary-btn" (click)="openAddMapArea()">Add Map Area</button>
+          <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
+        </div>
+      </header>
+
+      <section class="farm-dashboard-grid">
+        <article class="map-panel">
+          <div class="map-copy">
+            <div>
+              <span class="panel-kicker">Satellite-ready Farm Map</span>
+              <h3>{{ selectedField?.name || selectedFarm.name }} Map Area</h3>
+              <p>{{ selectedFarm.location || 'Prepared for parcel boundaries and field zoning overlays.' }}</p>
+            </div>
+            <div class="map-layer-strip">
+              <span>Satellite</span>
+              <span>Parcels</span>
+              <span>Zones</span>
+            </div>
+          </div>
+
+          <div id="selected-farm-map" class="farm-map"></div>
+        </article>
+
+        <aside class="map-insight-card">
+          <span class="panel-kicker">Selected Breakdown</span>
+          <h3>{{ selectedField?.name || 'Farm Overview' }}</h3>
+          <p>{{ selectedField ? selectedFieldCropLabel : selectedFarm.name }}</p>
+          <div class="mini-monitoring">
+            <article>
+              <span>Health</span>
+              <strong>{{ selectedFieldHealthIndex }}%</strong>
+            </article>
+            <article>
+              <span>Soil Moisture</span>
+              <strong>{{ selectedFieldSoilMoisture }}%</strong>
+            </article>
+          </div>
+        </aside>
+      </section>
+
+      <section class="field-operations-grid">
+        <article class="fields-panel">
+          <div class="panel-header">
+            <div>
+              <span class="panel-kicker">Fields / Parcels</span>
+              <h3>Operational plots</h3>
+            </div>
+            <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
+          </div>
+
+          <div class="field-list" *ngIf="selectedFarmFields.length > 0; else noFields">
+            <button
+              type="button"
+              class="field-row"
+              *ngFor="let field of selectedFarmFields"
+              [class.active]="selectedField?._id === field._id"
+              (click)="selectField(field)"
+            >
+              <div>
+                <strong>{{ field.name }}</strong>
+                <span>{{ getFieldCropLabel(field) }} | {{ field.area || 0 }} ac</span>
+              </div>
+              <small [ngClass]="getBadgeClass(field.status)">{{ field.status }}</small>
+            </button>
+          </div>
+
+          <ng-template #noFields>
+            <div class="empty-state compact">No fields have been added to this farm yet.</div>
+          </ng-template>
+        </article>
+
+        <article class="field-breakdown" *ngIf="selectedField; else noSelectedField">
+          <div class="panel-header">
+            <div>
+              <span class="panel-kicker">Individual Field Breakdown</span>
+              <h3>{{ selectedField.name }}</h3>
+              <p>{{ selectedFarm.name }} | {{ selectedFieldCropLabel }}</p>
+            </div>
+
+            <div class="card-actions">
+              <button type="button" class="edit-btn" (click)="editField(selectedField)">Edit Field</button>
+              <button type="button" class="delete-btn" (click)="deleteField(selectedField._id)">Delete Field</button>
+            </div>
+          </div>
+
+          <div class="field-detail-grid">
+            <div>
+              <span>Area</span>
+              <strong>{{ selectedField.area || 0 }} ac</strong>
+            </div>
+            <div>
+              <span>Health</span>
+              <strong>{{ selectedField.healthStatus }}</strong>
+            </div>
+            <div>
+              <span>Irrigation</span>
+              <strong>{{ selectedField.irrigationStatus }}</strong>
+            </div>
+            <div>
+              <span>Crop Status</span>
+              <strong>{{ selectedField.status }}</strong>
+            </div>
+          </div>
+
+          <div class="monitoring-grid">
+            <article>
+              <span>Health Index</span>
+              <strong>{{ selectedFieldHealthIndex }}%</strong>
+            </article>
+            <article>
+              <span>Soil Moisture</span>
+              <strong>{{ selectedFieldSoilMoisture }}%</strong>
+            </article>
+            <article>
+              <span>Irrigation Status</span>
+              <strong>{{ selectedField.irrigationStatus }}</strong>
+            </article>
+            <article>
+              <span>Crop Status</span>
+              <strong>{{ selectedField.status }}</strong>
+            </article>
+          </div>
+
+          <div class="field-notes" *ngIf="selectedField.notes">
+            <span>Notes</span>
+            <p>{{ selectedField.notes }}</p>
+          </div>
+
+          <div class="lifecycle-panel">
+            <div class="lifecycle-header">
+              <div>
+                <h4>Lifecycle Tracking</h4>
+                <span>{{ selectedFieldCropLabel }} | static planning view</span>
+              </div>
+              <strong>65%</strong>
+            </div>
+
+            <div class="lifecycle-track">
+              <article [class]="getLifecycleState(0)"><span></span><strong>Land Preparation</strong></article>
+              <article [class]="getLifecycleState(1)"><span></span><strong>Planting</strong></article>
+              <article [class]="getLifecycleState(2)"><span></span><strong>Vegetative Phase</strong></article>
+              <article [class]="getLifecycleState(3)"><span></span><strong>Flowering</strong></article>
+              <article [class]="getLifecycleState(4)"><span></span><strong>Ripening</strong></article>
+              <article [class]="getLifecycleState(5)"><span></span><strong>Harvest</strong></article>
+            </div>
+          </div>
+        </article>
+
+        <ng-template #noSelectedField>
+          <article class="field-breakdown empty-breakdown">
+            <span class="panel-kicker">No Field Selected</span>
+            <h3>Select a field or add one to this farm.</h3>
+          </article>
+        </ng-template>
+      </section>
+    </section>
+
+    <ng-template #noSelectedFarm>
+      <section class="farm-operations empty-workspace">
+        <p class="eyebrow">No Farm Selected</p>
+        <h2>Select or create a farm to open the operations dashboard.</h2>
+      </section>
+    </ng-template>
   </section>
 
-  <ng-template #noFarms>
-    <div class="empty-state">No farms found.</div>
-  </ng-template>
-
-  <div class="drawer-backdrop" [class.visible]="farmFormOpen" (click)="closeFarmForm()"></div>
+  <div class="drawer-backdrop" [class.visible]="farmFormOpen || fieldFormOpen" (click)="closeFarmForm(); closeFieldForm()"></div>
 
   <aside class="farm-drawer" [class.open]="farmFormOpen">
     <div class="drawer-header">
@@ -132,6 +358,99 @@
 
       <button *ngIf="editingFarmId !== ''" class="primary-btn" type="button" (click)="updateFarm()">
         Update Farm
+      </button>
+    </form>
+  </aside>
+
+  <aside class="field-drawer" [class.open]="fieldFormOpen">
+    <div class="drawer-header">
+      <div>
+        <span class="panel-kicker">Field Form</span>
+        <h2>{{ editingFieldId === '' ? 'Add Field' : 'Update Field' }}</h2>
+      </div>
+      <button type="button" class="icon-close" (click)="closeFieldForm()" aria-label="Close form"></button>
+    </div>
+
+    <form class="farm-form">
+      <label>
+        Parent farm
+        <input class="farmops-field" type="text" [value]="selectedFarm?.name || ''" disabled>
+      </label>
+
+      <label>
+        Field name
+        <input class="farmops-field" type="text" placeholder="North Parcel" [(ngModel)]="fieldName" name="fieldName">
+      </label>
+
+      <label>
+        Linked crop
+        <select class="farmops-field" [(ngModel)]="selectedCrop" name="selectedCrop">
+          <option value="">Use crop type instead</option>
+          <option *ngFor="let crop of getCropsForSelectedFarm()" [value]="crop._id">
+            {{ crop.name }} - {{ crop.type }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Crop type
+        <input class="farmops-field" type="text" placeholder="Corn, Wheat, Soybean" [(ngModel)]="fieldCropType" name="fieldCropType">
+      </label>
+
+      <div class="coordinate-grid">
+        <label>
+          Area
+          <input class="farmops-field" type="number" placeholder="0" [(ngModel)]="fieldArea" name="fieldArea">
+        </label>
+
+        <label>
+          Status
+          <select class="farmops-field" [(ngModel)]="fieldStatus" name="fieldStatus">
+            <option>Active</option>
+            <option>Planned</option>
+            <option>Resting</option>
+            <option>Harvested</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="coordinate-grid">
+        <label>
+          Health
+          <select class="farmops-field" [(ngModel)]="fieldHealthStatus" name="fieldHealthStatus">
+            <option>Good</option>
+            <option>Watch</option>
+            <option>Critical</option>
+          </select>
+        </label>
+
+        <label>
+          Irrigation
+          <select class="farmops-field" [(ngModel)]="fieldIrrigationStatus" name="fieldIrrigationStatus">
+            <option>Scheduled</option>
+            <option>Irrigated</option>
+            <option>Dry</option>
+            <option>Paused</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Notes
+        <textarea class="farmops-field" rows="4" placeholder="Optional field notes" [(ngModel)]="fieldNotes" name="fieldNotes"></textarea>
+      </label>
+
+      <div class="coordinate-preview">
+        <span>Map area</span>
+        <strong>Polygon drawing prepared for later phase</strong>
+      </div>
+
+      <button *ngIf="editingFieldId === ''" class="primary-btn" type="button" (click)="createField()">
+        Add Field
+      </button>
+
+      <button *ngIf="editingFieldId !== ''" class="primary-btn" type="button" (click)="updateField()">
+        Update Field
       </button>
     </form>
   </aside>
