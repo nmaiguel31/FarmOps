@@ -46,6 +46,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
+  overflow-x: hidden;
   color: var(--color-text);
   background: var(--color-page);
   font-family: var(--font-sans);
@@ -62,6 +63,11 @@ textarea {
 
 button {
   letter-spacing: 0;
+}
+
+img,
+canvas {
+  max-width: 100%;
 }
 
 a {

@@ -1,0 +1,135 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-page);
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+}
+
+.login-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(20,32,24,.14), rgba(20,32,24,.78)),
+    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80") center / cover;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-leaf));
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.brand-lockup strong,
+.brand-lockup small {
+  display: block;
+}
+
+.brand-lockup small,
+.visual-copy p,
+.eyebrow {
+  color: rgba(255,255,255,.78);
+}
+
+.visual-copy {
+  max-width: 720px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.visual-copy h1 {
+  margin: 0 0 16px;
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: .95;
+}
+
+.visual-copy p {
+  max-width: 560px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.login-card {
+  display: grid;
+  width: min(100%, 480px);
+  align-content: center;
+  gap: 28px;
+  justify-self: center;
+  padding: 48px;
+}
+
+.login-card .eyebrow {
+  color: var(--color-muted-strong);
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.login-form {
+  display: grid;
+  gap: 18px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--color-muted-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.login-button {
+  min-height: 44px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-visual {
+    min-height: 360px;
+    padding: 28px;
+  }
+
+  .login-card {
+    width: 100%;
+    padding: 28px;
+  }
+}

@@ -1,27 +1,40 @@
-<h1>Farm Management System</h1>
+<main class="login-page">
+  <section class="login-visual">
+    <div class="brand-lockup">
+      <span class="brand-mark">Fo</span>
+      <div>
+        <strong>FarmOps</strong>
+        <small>Agriculture SaaS</small>
+      </div>
+    </div>
 
-<div>
+    <div class="visual-copy">
+      <p class="eyebrow">Farm Management Platform</p>
+      <h1>Operate farms, crops, maps, and finances from one workspace.</h1>
+      <p>Secure access for agricultural teams managing field operations and business records.</p>
+    </div>
+  </section>
 
-  <label>Email</label>
-  <br>
-  <input
-    type="email"
-    [(ngModel)]="email"
-  >
+  <section class="login-card">
+    <div>
+      <p class="eyebrow">Welcome Back</p>
+      <h2>Sign in to FarmOps</h2>
+    </div>
 
-  <br><br>
+    <form class="login-form">
+      <label>
+        Email
+        <input class="farmops-field" type="email" [(ngModel)]="email" name="email">
+      </label>
 
-  <label>Password</label>
-  <br>
-  <input
-    type="password"
-    [(ngModel)]="password"
-  >
+      <label>
+        Password
+        <input class="farmops-field" type="password" [(ngModel)]="password" name="password">
+      </label>
 
-  <br><br>
-
-  <button (click)="onLogin()">
-    Login
-  </button>
-
-</div>
+      <button class="login-button" type="button" (click)="onLogin()">
+        Login
+      </button>
+    </form>
+  </section>
+</main>
