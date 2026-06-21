@@ -63,6 +63,57 @@ const validateCropForFarm = async (cropId, farmId, user) => {
   return crop._id;
 };
 
+const escapeRegExp = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const resolveFieldCrop = async ({ cropId, cropType, farmId, user }) => {
+  const selectedCrop =
+    await validateCropForFarm(cropId, farmId, user);
+
+  if (selectedCrop) {
+    return selectedCrop;
+  }
+
+  const manualCropType =
+    typeof cropType === 'string' ? cropType.trim() : '';
+
+  if (!manualCropType) {
+    return null;
+  }
+
+  const cropPattern =
+    new RegExp(`^${escapeRegExp(manualCropType)}$`, 'i');
+
+  const existingCrop = await Crop.findOne({
+    farm: farmId,
+    $or: [
+      { name: cropPattern },
+      { type: cropPattern }
+    ]
+  });
+
+  if (existingCrop) {
+    return existingCrop._id;
+  }
+
+  const createdCrop = await Crop.create({
+    name: manualCropType,
+    type: manualCropType,
+    season: 'Field Assigned',
+    farm: farmId
+  });
+
+  logEvent('info', 'CROP_CREATED_FROM_FIELD', {
+    cropId: createdCrop._id,
+    cropName: createdCrop.name,
+    farmId,
+    createdBy: user.id
+  });
+
+  return createdCrop._id;
+};
+
 const createField = async (req, res) => {
   try {
     const farm = await Farm.findById(req.body.farm);
@@ -88,8 +139,12 @@ const createField = async (req, res) => {
       });
     }
 
-    const crop =
-      await validateCropForFarm(req.body.crop, farm._id, req.user);
+    const crop = await resolveFieldCrop({
+      cropId: req.body.crop,
+      cropType: req.body.cropType,
+      farmId: farm._id,
+      user: req.user
+    });
 
     const field = await Field.create({
       name: req.body.name,
@@ -220,8 +275,12 @@ const updateField = async (req, res) => {
     const nextFarmId =
       req.body.farm || field.farm._id;
 
-    const crop =
-      await validateCropForFarm(req.body.crop, nextFarmId, req.user);
+    const crop = await resolveFieldCrop({
+      cropId: req.body.crop,
+      cropType: req.body.cropType,
+      farmId: nextFarmId,
+      user: req.user
+    });
 
     field.name = req.body.name;
     field.cropType = req.body.cropType || '';

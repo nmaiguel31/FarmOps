@@ -24,7 +24,7 @@ export class GoogleMapsLoader {
       script.id = 'google-maps';
 
       script.src =
-        `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
+        `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places,geometry`;
 
       script.onload = () => resolve();
 

@@ -1,6 +1,31 @@
 const Farm = require('../models/Farm');
 const logEvent = require('../utils/logger');
 
+const normalizePolygonCoordinates = (coordinates) => {
+  if (!Array.isArray(coordinates)) {
+    return [];
+  }
+
+  return coordinates
+    .map((point) => {
+      if (Array.isArray(point)) {
+        return {
+          lat: Number(point[0]),
+          lng: Number(point[1])
+        };
+      }
+
+      return {
+        lat: Number(point?.lat),
+        lng: Number(point?.lng)
+      };
+    })
+    .filter(point =>
+      Number.isFinite(point.lat) &&
+      Number.isFinite(point.lng)
+    );
+};
+
 // Create farm
 const createFarm = async (req, res) => {
   try {
@@ -13,6 +38,7 @@ const createFarm = async (req, res) => {
       latitude: req.body.latitude,
       longitude: req.body.longitude,
       size: req.body.size,
+      polygonCoordinates: normalizePolygonCoordinates(req.body.polygonCoordinates),
       owner: req.user.id
     });
   logEvent('info', 'FARM_CREATED', {
@@ -41,15 +67,22 @@ const getFarms = async (req, res) => {
 if (req.user.role === 'admin') {
 
   farms = await Farm.find()
-    .populate('owner', 'email role');
+    .populate('owner', 'email role')
+    .lean();
 
 } else {
 
   farms = await Farm.find({
     owner: req.user.id
-  }).populate('owner', 'email role');
+  }).populate('owner', 'email role')
+    .lean();
 
 }
+
+    farms = farms.map(farm => ({
+      ...farm,
+      polygonCoordinates: normalizePolygonCoordinates(farm.polygonCoordinates)
+    }));
 
     res.json(farms);
 
@@ -159,6 +192,7 @@ const updateFarm = async (req, res) => {
     farm.latitude = req.body.latitude;
     farm.longitude = req.body.longitude;
     farm.size = req.body.size;
+    farm.polygonCoordinates = normalizePolygonCoordinates(req.body.polygonCoordinates);
 
     await farm.save();
 

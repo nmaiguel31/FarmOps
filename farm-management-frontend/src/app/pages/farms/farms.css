@@ -6,9 +6,9 @@
 }
 
 .farms-page {
-  width: min(100%, 1580px);
+  width: min(100%, 1720px);
   margin: 0 auto;
-  padding: 34px;
+  padding: 26px;
   overflow: hidden;
 }
 
@@ -16,7 +16,6 @@
 .filters-card,
 .farm-list-item,
 .farm-operations,
-.farm-info-panel,
 .fields-panel,
 .field-breakdown,
 .farm-drawer,
@@ -41,7 +40,6 @@
 .panel-kicker,
 .hero-metrics span,
 .farm-summary span,
-.farm-info-grid span,
 .field-detail-grid span,
 .monitoring-grid span,
 .coordinate-preview span {
@@ -89,7 +87,6 @@
 
 .hero-metrics div,
 .farm-summary div,
-.farm-info-grid div,
 .field-detail-grid div,
 .monitoring-grid article,
 .coordinate-preview {
@@ -107,7 +104,7 @@
 
 .operations-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -150,7 +147,6 @@
 
 .filters-card h2,
 .drawer-header h2,
-.farm-info-panel h3,
 .fields-panel h3,
 .field-breakdown h3 {
   margin: 4px 0 0;
@@ -160,7 +156,6 @@
 .filter-grid,
 .coordinate-grid,
 .farm-summary,
-.farm-info-grid,
 .field-detail-grid,
 .monitoring-grid {
   display: grid;
@@ -219,7 +214,6 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .farm-list-item:hover,
@@ -280,7 +274,6 @@
 }
 
 .farm-summary strong,
-.farm-info-grid strong,
 .field-detail-grid strong,
 .monitoring-grid strong {
   display: block;
@@ -350,14 +343,12 @@
 }
 
 .farm-dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-  gap: 18px;
+  position: relative;
 }
 
 .map-panel {
   position: relative;
-  min-height: 560px;
+  min-height: 740px;
   overflow: hidden;
   background: #17201a;
   border: 1px solid var(--color-border);
@@ -389,14 +380,19 @@
 .farm-map {
   position: absolute;
   inset: 0;
-  min-height: 560px;
+  min-height: 740px;
   background: linear-gradient(135deg, #dcebd8, #8baa64);
 }
 
 .map-insight-card {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
   display: grid;
   gap: 16px;
   align-content: start;
+  width: min(320px, calc(100% - 36px));
   padding: 22px;
   background: #fff;
   border: 1px solid var(--color-border);
@@ -458,7 +454,6 @@
   border-radius: 999px;
 }
 
-.farm-info-panel,
 .fields-panel,
 .field-breakdown {
   display: grid;
@@ -697,7 +692,7 @@
   top: 0;
   right: 0;
   z-index: 50;
-  width: min(480px, 100%);
+  width: min(760px, 100%);
   height: 100vh;
   padding: 28px;
   overflow-y: auto;
@@ -762,6 +757,33 @@
   font-weight: 800;
 }
 
+.farm-map-selector {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-md);
+}
+
+.farm-map-selector p {
+  margin: 0;
+  color: var(--color-muted-strong);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.farm-location-map {
+  min-height: 430px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #dcebd8, #8baa64);
+  border-radius: var(--radius-sm);
+}
+
+.boundary-map-shell {
+  position: relative;
+}
+
 .coordinate-preview strong {
   display: block;
   margin-top: 5px;
@@ -774,7 +796,6 @@
 
 @media (max-width: 1200px) {
   .operations-layout,
-  .farm-dashboard-grid,
   .field-operations-grid {
     grid-template-columns: 1fr;
   }
@@ -797,7 +818,6 @@
   .filter-grid,
   .coordinate-grid,
   .farm-summary,
-  .farm-info-grid,
   .field-detail-grid,
   .monitoring-grid {
     width: 100%;
@@ -823,12 +843,18 @@
     min-height: 360px;
   }
 
+  .map-insight-card {
+    position: static;
+    width: auto;
+    margin-top: 14px;
+  }
+
   .farm-operations,
-  .farm-info-panel,
   .fields-panel,
   .field-breakdown,
   .farm-drawer,
   .field-drawer {
     padding: 22px;
   }
+
 }

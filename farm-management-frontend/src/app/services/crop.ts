@@ -8,7 +8,15 @@ export class Crop {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/crops';
+  private apiBase =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:5000/api'
+      : 'https://farmops-api-nmaiguel.azurewebsites.net/api';
+
+  private apiUrl = `${this.apiBase}/crops`;
+
+  private farmsUrl = `${this.apiBase}/farms`;
 
   getFarms() {
 
@@ -19,7 +27,7 @@ export class Crop {
     });
 
     return this.http.get(
-      'https://farmops-api-nmaiguel.azurewebsites.net/api/farms',
+      this.farmsUrl,
       { headers }
     );
   } 

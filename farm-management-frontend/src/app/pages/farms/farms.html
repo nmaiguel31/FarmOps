@@ -36,7 +36,7 @@
         <div class="farm-summary">
           <div>
             <span>Total Area</span>
-            <strong>{{ selectedFarm.size || 0 }}</strong>
+            <strong>{{ formatArea(selectedFarm.size) }}</strong>
           </div>
           <div>
             <span>Fields</span>
@@ -44,7 +44,7 @@
           </div>
           <div>
             <span>Field Area</span>
-            <strong>{{ totalSelectedFieldArea }}</strong>
+            <strong>{{ formatArea(totalSelectedFieldArea) }}</strong>
           </div>
           <div>
             <span>Health</span>
@@ -94,7 +94,7 @@
             <div class="farm-summary">
               <div>
                 <span>Size</span>
-                <strong>{{ farm.size || 0 }}</strong>
+                <strong>{{ formatArea(farm.size) }}</strong>
               </div>
               <div>
                 <span>Fields</span>
@@ -119,7 +119,7 @@
             >
               <div>
                 <strong>{{ field.name }}</strong>
-                <span>{{ getFieldCropLabel(field) }} | {{ field.area || 0 }} ac</span>
+                <span>{{ getFieldCropLabel(field) }} | {{ formatArea(field.area) }} ha</span>
               </div>
               <small [ngClass]="getBadgeClass(field.status)">{{ field.status }}</small>
             </button>
@@ -203,7 +203,7 @@
             >
               <div>
                 <strong>{{ field.name }}</strong>
-                <span>{{ getFieldCropLabel(field) }} | {{ field.area || 0 }} ac</span>
+                <span>{{ getFieldCropLabel(field) }} | {{ formatArea(field.area) }} ha</span>
               </div>
               <small [ngClass]="getBadgeClass(field.status)">{{ field.status }}</small>
             </button>
@@ -231,7 +231,7 @@
           <div class="field-detail-grid">
             <div>
               <span>Area</span>
-              <strong>{{ selectedField.area || 0 }} ac</strong>
+              <strong>{{ formatArea(selectedField.area) }} ha</strong>
             </div>
             <div>
               <span>Health</span>
@@ -330,26 +330,51 @@
         <input #locationInput class="farmops-field" type="text" placeholder="Search Location" [(ngModel)]="farmLocation" name="farmLocation">
       </label>
 
+      <section class="farm-map-selector">
+        <div>
+          <span class="panel-kicker">Select Farm Location</span>
+          <p>Search a nearby location, then move the pin to the exact farm position.</p>
+        </div>
+
+        <div class="boundary-map-shell">
+          <div id="farm-location-map" #farmLocationMap class="farm-location-map"></div>
+        </div>
+
+        <p class="map-helper">
+          {{ isDrawingFarmBoundary ? 'Click the map to add perimeter points, then finish the boundary.' : 'Draw the farm perimeter to calculate total area automatically.' }}
+        </p>
+      </section>
+
       <div class="coordinate-grid">
         <label>
           Latitude
-          <input class="farmops-field" type="number" placeholder="Latitude" [(ngModel)]="farmLatitude" name="farmLatitude">
+          <input class="farmops-field" type="number" placeholder="Latitude" [(ngModel)]="farmLatitude" name="farmLatitude" readonly>
         </label>
 
         <label>
           Longitude
-          <input class="farmops-field" type="number" placeholder="Longitude" [(ngModel)]="farmLongitude" name="farmLongitude">
+          <input class="farmops-field" type="number" placeholder="Longitude" [(ngModel)]="farmLongitude" name="farmLongitude" readonly>
         </label>
       </div>
 
       <label>
-        Size
-        <input class="farmops-field" type="number" placeholder="Size" [(ngModel)]="farmSize" name="farmSize">
+        Calculated size (hectares)
+        <input class="farmops-field" type="number" placeholder="Draw boundary to calculate" [(ngModel)]="farmSize" name="farmSize" readonly>
       </label>
 
       <div class="coordinate-preview">
         <span>Coords</span>
         <strong>{{ farmLatitude || 0 }}, {{ farmLongitude || 0 }}</strong>
+      </div>
+
+      <div class="coordinate-preview">
+        <span>Calculated area</span>
+        <strong>{{ formatArea(farmSize) }} hectares</strong>
+      </div>
+
+      <div class="coordinate-preview">
+        <span>Boundary points</span>
+        <strong>{{ farmBoundaryCoordinates.length }} saved points</strong>
       </div>
 
       <button *ngIf="editingFarmId === ''" class="primary-btn" type="button" (click)="createFarm()">
@@ -399,8 +424,8 @@
 
       <div class="coordinate-grid">
         <label>
-          Area
-          <input class="farmops-field" type="number" placeholder="0" [(ngModel)]="fieldArea" name="fieldArea">
+          Calculated area (hectares)
+          <input class="farmops-field" type="number" placeholder="Draw boundary to calculate" [(ngModel)]="fieldArea" name="fieldArea" readonly>
         </label>
 
         <label>
@@ -413,6 +438,21 @@
           </select>
         </label>
       </div>
+
+      <section class="farm-map-selector">
+        <div>
+          <span class="panel-kicker">Field Boundary</span>
+          <p>Draw this field or parcel inside the selected farm boundary.</p>
+        </div>
+
+        <div class="boundary-map-shell">
+          <div id="field-boundary-map" class="farm-location-map"></div>
+        </div>
+
+        <p class="map-helper">
+          {{ isDrawingFieldBoundary ? 'Click the map to add field boundary points, then finish the boundary.' : 'The farm boundary stays visible as context while drawing the field.' }}
+        </p>
+      </section>
 
       <div class="coordinate-grid">
         <label>
@@ -441,8 +481,13 @@
       </label>
 
       <div class="coordinate-preview">
-        <span>Map area</span>
-        <strong>Polygon drawing prepared for later phase</strong>
+        <span>Field area</span>
+        <strong>{{ formatArea(fieldArea) }} hectares</strong>
+      </div>
+
+      <div class="coordinate-preview">
+        <span>Boundary points</span>
+        <strong>{{ fieldBoundaryCoordinates.length }} saved points</strong>
       </div>
 
       <button *ngIf="editingFieldId === ''" class="primary-btn" type="button" (click)="createField()">

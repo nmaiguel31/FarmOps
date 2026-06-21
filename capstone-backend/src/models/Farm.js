@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+const polygonPointSchema = new mongoose.Schema(
+  {
+    lat: {
+      type: Number,
+      required: true
+    },
+
+    lng: {
+      type: Number,
+      required: true
+    }
+  },
+  {
+    _id: false
+  }
+);
+
 const farmSchema = new mongoose.Schema(
   {
     name: {
@@ -25,6 +42,11 @@ const farmSchema = new mongoose.Schema(
     size: {
       type: Number,
       required: true
+    },
+
+    polygonCoordinates: {
+      type: [polygonPointSchema],
+      default: []
     },
 
     owner: {
