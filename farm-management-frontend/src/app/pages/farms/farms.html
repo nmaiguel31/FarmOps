@@ -19,9 +19,7 @@
       </div>
 
       <div class="hero-cta-row">
-        <button type="button" class="secondary-btn" (click)="openCreateFarm()">Add Farm</button>
-        <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
-        <button type="button" class="secondary-btn" (click)="openAddMapArea()">Add Map Area</button>
+        <button type="button" class="primary-btn" (click)="openCreateFarm()">Create Farm</button>
       </div>
     </div>
   </section>
@@ -142,10 +140,6 @@
           <span>{{ selectedFarm.name }} | {{ selectedFieldCropLabel }}</span>
         </div>
 
-        <div class="operation-actions">
-          <button type="button" class="secondary-btn" (click)="openAddMapArea()">Add Map Area</button>
-          <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
-        </div>
       </header>
 
       <section class="farm-dashboard-grid">
@@ -155,11 +149,6 @@
               <span class="panel-kicker">Satellite-ready Farm Map</span>
               <h3>{{ selectedField?.name || selectedFarm.name }} Map Area</h3>
               <p>{{ selectedFarm.location || 'Prepared for parcel boundaries and field zoning overlays.' }}</p>
-            </div>
-            <div class="map-layer-strip">
-              <span>Satellite</span>
-              <span>Parcels</span>
-              <span>Zones</span>
             </div>
           </div>
 
@@ -181,6 +170,107 @@
             </article>
           </div>
         </aside>
+      </section>
+
+      <section class="weather-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">Weather Insights</span>
+            <h3>Weather for: {{ getWeatherTargetName() }}</h3>
+            <p>Decision context for field activity, irrigation and crop planning.</p>
+          </div>
+          <span class="weather-source">Open-Meteo</span>
+        </div>
+
+        <div class="weather-state" *ngIf="weatherLoading">
+          Loading weather for this location...
+        </div>
+
+        <div class="weather-state warning" *ngIf="!weatherLoading && weatherError">
+          {{ weatherError }}
+        </div>
+
+        <ng-container *ngIf="!weatherLoading && !weatherError && weatherInsights">
+          <article [style.background]="getConditionAccent(weatherInsights.condition)" [style.border-color]="getRainRiskColor(weatherInsights.rainProbability)" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:24px;border:1px solid;border-radius:18px">
+            <div style="display:flex;align-items:center;gap:18px">
+              <span style="font-size:52px;line-height:1">{{ getForecastIcon(weatherInsights.condition) }}</span>
+              <div style="display:grid;gap:4px">
+                <span class="panel-kicker">Current Weather</span>
+                <strong style="font-size:44px;line-height:1">{{ formatWeatherValue(weatherInsights.temperature) }}&deg;C</strong>
+                <h3 style="margin:0">{{ weatherInsights.condition }}</h3>
+              </div>
+            </div>
+            <aside [style.background]="getRainRiskBg(weatherInsights.rainProbability)" style="display:grid;gap:6px;max-width:320px;padding:16px;border-radius:14px">
+              <span style="font-size:22px">{{ getWeatherInsightIcon() }}</span>
+              <strong>{{ getWeatherInsightTitle() }}</strong>
+              <small>{{ getWeatherInsight() }}</small>
+            </aside>
+          </article>
+
+          <article style="display:grid;gap:18px;padding:18px;background:#f8faf7;border:1px solid var(--color-border);border-radius:16px">
+            <span class="panel-kicker">Field Status</span>
+            <div class="weather-metrics">
+            <article>
+              <span style="font-size:28px">🌡️</span>
+              <span>Temperature</span>
+              <strong>{{ formatWeatherValue(weatherInsights.temperature) }}&deg;C</strong>
+              <small>{{ weatherInsights.condition }}</small>
+            </article>
+            <article>
+              <span style="font-size:28px">💧</span>
+              <span>Humidity</span>
+              <strong>{{ formatWeatherValue(weatherInsights.humidity, '%') }}</strong>
+              <small>Current air moisture</small>
+            </article>
+            <article>
+              <span style="font-size:28px">🌬️</span>
+              <span>Wind Speed</span>
+              <strong>{{ formatWeatherValue(weatherInsights.windSpeed, ' km/h') }}</strong>
+              <small>At 10 m height</small>
+            </article>
+            <article [style.border-color]="getRainRiskColor(weatherInsights.rainProbability)">
+              <span style="font-size:28px">🌧️</span>
+              <span>Rain Probability</span>
+              <strong>{{ formatWeatherValue(weatherInsights.rainProbability, '%') }}</strong>
+              <small>{{ weatherInsights.precipitation }} mm precipitation</small>
+            </article>
+            </div>
+            <strong>Recommended activities:</strong>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }}</span>
+            </div>
+          </article>
+
+          <article style="display:grid;gap:16px;padding:18px;background:#fff;border:1px solid var(--color-border);border-radius:16px">
+            <span class="panel-kicker">Weekly Forecast</span>
+            <div class="forecast-strip">
+            <article *ngFor="let day of weatherInsights.forecast" [style.background]="getConditionAccent(day.condition)" [style.border-color]="getRainRiskColor(day.rainProbability)" style="display:grid;gap:10px;text-align:center;align-content:start">
+              <span>{{ formatForecastDate(day.date) }}</span>
+              <strong style="font-size:34px;line-height:1">{{ getForecastIcon(day.condition) }}</strong>
+              <div style="display:grid;gap:3px">
+                <strong>{{ formatWeatherValue(day.high) }}&deg; / {{ formatWeatherValue(day.low) }}&deg;</strong>
+                <small>{{ formatWeatherValue(day.rainProbability, '% rain') }}</small>
+              </div>
+            </article>
+            </div>
+          </article>
+
+          <article style="display:none">
+            <span class="panel-kicker">Field Status</span>
+            <div style="display:none">
+              <strong>🌡 {{ formatWeatherValue(weatherInsights.temperature) }}&deg;C</strong>
+              <strong>💧 {{ formatWeatherValue(weatherInsights.humidity, '%') }}</strong>
+              <strong>🌧 {{ formatWeatherValue(weatherInsights.rainProbability, '%') }}</strong>
+            </div>
+            <small style="display:none">Recommended activities:
+              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }} </span>
+            </small>
+            <strong>Recommended activities:</strong>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }}</span>
+            </div>
+          </article>
+        </ng-container>
       </section>
 
       <section class="field-operations-grid">
@@ -275,18 +365,46 @@
             <div class="lifecycle-header">
               <div>
                 <h4>Lifecycle Tracking</h4>
-                <span>{{ selectedFieldCropLabel }} | static planning view</span>
+                <span>{{ selectedFieldCropLabel }} | crop lifecycle</span>
               </div>
-              <strong>65%</strong>
+              <strong>{{ getSelectedCropProgress() }}%</strong>
             </div>
 
+            <div class="field-detail-grid">
+              <div>
+                <span>Planting Date</span>
+                <strong>{{ formatLifecycleDate(getSelectedCrop()?.plantingDate) }}</strong>
+              </div>
+              <div>
+                <span>Current Stage</span>
+                <strong>{{ getSelectedCropStage() }}</strong>
+              </div>
+              <div>
+                <span>Days in Stage</span>
+                <strong>{{ getSelectedCropDaysInStage() }}</strong>
+              </div>
+              <div>
+                <span>Expected Harvest</span>
+                <strong>{{ formatLifecycleDate(getSelectedCrop()?.expectedHarvestDate) }}</strong>
+              </div>
+            </div>
+
+            <label *ngIf="getSelectedCrop()">
+              Update stage
+              <select class="farmops-field" [ngModel]="getSelectedCropStage()" (ngModelChange)="updateSelectedCropStage($event)" name="cropLifecycleStage">
+                <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
+              </select>
+            </label>
+
             <div class="lifecycle-track">
-              <article [class]="getLifecycleState(0)"><span></span><strong>Land Preparation</strong></article>
-              <article [class]="getLifecycleState(1)"><span></span><strong>Planting</strong></article>
-              <article [class]="getLifecycleState(2)"><span></span><strong>Vegetative Phase</strong></article>
-              <article [class]="getLifecycleState(3)"><span></span><strong>Flowering</strong></article>
-              <article [class]="getLifecycleState(4)"><span></span><strong>Ripening</strong></article>
-              <article [class]="getLifecycleState(5)"><span></span><strong>Harvest</strong></article>
+              <article *ngFor="let stage of lifecycleStages; let i = index" [class]="getLifecycleState(i)">
+                <span></span>
+                <strong>{{ stage }}</strong>
+              </article>
+            </div>
+
+            <div class="empty-state compact" *ngIf="!getSelectedCrop()">
+              Link this field to a crop to track lifecycle stages.
             </div>
           </div>
         </article>
@@ -500,3 +618,4 @@
     </form>
   </aside>
 </main>
+

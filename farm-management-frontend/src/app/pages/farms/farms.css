@@ -16,6 +16,7 @@
 .filters-card,
 .farm-list-item,
 .farm-operations,
+.weather-panel,
 .fields-panel,
 .field-breakdown,
 .farm-drawer,
@@ -42,6 +43,8 @@
 .farm-summary span,
 .field-detail-grid span,
 .monitoring-grid span,
+.weather-metrics span,
+.forecast-strip span,
 .coordinate-preview span {
   display: block;
   color: var(--color-muted-strong);
@@ -89,6 +92,8 @@
 .farm-summary div,
 .field-detail-grid div,
 .monitoring-grid article,
+.weather-metrics article,
+.forecast-strip article,
 .coordinate-preview {
   padding: 14px;
   background: #f8faf7;
@@ -436,24 +441,6 @@
   font-size: 28px;
 }
 
-.map-layer-strip {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(17, 24, 20, .72);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 999px;
-}
-
-.map-layer-strip span {
-  padding: 7px 10px;
-  color: #eef8e9;
-  background: rgba(255,255,255,.1);
-  border-radius: 999px;
-}
-
 .fields-panel,
 .field-breakdown {
   display: grid;
@@ -467,6 +454,19 @@
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   gap: 18px;
 }
+
+.weather-panel {
+  display: grid;
+  padding: 22px;
+}
+
+.weather-metrics,
+.forecast-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
 
 .field-list {
   display: grid;
@@ -819,7 +819,9 @@
   .coordinate-grid,
   .farm-summary,
   .field-detail-grid,
-  .monitoring-grid {
+  .monitoring-grid,
+  .weather-metrics,
+  .forecast-strip {
     width: 100%;
     grid-template-columns: 1fr;
   }
@@ -850,6 +852,7 @@
   }
 
   .farm-operations,
+  .weather-panel,
   .fields-panel,
   .field-breakdown,
   .farm-drawer,

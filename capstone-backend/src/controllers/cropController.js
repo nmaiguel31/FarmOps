@@ -40,7 +40,11 @@ const createCrop = async (req, res) => {
       name: req.body.name,
       type: req.body.type,
       season: req.body.season,
-      farm: req.body.farm
+      farm: req.body.farm,
+      currentStage: req.body.currentStage || 'Planning',
+      stageStartedAt: req.body.stageStartedAt || new Date(),
+      plantingDate: req.body.plantingDate || undefined,
+      expectedHarvestDate: req.body.expectedHarvestDate || undefined
     });
     
     logEvent('info', 'CROP_CREATED', {
@@ -208,9 +212,13 @@ const updateCrop = async (req, res) => {
 
     }
 
-    crop.name = req.body.name;
-    crop.type = req.body.type;
-    crop.season = req.body.season;
+    crop.name = req.body.name ?? crop.name;
+    crop.type = req.body.type ?? crop.type;
+    crop.season = req.body.season ?? crop.season;
+    crop.currentStage = req.body.currentStage ?? crop.currentStage;
+    crop.stageStartedAt = req.body.stageStartedAt ?? crop.stageStartedAt;
+    crop.plantingDate = req.body.plantingDate ?? crop.plantingDate;
+    crop.expectedHarvestDate = req.body.expectedHarvestDate ?? crop.expectedHarvestDate;
 
     await crop.save();
 

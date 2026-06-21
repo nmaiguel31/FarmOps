@@ -21,6 +21,33 @@ const cropSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Farm',
       required: true
+    },
+
+    currentStage: {
+      type: String,
+      enum: [
+        'Planning',
+        'Land Preparation',
+        'Planting',
+        'Vegetative Growth',
+        'Flowering',
+        'Ripening',
+        'Harvest'
+      ],
+      default: 'Planning'
+    },
+
+    stageStartedAt: {
+      type: Date,
+      default: Date.now
+    },
+
+    plantingDate: {
+      type: Date
+    },
+
+    expectedHarvestDate: {
+      type: Date
     }
   },
   {

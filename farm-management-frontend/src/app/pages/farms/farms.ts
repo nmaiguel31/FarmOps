@@ -13,7 +13,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
+import { Crop as CropService } from '../../services/crop';
 import { GoogleMapsLoader } from '../../services/google-maps-loader';
+import { WeatherInsights, WeatherService } from '../../services/weather';
 
 @Component({
   selector: 'app-farms',
@@ -61,6 +63,25 @@ export class Farms implements OnInit, AfterViewInit {
   mapsReady = false;
   isDrawingFarmBoundary = false;
   isDrawingFieldBoundary = false;
+  weatherInsights: WeatherInsights | null = null;
+  weatherLoading = false;
+  weatherError = '';
+  selectedMapLayer = this.getInitialMapLayer();
+  readonly mapLayerOptions = [
+    { label: 'Map', value: 'roadmap' },
+    { label: 'Satellite', value: 'satellite' },
+    { label: 'Hybrid', value: 'hybrid' },
+    { label: 'Terrain', value: 'terrain' }
+  ];
+  readonly lifecycleStages = [
+    'Planning',
+    'Land Preparation',
+    'Planting',
+    'Vegetative Growth',
+    'Flowering',
+    'Ripening',
+    'Harvest'
+  ];
   private farmFormMap: any = null;
   private farmFormMarker: any = null;
   private farmFormPolygon: any = null;
@@ -69,10 +90,14 @@ export class Farms implements OnInit, AfterViewInit {
   private fieldBoundaryPolygon: any = null;
   private fieldBoundaryVertexMarkers: any[] = [];
   private farmGeocoder: any = null;
+  private activeMaps: any[] = [];
+  private mapLayerButtonGroups: HTMLButtonElement[][] = [];
 
   private mapsLoader = inject(GoogleMapsLoader);
   private farmService = inject(Farm);
   private fieldService = inject(Field);
+  private cropService = inject(CropService);
+  private weatherService = inject(WeatherService);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
@@ -226,6 +251,7 @@ updateFarm() {
         }
 
         this.renderSelectedFarmMap();
+        this.loadWeatherForSelection();
         this.cdr.detectChanges();
 
       },
@@ -245,6 +271,7 @@ updateFarm() {
         this.fields = [...data];
         this.syncSelectedField();
         this.renderSelectedFarmMap();
+        this.loadWeatherForSelection();
         this.cdr.detectChanges();
 
       },
@@ -294,6 +321,202 @@ updateFarm() {
 
   }
 
+  formatWeatherValue(value: any, suffix = '') {
+
+    const metric = Number(value);
+    return Number.isFinite(metric) ? `${Math.round(metric)}${suffix}` : '--';
+
+  }
+
+  formatForecastDate(date: string) {
+
+    return new Date(date).toLocaleDateString(
+      'en-US',
+      {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      }
+    );
+
+  }
+
+  getWeatherTargetName() {
+
+    return this.selectedField?.name || this.selectedFarm?.name || 'selected farm';
+
+  }
+
+  getRainRiskClass(value: any) {
+
+    const rain = Number(value || 0);
+
+    if (rain >= 70) {
+      return 'rain-high';
+    }
+
+    if (rain >= 35) {
+      return 'rain-medium';
+    }
+
+    return 'rain-low';
+
+  }
+
+  getRainRiskColor(value: any) {
+
+    const risk = this.getRainRiskClass(value);
+
+    if (risk === 'rain-high') {
+      return '#fca5a5';
+    }
+
+    if (risk === 'rain-medium') {
+      return '#f6c453';
+    }
+
+    return '#bbf7d0';
+
+  }
+
+  getRainRiskBg(value: any) {
+
+    const risk = this.getRainRiskClass(value);
+
+    if (risk === 'rain-high') {
+      return '#fee2e2';
+    }
+
+    if (risk === 'rain-medium') {
+      return '#fff3cf';
+    }
+
+    return '#eef8ef';
+
+  }
+
+  getWeatherInsight() {
+
+    if (!this.weatherInsights) {
+      return '';
+    }
+
+    if (this.hasHighRainRisk()) {
+      return 'Rain is likely soon. Consider delaying irrigation.';
+    }
+
+    if (this.weatherInsights.windSpeed >= 30) {
+      return 'Wind may affect spraying operations.';
+    }
+
+    return 'Conditions look stable for field operations.';
+
+  }
+
+  getWeatherInsightTitle() {
+
+    if (!this.weatherInsights) {
+      return 'Field Recommendation';
+    }
+
+    if (this.hasHighRainRisk()) {
+      return 'Rain expected within 48 hours';
+    }
+
+    if (this.weatherInsights.windSpeed >= 30) {
+      return 'Wind advisory';
+    }
+
+    return 'Field Recommendation';
+
+  }
+
+  getWeatherInsightIcon() {
+
+    if (this.hasHighRainRisk()) {
+      return '⚠️';
+    }
+
+    if (this.weatherInsights && this.weatherInsights.windSpeed >= 30) {
+      return '🌬️';
+    }
+
+    return '🌱';
+
+  }
+
+  getForecastIcon(condition: string) {
+
+    const value = (condition || '').toLowerCase();
+
+    if (value.includes('storm')) {
+      return '⛈️';
+    }
+
+    if (value.includes('rain') || value.includes('drizzle')) {
+      return '🌧️';
+    }
+
+    if (value.includes('cloud') || value.includes('fog')) {
+      return '☁️';
+    }
+
+    return '☀️';
+
+  }
+
+  getConditionAccent(condition: string) {
+
+    const value = (condition || '').toLowerCase();
+
+    if (value.includes('storm')) {
+      return '#fff3cf';
+    }
+
+    if (value.includes('rain') || value.includes('drizzle')) {
+      return '#fee2e2';
+    }
+
+    if (value.includes('cloud') || value.includes('fog')) {
+      return '#e8f2ff';
+    }
+
+    return '#fff8d7';
+
+  }
+
+  getOperationalRecommendations() {
+
+    if (!this.weatherInsights) {
+      return [];
+    }
+
+    const recommendations = ['Inspection'];
+
+    if (this.weatherInsights.rainProbability < 70) {
+      recommendations.unshift('Irrigation');
+    }
+
+    if (this.weatherInsights.windSpeed < 30 && this.weatherInsights.rainProbability < 50) {
+      recommendations.splice(1, 0, 'Fertilization');
+    }
+
+    return recommendations;
+
+  }
+
+  private hasHighRainRisk() {
+
+    if (!this.weatherInsights) {
+      return false;
+    }
+
+    return this.weatherInsights.rainProbability >= 70 ||
+      this.weatherInsights.forecast.slice(0, 2)
+        .some(day => day.rainProbability >= 70);
+
+  }
+
   get selectedFieldCropLabel() {
     return this.selectedField
       ? this.getFieldCropLabel(this.selectedField)
@@ -330,6 +553,100 @@ updateFarm() {
     }
 
     return 68;
+  }
+
+  private loadWeatherForSelection() {
+
+    const coordinates = this.getWeatherCoordinates();
+
+    this.weatherInsights = null;
+    this.weatherError = '';
+
+    if (!coordinates) {
+      this.weatherLoading = false;
+      this.weatherError =
+        'Add farm coordinates or draw a field boundary to load weather insights.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.weatherLoading = true;
+
+    this.weatherService.getWeather(coordinates.lat, coordinates.lng)
+      .subscribe({
+        next: (weather) => {
+          this.weatherInsights = weather;
+          this.weatherLoading = false;
+          this.weatherError = '';
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.weatherInsights = null;
+          this.weatherLoading = false;
+          this.weatherError =
+            'Weather data is temporarily unavailable for this location.';
+          this.cdr.detectChanges();
+        }
+      });
+
+  }
+
+  private getWeatherCoordinates() {
+
+    const fieldCoordinates =
+      this.getFieldWeatherCoordinates(this.selectedField);
+
+    if (fieldCoordinates) {
+      return fieldCoordinates;
+    }
+
+    const farmLat = Number(this.selectedFarm?.latitude);
+    const farmLng = Number(this.selectedFarm?.longitude);
+
+    if (Number.isFinite(farmLat) && Number.isFinite(farmLng) && farmLat && farmLng) {
+      return {
+        lat: farmLat,
+        lng: farmLng
+      };
+    }
+
+    return null;
+
+  }
+
+  private getFieldWeatherCoordinates(field: any) {
+
+    if (!field) {
+      return null;
+    }
+
+    const lat = Number(field.latitude);
+    const lng = Number(field.longitude);
+
+    if (Number.isFinite(lat) && Number.isFinite(lng) && lat && lng) {
+      return { lat, lng };
+    }
+
+    const polygonCoordinates =
+      field.polygonCoordinates || [];
+
+    if (!polygonCoordinates.length) {
+      return null;
+    }
+
+    const center = polygonCoordinates.reduce(
+      (sum: any, point: any) => ({
+        lat: sum.lat + Number(point.lat || 0),
+        lng: sum.lng + Number(point.lng || 0)
+      }),
+      { lat: 0, lng: 0 }
+    );
+
+    return {
+      lat: center.lat / polygonCoordinates.length,
+      lng: center.lng / polygonCoordinates.length
+    };
+
   }
 
   getFieldCountForFarm(farm: any) {
@@ -421,6 +738,7 @@ updateFarm() {
     this.expandedFarmIds.add(farm._id);
     this.syncSelectedField();
     this.renderSelectedFarmMap();
+    this.loadWeatherForSelection();
 
   }
 
@@ -431,6 +749,7 @@ updateFarm() {
       this.expandedFarmIds.add(field.farm?._id || field.farm);
     }
     this.renderSelectedFarmMap();
+    this.loadWeatherForSelection();
     this.cdr.detectChanges();
 
   }
@@ -599,23 +918,111 @@ updateFarm() {
 
   getLifecycleState(index: number) {
 
-    if (!this.selectedField) {
-      return 'pending';
-    }
+    const currentIndex =
+      this.lifecycleStages.indexOf(this.getSelectedCropStage());
 
-    if (this.selectedField.status === 'Harvested') {
+    if (index < currentIndex) {
       return 'complete';
     }
 
-    if (this.selectedField.status === 'Planned') {
-      return index === 0 ? 'current' : 'pending';
+    if (index === currentIndex) {
+      return 'current';
     }
 
-    if (this.selectedField.status === 'Resting') {
-      return index < 2 ? 'complete' : index === 2 ? 'current' : 'pending';
+    return 'pending';
+
+  }
+
+  getSelectedCrop() {
+
+    const crop = this.selectedField?.crop;
+
+    if (crop?._id) {
+      return crop;
     }
 
-    return index < 3 ? 'complete' : index === 3 ? 'current' : 'pending';
+    return this.crops.find(item => item._id === crop) || null;
+
+  }
+
+  getSelectedCropStage() {
+
+    return this.getSelectedCrop()?.currentStage || 'Planning';
+
+  }
+
+  getSelectedCropProgress() {
+
+    const currentIndex =
+      Math.max(this.lifecycleStages.indexOf(this.getSelectedCropStage()), 0);
+
+    return Math.round(((currentIndex + 1) / this.lifecycleStages.length) * 100);
+
+  }
+
+  getSelectedCropDaysInStage() {
+
+    const startedAt =
+      this.getSelectedCrop()?.stageStartedAt;
+
+    if (!startedAt) {
+      return 0;
+    }
+
+    const start = new Date(startedAt).getTime();
+    const now = Date.now();
+
+    if (!Number.isFinite(start)) {
+      return 0;
+    }
+
+    return Math.max(Math.floor((now - start) / 86400000), 0);
+
+  }
+
+  formatLifecycleDate(date: any) {
+
+    if (!date) {
+      return '-';
+    }
+
+    return new Date(date).toLocaleDateString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }
+    );
+
+  }
+
+  updateSelectedCropStage(stage: string) {
+
+    const crop = this.getSelectedCrop();
+
+    if (!crop || !this.lifecycleStages.includes(stage)) {
+      return;
+    }
+
+    const payload = {
+      name: crop.name,
+      type: crop.type,
+      season: crop.season,
+      farm: crop.farm?._id || crop.farm || this.selectedFarm?._id,
+      currentStage: stage,
+      stageStartedAt: new Date().toISOString(),
+      plantingDate: crop.plantingDate || (stage === 'Planting' ? new Date().toISOString() : undefined),
+      expectedHarvestDate: crop.expectedHarvestDate || undefined
+    };
+
+    this.cropService.updateCrop(crop._id, payload).subscribe({
+      next: () => {
+        this.loadCrops();
+        this.loadFields();
+      },
+      error: (error) => console.error(error)
+    });
 
   }
   
@@ -648,11 +1055,12 @@ updateFarm() {
         const map = new google.maps.Map(
           mapElement,
           {
-            center: position,
-            zoom: 12,
-            disableDefaultUI: true,
-            zoomControl: true,
-            fullscreenControl: true
+        center: position,
+        zoom: 12,
+        mapTypeId: this.selectedMapLayer,
+        disableDefaultUI: true,
+        zoomControl: true,
+        fullscreenControl: true
           }
         );
 
@@ -730,12 +1138,13 @@ renderSelectedFarmMap() {
       {
         center: position,
         zoom: hasCoordinates ? 16 : 6,
-        mapTypeId: 'hybrid',
+        mapTypeId: this.selectedMapLayer,
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: true
       }
     );
+    this.addMapLayerControls(map);
 
     new google.maps.Marker({
       position,
@@ -869,13 +1278,14 @@ private initializeFarmFormMap() {
     {
       center: position,
       zoom: hasCoordinates ? 16 : 6,
-      mapTypeId: 'hybrid',
+      mapTypeId: this.selectedMapLayer,
       streetViewControl: false,
       mapTypeControl: false,
       fullscreenControl: true
     }
   );
   this.addMapBoundaryControls(this.farmFormMap, 'farm');
+  this.addMapLayerControls(this.farmFormMap);
 
   this.farmFormMarker = new google.maps.Marker({
     position,
@@ -1169,13 +1579,14 @@ private initializeFieldBoundaryMap() {
     {
       center: position,
       zoom: hasCoordinates ? 16 : 6,
-      mapTypeId: 'hybrid',
+      mapTypeId: this.selectedMapLayer,
       streetViewControl: false,
       mapTypeControl: false,
       fullscreenControl: true
     }
   );
   this.addMapBoundaryControls(this.fieldBoundaryMap, 'field');
+  this.addMapLayerControls(this.fieldBoundaryMap);
 
   this.renderFarmBoundaryOnMap(
     this.fieldBoundaryMap,
@@ -1442,6 +1853,96 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
 
   control.append(drawButton, finishButton, clearButton);
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(control);
+
+}
+
+private addMapLayerControls(map: any) {
+
+  if (!map || !google?.maps?.ControlPosition) {
+    return;
+  }
+
+  const control = document.createElement('div');
+  const buttons: HTMLButtonElement[] = [];
+  control.style.display = 'flex';
+  control.style.flexWrap = 'wrap';
+  control.style.gap = '6px';
+  control.style.margin = '12px';
+  control.style.padding = '7px';
+  control.style.background = 'rgba(255,255,255,.94)';
+  control.style.border = '1px solid rgba(15,23,42,.12)';
+  control.style.borderRadius = '14px';
+  control.style.boxShadow = '0 12px 32px rgba(15,23,42,.16)';
+
+  this.mapLayerOptions.forEach(option => {
+    const button =
+      this.createMapControlButton(option.label, option.value === this.selectedMapLayer);
+    button.dataset['layer'] = option.value;
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setSelectedMapLayer(option.value, map, buttons);
+    });
+
+    buttons.push(button);
+    control.appendChild(button);
+  });
+
+  this.activeMaps = this.activeMaps
+    .filter(activeMap => activeMap?.getDiv?.()?.isConnected);
+  this.activeMaps.push(map);
+  this.mapLayerButtonGroups.push(buttons);
+  this.updateMapLayerButtons(buttons);
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(control);
+
+}
+
+private setSelectedMapLayer(layer: string, map?: any, buttons: HTMLButtonElement[] = []) {
+
+  if (!this.isValidMapLayer(layer)) {
+    return;
+  }
+
+  this.selectedMapLayer = layer;
+  localStorage.setItem('farmops-map-layer', layer);
+
+  this.activeMaps = this.activeMaps
+    .filter(activeMap => activeMap?.getDiv?.()?.isConnected);
+  this.activeMaps.forEach(activeMap => activeMap.setMapTypeId(layer));
+
+  if (map && !this.activeMaps.includes(map)) {
+    map.setMapTypeId(layer);
+  }
+
+  this.mapLayerButtonGroups.forEach(group => this.updateMapLayerButtons(group));
+  this.cdr.detectChanges();
+
+}
+
+private updateMapLayerButtons(buttons: HTMLButtonElement[]) {
+
+  buttons.forEach(button => {
+    const active =
+      button.dataset['layer'] === this.selectedMapLayer;
+    button.style.color = active ? '#ffffff' : '#274236';
+    button.style.background = active ? '#16a34a' : '#ffffff';
+    button.style.border = active ? '0' : '1px solid rgba(15,23,42,.14)';
+  });
+
+}
+
+private getInitialMapLayer() {
+
+  const storedLayer =
+    localStorage.getItem('farmops-map-layer');
+
+  return this.isValidMapLayer(storedLayer) ? storedLayer as string : 'hybrid';
+
+}
+
+private isValidMapLayer(layer: any) {
+
+  return ['roadmap', 'satellite', 'hybrid', 'terrain'].includes(layer);
 
 }
 
