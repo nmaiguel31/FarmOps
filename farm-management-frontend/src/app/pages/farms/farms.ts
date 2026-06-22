@@ -107,7 +107,8 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
     { label: 'Map', value: 'roadmap' },
     { label: 'Satellite', value: 'satellite' },
     { label: 'Hybrid', value: 'hybrid' },
-    { label: 'Terrain', value: 'terrain' }
+    { label: 'Terrain', value: 'terrain' },
+    { label: 'NDVI', value: 'ndvi' }
   ];
   readonly lifecycleStages = [
     'Planning',
@@ -127,6 +128,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private fieldBoundaryMap: any = null;
   private fieldBoundaryPolygon: any = null;
   private fieldBoundaryVertexMarkers: any[] = [];
+  private ndviOverlays: any[] = [];
   private farmGeocoder: any = null;
   private activeMaps: any[] = [];
   private mapLayerButtonGroups: HTMLButtonElement[][] = [];
@@ -574,19 +576,7 @@ updateFarm() {
   }
 
   get selectedFieldHealthIndex() {
-    if (!this.selectedField) {
-      return 0;
-    }
-
-    if (this.selectedField.healthStatus === 'Critical') {
-      return 48;
-    }
-
-    if (this.selectedField.healthStatus === 'Watch') {
-      return 72;
-    }
-
-    return 91;
+    return this.selectedField ? this.getFieldHealthIndex(this.selectedField) : 0;
   }
 
   get selectedFieldSoilMoisture() {
@@ -603,6 +593,18 @@ updateFarm() {
     }
 
     return 68;
+  }
+
+  get selectedFieldNdviScore() {
+    return this.selectedField ? this.getFieldNdviScore(this.selectedField) : 0;
+  }
+
+  get selectedFieldVegetationStatus() {
+    return this.getVegetationStatus(this.selectedFieldNdviScore);
+  }
+
+  get selectedFieldNdviTone() {
+    return this.getNdviTone(this.selectedFieldNdviScore);
   }
 
   private loadWeatherForSelection() {
@@ -1085,6 +1087,170 @@ updateFarm() {
 
   }
 
+  getFieldHealthIndex(field: any) {
+
+    const normalized =
+      String(field?.healthStatus || '').toLowerCase();
+
+    if (normalized.includes('critical') || normalized.includes('poor')) {
+      return 28;
+    }
+
+    if (
+      normalized.includes('watch') ||
+      normalized.includes('fair') ||
+      normalized.includes('warning')
+    ) {
+      return 55;
+    }
+
+    return 91;
+
+  }
+
+  getFieldNdviScore(field: any) {
+
+    return this.getFieldHealthIndex(field);
+
+  }
+
+  getVegetationStatus(score: number) {
+
+    if (score <= 30) {
+      return 'Poor vegetation';
+    }
+
+    if (score <= 60) {
+      return 'Moderate vegetation';
+    }
+
+    if (score <= 80) {
+      return 'Healthy vegetation';
+    }
+
+    return 'Excellent vegetation';
+
+  }
+
+  getNdviTone(score: number) {
+
+    if (score <= 30) {
+      return 'tone-danger';
+    }
+
+    if (score <= 60) {
+      return 'tone-warning';
+    }
+
+    if (score <= 80) {
+      return 'tone-success';
+    }
+
+    return 'tone-excellent';
+
+  }
+
+  getFieldRecommendations() {
+
+    if (!this.selectedField) {
+      return [];
+    }
+
+    const recommendations: Array<{
+      title: string;
+      priority: 'Low' | 'Medium' | 'High';
+      reason: string;
+      action: string;
+    }> = [];
+    const healthIndex =
+      this.selectedFieldHealthIndex;
+    const soilMoisture =
+      this.selectedFieldSoilMoisture;
+    const ndviScore =
+      this.selectedFieldNdviScore;
+    const rainProbability =
+      this.weatherInsights?.rainProbability ?? null;
+    const lifecycleStage =
+      this.getSelectedCropStage();
+    const cropStatus =
+      String(this.selectedField.status || '').toLowerCase();
+
+    if (
+      soilMoisture < 40 &&
+      (rainProbability === null || rainProbability < 40)
+    ) {
+      recommendations.push({
+        title: 'Irrigation recommended',
+        priority: 'High',
+        reason: `Soil moisture is ${soilMoisture}% and near-term rain probability is ${this.formatRecommendationRain(rainProbability)}.`,
+        action: 'Schedule irrigation for this field and recheck soil moisture after watering.'
+      });
+    }
+
+    if (rainProbability !== null && rainProbability > 70) {
+      recommendations.push({
+        title: 'Delay irrigation',
+        priority: 'Medium',
+        reason: `Rain probability is ${rainProbability}%, which may naturally increase soil moisture soon.`,
+        action: 'Postpone irrigation and monitor conditions after the rainfall window.'
+      });
+    }
+
+    if (healthIndex < 50 || ndviScore < 50) {
+      recommendations.push({
+        title: 'Field inspection needed',
+        priority: 'High',
+        reason: `Health index is ${healthIndex}% and NDVI score is ${ndviScore}%, indicating possible crop stress.`,
+        action: 'Inspect the field for pests, disease, nutrient deficiency, irrigation gaps or uneven growth.'
+      });
+    }
+
+    if (
+      lifecycleStage === 'Flowering' ||
+      lifecycleStage === 'Ripening'
+    ) {
+      recommendations.push({
+        title: 'Increase crop monitoring',
+        priority: 'Medium',
+        reason: `${lifecycleStage} is a sensitive lifecycle stage for yield quality and harvest timing.`,
+        action: 'Check crop condition more frequently and avoid disruptive operations when possible.'
+      });
+    }
+
+    if (cropStatus.includes('harvested')) {
+      recommendations.push({
+        title: 'Review harvest outcome',
+        priority: 'Low',
+        reason: 'This field is marked as harvested, so operational focus can shift to performance review.',
+        action: 'Review yield notes, update crop records and compare revenue or expenses in financial records.'
+      });
+    }
+
+    if (!recommendations.length) {
+      recommendations.push({
+        title: 'No urgent action required',
+        priority: 'Low',
+        reason: 'Field health, moisture, vegetation and weather indicators are within stable operating ranges.',
+        action: 'Continue routine inspection and keep monitoring weather, lifecycle and NDVI changes.'
+      });
+    }
+
+    return recommendations;
+
+  }
+
+  getRecommendationPriorityClass(priority: string) {
+
+    return `priority-${String(priority || 'low').toLowerCase()}`;
+
+  }
+
+  private formatRecommendationRain(value: number | null) {
+
+    return value === null ? 'not available' : `${value}%`;
+
+  }
+
   getSelectedCrop() {
 
     const crop = this.selectedField?.crop;
@@ -1291,7 +1457,7 @@ updateFarm() {
           {
         center: position,
         zoom: 12,
-        mapTypeId: this.selectedMapLayer,
+        mapTypeId: this.getGoogleMapTypeId(),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: true
@@ -1358,6 +1524,8 @@ renderSelectedFarmMap() {
       return;
     }
 
+    this.clearNdviOverlays();
+
     const hasCoordinates =
       this.selectedFarm.latitude &&
       this.selectedFarm.longitude;
@@ -1372,7 +1540,7 @@ renderSelectedFarmMap() {
       {
         center: position,
         zoom: hasCoordinates ? 16 : 6,
-        mapTypeId: this.selectedMapLayer,
+        mapTypeId: this.getGoogleMapTypeId(),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: true
@@ -1512,7 +1680,7 @@ private initializeFarmFormMap() {
     {
       center: position,
       zoom: hasCoordinates ? 16 : 6,
-      mapTypeId: this.selectedMapLayer,
+      mapTypeId: this.getGoogleMapTypeId(),
       streetViewControl: false,
       mapTypeControl: false,
       fullscreenControl: true
@@ -1637,6 +1805,70 @@ private renderFieldBoundariesOnMap(map: any) {
       polygon.addListener('click', () => this.selectField(field));
       this.renderFieldBoundaryLabel(map, field);
     });
+
+  this.renderNdviLayerOnMap(map);
+
+}
+
+private renderNdviLayerOnMap(map: any) {
+
+  if (
+    this.selectedMapLayer !== 'ndvi' ||
+    !map ||
+    typeof google === 'undefined'
+  ) {
+    return;
+  }
+
+  this.selectedFarmFields
+    .filter(field => field.polygonCoordinates?.length)
+    .forEach(field => {
+      const selected =
+        this.selectedField?._id === field._id;
+
+      const overlay = new google.maps.Polygon({
+        paths: field.polygonCoordinates,
+        fillColor: this.getFieldNdviColor(field),
+        fillOpacity: selected ? .68 : .52,
+        strokeColor: selected ? '#f97316' : this.getFieldNdviColor(field),
+        strokeOpacity: selected ? 1 : .86,
+        strokeWeight: selected ? 3 : 2,
+        clickable: true,
+        zIndex: selected ? 40 : 30,
+        map
+      });
+
+      overlay.addListener('click', () => this.selectField(field));
+      this.ndviOverlays.push(overlay);
+    });
+
+}
+
+private clearNdviOverlays() {
+
+  this.ndviOverlays.forEach(overlay => overlay.setMap(null));
+  this.ndviOverlays = [];
+
+}
+
+private getFieldNdviColor(field: any) {
+
+  const score =
+    this.getFieldNdviScore(field);
+
+  if (score <= 30) {
+    return '#ef4444';
+  }
+
+  if (score <= 60) {
+    return '#facc15';
+  }
+
+  if (score <= 80) {
+    return '#84cc16';
+  }
+
+  return '#15803d';
 
 }
 
@@ -1813,7 +2045,7 @@ private initializeFieldBoundaryMap() {
     {
       center: position,
       zoom: hasCoordinates ? 16 : 6,
-      mapTypeId: this.selectedMapLayer,
+      mapTypeId: this.getGoogleMapTypeId(),
       streetViewControl: false,
       mapTypeControl: false,
       fullscreenControl: true
@@ -2142,10 +2374,21 @@ private setSelectedMapLayer(layer: string, map?: any, buttons: HTMLButtonElement
 
   this.activeMaps = this.activeMaps
     .filter(activeMap => activeMap?.getDiv?.()?.isConnected);
-  this.activeMaps.forEach(activeMap => activeMap.setMapTypeId(layer));
+  this.activeMaps.forEach(activeMap =>
+    activeMap.setMapTypeId(this.getGoogleMapTypeId(layer))
+  );
 
   if (map && !this.activeMaps.includes(map)) {
-    map.setMapTypeId(layer);
+    map.setMapTypeId(this.getGoogleMapTypeId(layer));
+  }
+
+  this.clearNdviOverlays();
+  if (this.selectedMapLayer === 'ndvi') {
+    this.activeMaps.forEach(activeMap => this.renderNdviLayerOnMap(activeMap));
+
+    if (map && !this.activeMaps.includes(map)) {
+      this.renderNdviLayerOnMap(map);
+    }
   }
 
   this.mapLayerButtonGroups.forEach(group => this.updateMapLayerButtons(group));
@@ -2174,9 +2417,15 @@ private getInitialMapLayer() {
 
 }
 
+private getGoogleMapTypeId(layer = this.selectedMapLayer) {
+
+  return layer === 'ndvi' ? 'hybrid' : layer;
+
+}
+
 private isValidMapLayer(layer: any) {
 
-  return ['roadmap', 'satellite', 'hybrid', 'terrain'].includes(layer);
+  return ['roadmap', 'satellite', 'hybrid', 'terrain', 'ndvi'].includes(layer);
 
 }
 

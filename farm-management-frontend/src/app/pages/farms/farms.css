@@ -398,6 +398,7 @@
   gap: 16px;
   align-content: start;
   width: min(320px, calc(100% - 36px));
+  min-width: 0;
   padding: 22px;
   background: #fff;
   border: 1px solid var(--color-border);
@@ -417,14 +418,18 @@
 
 .mini-monitoring {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  min-width: 0;
 }
 
 .mini-monitoring article {
+  min-width: 0;
   padding: 16px;
   background: #f8faf7;
   border: 1px solid #e5ece4;
   border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
 .mini-monitoring span {
@@ -438,7 +443,17 @@
 .mini-monitoring strong {
   display: block;
   margin-top: 6px;
-  font-size: 28px;
+  font-size: clamp(18px, 1.7vw, 28px);
+  line-height: 1.08;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.mini-monitoring .vegetation-status-value {
+  font-size: clamp(13px, 1vw, 16px);
+  line-height: 1.2;
+  white-space: normal;
 }
 
 .fields-panel,
@@ -616,6 +631,10 @@
   color: #078343;
 }
 
+.tone-excellent {
+  color: #166534;
+}
+
 .tone-warning {
   color: #c27a00;
 }
@@ -636,11 +655,17 @@
   color: #078343;
 }
 
+.field-metric-card strong.tone-excellent,
+.mini-monitoring strong.tone-excellent {
+  color: #166534;
+}
+
 .field-metric-card strong.tone-warning {
   color: #c27a00;
 }
 
-.field-metric-card strong.tone-danger {
+.field-metric-card strong.tone-danger,
+.mini-monitoring strong.tone-danger {
   color: #c72222;
 }
 
@@ -649,6 +674,18 @@
 }
 
 .field-metric-card strong.tone-blue {
+  color: #075fbd;
+}
+
+.mini-monitoring strong.tone-success {
+  color: #078343;
+}
+
+.mini-monitoring strong.tone-warning {
+  color: #c27a00;
+}
+
+.mini-monitoring strong.tone-blue {
   color: #075fbd;
 }
 
@@ -666,6 +703,77 @@
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.ai-recommendations-panel {
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 2vw, 24px);
+  background: #fff;
+  border: 1px solid #dfe8dc;
+  border-radius: var(--radius-md);
+}
+
+.recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.recommendation-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e1e8df;
+  border-left: 5px solid var(--priority-color);
+  border-radius: var(--radius-md);
+}
+
+.recommendation-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recommendation-card h5 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.recommendation-card-top span {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  color: var(--priority-color);
+  background: var(--priority-bg);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recommendation-card small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-muted-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.priority-high {
+  --priority-color: #c72222;
+  --priority-bg: #fde9e7;
+}
+
+.priority-medium {
+  --priority-color: #c27a00;
+  --priority-bg: #fff4d9;
+}
+
+.priority-low {
+  --priority-color: #075fbd;
+  --priority-bg: #e8f3ff;
 }
 
 .lifecycle-panel {
@@ -1134,6 +1242,7 @@
   }
 
   .field-metric-grid,
+  .recommendation-grid,
   .lifecycle-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1157,6 +1266,7 @@
     .coordinate-grid,
     .farm-summary,
     .field-metric-grid,
+    .recommendation-grid,
     .lifecycle-summary-grid,
     .weather-metrics,
   .forecast-strip {

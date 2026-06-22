@@ -162,11 +162,21 @@
           <div class="mini-monitoring">
             <article>
               <span>Health</span>
-              <strong>{{ selectedFieldHealthIndex }}%</strong>
+              <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndex }}%</strong>
             </article>
             <article>
               <span>Soil Moisture</span>
-              <strong>{{ selectedFieldSoilMoisture }}%</strong>
+              <strong [ngClass]="getMoistureTone(selectedFieldSoilMoisture)">{{ selectedFieldSoilMoisture }}%</strong>
+            </article>
+            <article>
+              <span>NDVI Score</span>
+              <strong [ngClass]="selectedFieldNdviTone">{{ selectedFieldNdviScore }}%</strong>
+            </article>
+            <article>
+              <span>Vegetation Status</span>
+              <strong class="vegetation-status-value" [ngClass]="selectedFieldNdviTone">
+                {{ selectedFieldVegetationStatus }}
+              </strong>
             </article>
           </div>
         </aside>
@@ -384,6 +394,37 @@
             <span>Notes</span>
             <p>{{ selectedField.notes }}</p>
           </div>
+
+          <section class="ai-recommendations-panel">
+            <div class="ai-recommendations-header">
+              <div>
+                <span class="panel-kicker">AI Recommendations</span>
+                <h4>AI Recommendations</h4>
+                <p>Rule-based agronomic insights generated from field, weather, lifecycle and vegetation indicators.</p>
+              </div>
+            </div>
+
+            <div class="recommendation-grid">
+              <article
+                *ngFor="let recommendation of getFieldRecommendations()"
+                class="recommendation-card"
+                [ngClass]="getRecommendationPriorityClass(recommendation.priority)"
+              >
+                <div class="recommendation-card-top">
+                  <h5>{{ recommendation.title }}</h5>
+                  <span>{{ recommendation.priority }}</span>
+                </div>
+                <div>
+                  <small>Reason</small>
+                  <p>{{ recommendation.reason }}</p>
+                </div>
+                <div>
+                  <small>Suggested action</small>
+                  <p>{{ recommendation.action }}</p>
+                </div>
+              </article>
+            </div>
+          </section>
 
           <div class="lifecycle-panel" *ngIf="getSelectedCrop(); else noLinkedCropLifecycle">
             <div class="lifecycle-header">
