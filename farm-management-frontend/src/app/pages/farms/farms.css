@@ -41,8 +41,6 @@
 .panel-kicker,
 .hero-metrics span,
 .farm-summary span,
-.field-detail-grid span,
-.monitoring-grid span,
 .weather-metrics span,
 .forecast-strip span,
 .coordinate-preview span {
@@ -90,8 +88,6 @@
 
 .hero-metrics div,
 .farm-summary div,
-.field-detail-grid div,
-.monitoring-grid article,
 .weather-metrics article,
 .forecast-strip article,
 .coordinate-preview {
@@ -160,9 +156,7 @@
 
 .filter-grid,
 .coordinate-grid,
-.farm-summary,
-.field-detail-grid,
-.monitoring-grid {
+.farm-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -279,8 +273,7 @@
 }
 
 .farm-summary strong,
-.field-detail-grid strong,
-.monitoring-grid strong {
+.field-metric-card strong {
   display: block;
   margin-top: 5px;
   overflow: hidden;
@@ -345,6 +338,13 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.card-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .farm-dashboard-grid {
@@ -445,14 +445,19 @@
 .field-breakdown {
   display: grid;
   gap: 18px;
+  min-width: 0;
+  box-sizing: border-box;
   align-content: start;
   padding: 22px;
+  overflow: hidden;
 }
 
 .field-operations-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(235px, 280px) minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .weather-panel {
@@ -529,12 +534,122 @@
   background: #e8f3d7;
 }
 
-.field-detail-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.field-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 16px;
 }
 
-.monitoring-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.field-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 92px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e1e8df;
+  border-radius: var(--radius-md);
+}
+
+.field-metric-card span:not(.metric-icon) {
+  display: block;
+  color: #395548;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.field-metric-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.metric-icon,
+.info-icon {
+  display: grid;
+  flex: 0 0 auto;
+  position: relative;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+}
+
+.metric-icon svg,
+.info-icon svg,
+.stage-node svg {
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.health-icon {
+  color: #c62828;
+  background: #fde9e7;
+}
+
+.irrigation-icon {
+  color: #b77900;
+  background: #fff4d9;
+}
+
+.crop-icon,
+.index-icon {
+  color: #16864f;
+  background: #e8f7e8;
+}
+
+.moisture-icon {
+  color: #1264b8;
+  background: #e8f3ff;
+}
+
+.tone-success {
+  color: #078343;
+}
+
+.tone-warning {
+  color: #c27a00;
+}
+
+.tone-danger {
+  color: #c72222;
+}
+
+.tone-muted {
+  color: #5f7468;
+}
+
+.tone-blue {
+  color: #075fbd;
+}
+
+.field-metric-card strong.tone-success {
+  color: #078343;
+}
+
+.field-metric-card strong.tone-warning {
+  color: #c27a00;
+}
+
+.field-metric-card strong.tone-danger {
+  color: #c72222;
+}
+
+.field-metric-card strong.tone-muted {
+  color: #5f7468;
+}
+
+.field-metric-card strong.tone-blue {
+  color: #075fbd;
 }
 
 .field-notes {
@@ -555,72 +670,290 @@
 
 .lifecycle-panel {
   display: grid;
-  gap: 16px;
-  padding: 16px;
-  background: #f8faf7;
-  border: 1px solid #e5ece4;
+  gap: 28px;
+  width: 100%;
+  padding: clamp(22px, 2vw, 28px);
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e1e8df;
   border-radius: var(--radius-md);
 }
 
 .lifecycle-header h4 {
   margin: 0 0 4px;
-  font-size: 20px;
-}
-
-.lifecycle-header strong {
-  color: var(--color-primary-strong);
   font-size: 24px;
 }
 
-.lifecycle-track {
+.lifecycle-progress {
   display: grid;
-  grid-template-columns: repeat(6, minmax(100px, 1fr));
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  justify-items: end;
+  gap: 6px;
+  width: min(280px, 100%);
 }
 
-.lifecycle-track article {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  min-width: 100px;
+.lifecycle-progress span {
   color: var(--color-muted-strong);
-  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.lifecycle-track span {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  background: #fff;
-  border: 5px solid #dde7da;
+.lifecycle-progress strong {
+  color: var(--color-primary-strong);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  background: #e7ece5;
   border-radius: 999px;
 }
 
-.lifecycle-track span::after {
-  width: 12px;
-  height: 7px;
+.progress-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #0d8f59, #2fb66f);
+  border-radius: inherit;
+}
+
+.lifecycle-timeline-shell {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px 0 0;
+}
+
+.lifecycle-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0;
+  width: 100%;
+  overflow: hidden;
+  padding: 42px 6px 0;
+  box-sizing: border-box;
+}
+
+.lifecycle-track::before,
+.lifecycle-track::after {
+  position: absolute;
+  top: 77px;
+  right: 7.5%;
+  left: 7.5%;
+  height: 4px;
   content: "";
-  border-left: 3px solid currentColor;
-  border-bottom: 3px solid currentColor;
+  border-radius: 999px;
+}
+
+.lifecycle-track::before {
+  background: repeating-linear-gradient(
+    90deg,
+    #d8ded7 0 12px,
+    transparent 12px 18px
+  );
+}
+
+.lifecycle-track::after {
+  right: auto;
+  width: var(--lifecycle-progress, 0%);
+  max-width: 85%;
+  background: var(--color-primary);
+}
+
+.lifecycle-track article {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 11px;
+  min-width: 0;
+  color: var(--color-muted-strong);
+  text-align: center;
+  z-index: 1;
+}
+
+.lifecycle-track .stage-node {
+  display: grid;
+  width: clamp(58px, 5.8vw, 72px);
+  height: clamp(58px, 5.8vw, 72px);
+  place-items: center;
+  color: #7a827b;
+  background: #f3f5f2;
+  border: 2px solid #d7ded5;
+  border-radius: 999px;
+  font-size: 0;
+}
+
+.lifecycle-track .complete .stage-node {
+  color: #0c8b55;
+  background: #e8f7e8;
+  border-color: #bfe8cc;
+}
+
+.lifecycle-track .current .stage-node {
+  color: #7a5200;
+  background: #fff4d6;
+  border-color: #e0a300;
+  box-shadow: 0 0 0 6px rgba(224, 163, 0, .12);
+}
+
+.lifecycle-track em {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  color: #946100;
+  background: #fff4d6;
+  border: 1px solid #e0a300;
+  border-radius: 999px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.stage-label {
+  min-height: 30px;
+  color: #8a948b;
+  font-size: clamp(12px, .84vw, 14px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.stage-date {
+  color: #8a948b;
+  font-size: clamp(11px, .76vw, 12px);
+  white-space: nowrap;
+}
+
+.stage-label.complete {
+  color: #0c8b55;
+}
+
+.stage-label.current {
+  color: #b77900;
+}
+
+.stage-label.pending {
+  color: #8a948b;
+}
+
+.stage-date.complete {
+  color: #4f8f70;
+}
+
+.stage-date.current {
+  color: #9a6a00;
+}
+
+.stage-complete-check {
+  position: relative;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  margin-top: 6px;
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+.stage-complete-check::after {
+  width: 8px;
+  height: 5px;
+  content: "";
+  border-bottom: 2px solid #fff;
+  border-left: 2px solid #fff;
   transform: rotate(-45deg);
 }
 
-.lifecycle-track .complete span,
-.lifecycle-track .current span {
-  color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary-soft);
+.lifecycle-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
-.lifecycle-track .pending span::after {
-  display: none;
+.lifecycle-summary-grid article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background: #fbfdfb;
+  border: 1px solid #e1e8df;
+  border-radius: var(--radius-md);
 }
 
-.lifecycle-track strong {
-  font-size: 12px;
+.lifecycle-summary-grid article > div {
+  min-width: 0;
+}
+
+.lifecycle-summary-grid span:not(.info-icon) {
+  display: block;
+  color: #395548;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lifecycle-summary-grid strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--color-text);
+  font-size: clamp(14px, .9vw, 16px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.lifecycle-summary-grid small {
+  display: block;
+  margin-top: 7px;
+  color: var(--color-muted-strong);
+  font-size: 13px;
+}
+
+.stage-update-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, auto);
+  gap: 16px;
+  align-items: end;
+}
+
+.stage-update-row label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.update-stage-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.card-actions button svg,
+.update-stage-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke-width: 2.2;
+}
+
+.lifecycle-note {
+  margin: -6px 0 0;
+  padding: 14px 16px;
+  color: #1f5590;
+  background: #eef7ff;
+  border: 1px solid #b8d8ff;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
 }
 
 .primary-btn,
@@ -799,6 +1132,11 @@
   .field-operations-grid {
     grid-template-columns: 1fr;
   }
+
+  .field-metric-grid,
+  .lifecycle-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -816,14 +1154,56 @@
   .hero-actions,
   .hero-metrics,
   .filter-grid,
-  .coordinate-grid,
-  .farm-summary,
-  .field-detail-grid,
-  .monitoring-grid,
-  .weather-metrics,
+    .coordinate-grid,
+    .farm-summary,
+    .field-metric-grid,
+    .lifecycle-summary-grid,
+    .weather-metrics,
   .forecast-strip {
     width: 100%;
     grid-template-columns: 1fr;
+  }
+
+  .lifecycle-header,
+  .stage-update-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lifecycle-header {
+    display: grid;
+  }
+
+  .lifecycle-progress {
+    justify-items: stretch;
+    min-width: 0;
+  }
+
+  .lifecycle-track {
+    padding-top: 20px;
+  }
+
+  .lifecycle-track::before {
+    top: 41px;
+  }
+
+  .lifecycle-track .stage-node {
+    width: 42px;
+    height: 42px;
+    font-size: 10px;
+  }
+
+  .lifecycle-track em {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .lifecycle-track strong,
+  .lifecycle-track small {
+    font-size: 10px;
+  }
+
+  .update-stage-btn {
+    width: 100%;
   }
 
   .operation-actions,

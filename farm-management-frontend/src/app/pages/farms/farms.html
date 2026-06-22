@@ -313,100 +313,157 @@
             </div>
 
             <div class="card-actions">
-              <button type="button" class="edit-btn" (click)="editField(selectedField)">Edit Field</button>
-              <button type="button" class="delete-btn" (click)="deleteField(selectedField._id)">Delete Field</button>
+              <button type="button" class="edit-btn" (click)="editField(selectedField)">
+                <svg lucidePencil aria-hidden="true"></svg>
+                Edit Field
+              </button>
+              <button type="button" class="delete-btn" (click)="deleteField(selectedField._id)">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+                Delete Field
+              </button>
             </div>
           </div>
 
-          <div class="field-detail-grid">
-            <div>
-              <span>Area</span>
-              <strong>{{ formatArea(selectedField.area) }} ha</strong>
-            </div>
-            <div>
-              <span>Health</span>
-              <strong>{{ selectedField.healthStatus }}</strong>
-            </div>
-            <div>
-              <span>Irrigation</span>
-              <strong>{{ selectedField.irrigationStatus }}</strong>
-            </div>
-            <div>
-              <span>Crop Status</span>
-              <strong>{{ selectedField.status }}</strong>
-            </div>
+          <div class="field-metric-grid">
+            <article class="field-metric-card">
+              <span class="metric-icon area-icon" aria-hidden="true">
+                <svg lucideMap></svg>
+              </span>
+              <div>
+                <span>Area</span>
+                <strong>{{ formatArea(selectedField.area) }} ha</strong>
+              </div>
+            </article>
+            <article class="field-metric-card">
+              <span class="metric-icon health-icon" aria-hidden="true">
+                <svg lucideHeartPulse></svg>
+              </span>
+              <div>
+                <span>Health</span>
+                <strong [ngClass]="getFieldValueTone('health', selectedField.healthStatus)">{{ selectedField.healthStatus }}</strong>
+              </div>
+            </article>
+            <article class="field-metric-card">
+              <span class="metric-icon irrigation-icon" aria-hidden="true">
+                <svg lucideDroplet></svg>
+              </span>
+              <div>
+                <span>Irrigation</span>
+                <strong [ngClass]="getFieldValueTone('irrigation', selectedField.irrigationStatus)">{{ selectedField.irrigationStatus }}</strong>
+              </div>
+            </article>
+            <article class="field-metric-card">
+              <span class="metric-icon crop-icon" aria-hidden="true">
+                <svg lucideLeaf></svg>
+              </span>
+              <div>
+                <span>Crop Status</span>
+                <strong [ngClass]="getFieldValueTone('crop', selectedField.status)">{{ selectedField.status }}</strong>
+              </div>
+            </article>
+            <article class="field-metric-card">
+              <span class="metric-icon index-icon" aria-hidden="true">
+                <svg lucideActivity></svg>
+              </span>
+              <div>
+                <span>Health Index</span>
+                <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndex }}%</strong>
+              </div>
+            </article>
+            <article class="field-metric-card">
+              <span class="metric-icon moisture-icon" aria-hidden="true">
+                <svg lucideWaves></svg>
+              </span>
+              <div>
+                <span>Soil Moisture</span>
+                <strong [ngClass]="getMoistureTone(selectedFieldSoilMoisture)">{{ selectedFieldSoilMoisture }}%</strong>
+              </div>
+            </article>
           </div>
-
-          <div class="monitoring-grid">
-            <article>
-              <span>Health Index</span>
-              <strong>{{ selectedFieldHealthIndex }}%</strong>
-            </article>
-            <article>
-              <span>Soil Moisture</span>
-              <strong>{{ selectedFieldSoilMoisture }}%</strong>
-            </article>
-            <article>
-              <span>Irrigation Status</span>
-              <strong>{{ selectedField.irrigationStatus }}</strong>
-            </article>
-            <article>
-              <span>Crop Status</span>
-              <strong>{{ selectedField.status }}</strong>
-            </article>
-          </div>
-
           <div class="field-notes" *ngIf="selectedField.notes">
             <span>Notes</span>
             <p>{{ selectedField.notes }}</p>
           </div>
 
-          <div class="lifecycle-panel">
+          <div class="lifecycle-panel" *ngIf="getSelectedCrop(); else noLinkedCropLifecycle">
             <div class="lifecycle-header">
               <div>
                 <h4>Lifecycle Tracking</h4>
                 <span>{{ selectedFieldCropLabel }} | crop lifecycle</span>
               </div>
-              <strong>{{ getSelectedCropProgress() }}%</strong>
-            </div>
-
-            <div class="field-detail-grid">
-              <div>
-                <span>Planting Date</span>
-                <strong>{{ formatLifecycleDate(getSelectedCrop()?.plantingDate) }}</strong>
-              </div>
-              <div>
-                <span>Current Stage</span>
-                <strong>{{ getSelectedCropStage() }}</strong>
-              </div>
-              <div>
-                <span>Days in Stage</span>
-                <strong>{{ getSelectedCropDaysInStage() }}</strong>
-              </div>
-              <div>
-                <span>Expected Harvest</span>
-                <strong>{{ formatLifecycleDate(getSelectedCrop()?.expectedHarvestDate) }}</strong>
+              <div class="lifecycle-progress">
+                <span>Overall Progress</span>
+                <strong>{{ getSelectedCropProgress() }}%</strong>
+                <div class="progress-bar">
+                  <i [style.width.%]="getSelectedCropProgress()"></i>
+                </div>
               </div>
             </div>
 
-            <label *ngIf="getSelectedCrop()">
-              Update stage
-              <select class="farmops-field" [ngModel]="getSelectedCropStage()" (ngModelChange)="updateSelectedCropStage($event)" name="cropLifecycleStage">
-                <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
-              </select>
-            </label>
+            <div class="lifecycle-timeline-shell">
+              <div class="lifecycle-track" [style.--lifecycle-progress]="getSelectedCropProgress() + '%'">
+                <article *ngFor="let stage of lifecycleStages; let i = index" [class]="getLifecycleState(i)">
+                  <em *ngIf="getLifecycleState(i) === 'current'">Current Stage</em>
+                  <span class="stage-node">
+                  <ng-container [ngSwitch]="stage">
+                    <svg *ngSwitchCase="'Planning'" lucideCalendar></svg>
+                    <svg *ngSwitchCase="'Land Preparation'" lucideTractor></svg>
+                    <svg *ngSwitchCase="'Planting'" lucideSprout></svg>
+                    <svg *ngSwitchCase="'Vegetative Growth'" lucideLeaf></svg>
+                    <svg *ngSwitchCase="'Flowering'" lucideFlower2></svg>
+                    <svg *ngSwitchCase="'Ripening'" lucideGrape></svg>
+                    <svg *ngSwitchCase="'Harvest'" lucideShoppingBasket></svg>
+                    <svg *ngSwitchDefault lucideActivity></svg>
+                  </ng-container>
+                  </span>
+                  <strong class="stage-label" [ngClass]="getLifecycleState(i)">{{ stage }}</strong>
+                  <small class="stage-date" [ngClass]="getLifecycleState(i)">{{ getStageDateRange(i) }}</small>
+                  <span *ngIf="getLifecycleState(i) === 'complete'" class="stage-complete-check" aria-hidden="true"></span>
+                </article>
+              </div>
+            </div>
 
-            <div class="lifecycle-track">
-              <article *ngFor="let stage of lifecycleStages; let i = index" [class]="getLifecycleState(i)">
-                <span></span>
-                <strong>{{ stage }}</strong>
+            <div class="lifecycle-summary-grid">
+              <article *ngFor="let item of getLifecycleInfoCards()">
+                <span class="info-icon" aria-hidden="true" [ngSwitch]="item.icon">
+                  <svg *ngSwitchCase="'planting'" lucideCalendar></svg>
+                  <svg *ngSwitchCase="'stage'" lucideLeaf></svg>
+                  <svg *ngSwitchCase="'days'" lucideActivity></svg>
+                  <svg *ngSwitchCase="'harvest'" lucideCalendar></svg>
+                </span>
+                <div>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                  <small>{{ item.note }}</small>
+                </div>
               </article>
             </div>
 
-            <div class="empty-state compact" *ngIf="!getSelectedCrop()">
-              Link this field to a crop to track lifecycle stages.
+            <div class="stage-update-row">
+              <label>
+                Update stage
+                <select class="farmops-field" [ngModel]="pendingLifecycleStage" (ngModelChange)="setPendingLifecycleStage($event)" name="cropLifecycleStage">
+                  <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
+                </select>
+              </label>
+              <button type="button" class="primary-btn update-stage-btn" (click)="updateSelectedCropStage()">
+                <svg lucideRefreshCw aria-hidden="true"></svg>
+                Update Stage
+              </button>
             </div>
+
+            <p class="lifecycle-note">
+              Days in stage are automatically calculated from the current stage start date.
+            </p>
           </div>
+
+          <ng-template #noLinkedCropLifecycle>
+            <div class="lifecycle-panel">
+              <div class="empty-state compact">
+                Link this field to a crop to track lifecycle stages.
+              </div>
+            </div>
+          </ng-template>
         </article>
 
         <ng-template #noSelectedField>
@@ -618,4 +675,5 @@
     </form>
   </aside>
 </main>
+
 

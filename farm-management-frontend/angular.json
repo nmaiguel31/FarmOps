@@ -36,11 +36,11 @@
                   "maximumWarning": "500kB",
                   "maximumError": "2MB"
                 },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "12kB"
-                }
+                  {
+                    "type": "anyComponentStyle",
+                    "maximumWarning": "4kB",
+                    "maximumError": "18kB"
+                  }
               ],
               "outputHashing": "all"
             },
