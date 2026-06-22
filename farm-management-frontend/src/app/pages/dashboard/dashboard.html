@@ -1,252 +1,267 @@
-<main class="dashboard-page">
-  <section class="dashboard-intro">
+<main class="dashboard-page command-dashboard">
+  <section class="command-header">
     <div>
       <p class="eyebrow">FarmOps Command Center</p>
-      <h1>Manage every field from one live operations map.</h1>
+      <h1>Good morning, Farm Manager 👋</h1>
+      <p>Here's what's happening on your farms today.</p>
     </div>
 
-    <div class="quick-actions" aria-label="Quick actions">
+    <div class="command-header-actions">
+      <span class="date-range">This Week</span>
       <a routerLink="/farms" class="action-button primary-action">
-        <span class="plus-icon"></span>
-        Create Farm
-      </a>
-      <a routerLink="/crops" class="action-button">
-        <span class="sprout-icon"></span>
-        Create Crop
+        Open Field Operations
       </a>
     </div>
   </section>
 
-  <section class="hero-grid">
-    <article class="map-hero panel">
-      <div class="map-copy">
-        <div>
-          <span class="panel-kicker">Farm Locations</span>
-          <h2>Operational map</h2>
-          <p>Track active farms, field coverage, and regional distribution across your portfolio.</p>
-        </div>
-        <span class="panel-pill">Google Maps</span>
+  <section class="command-kpi-row" aria-label="Executive summary">
+    <article class="metric-card command-kpi" *ngFor="let kpi of commandKpis" [ngClass]="kpi.tone">
+      <div class="metric-icon" [ngSwitch]="kpi.icon">
+        <svg *ngSwitchCase="'revenue'" lucideBadgeDollarSign></svg>
+        <svg *ngSwitchCase="'profit'" lucideTrendingUp></svg>
+        <svg *ngSwitchCase="'expenses'" lucideReceipt></svg>
+        <svg *ngSwitchCase="'fields'" lucideLeaf></svg>
+        <svg *ngSwitchCase="'health'" lucideActivity></svg>
+        <svg *ngSwitchCase="'ndvi'" lucideSprout></svg>
+        <svg *ngSwitchDefault lucideChartNoAxesCombined></svg>
       </div>
-
-      <div id="all-farms-map" class="dashboard-map"></div>
-
-      <div class="map-stats" aria-label="Map summary">
-        <div>
-          <span>Farms</span>
-          <strong>{{ totalFarms }}</strong>
-        </div>
-        <div>
-          <span>Crops</span>
-          <strong>{{ totalCrops }}</strong>
-        </div>
-        <div>
-          <span>Records</span>
-          <strong>{{ totalRecords }}</strong>
-        </div>
-      </div>
-    </article>
-
-    <aside class="hero-side">
-      <article class="weather-card panel">
-        <div class="weather-top">
-          <div>
-            <span class="panel-kicker">Weather</span>
-            <h2>Field conditions</h2>
-          </div>
-          <span class="weather-sun"></span>
-        </div>
-
-        <div class="temperature-row">
-          <strong>24 C</strong>
-          <span>Partly cloudy</span>
-        </div>
-
-        <div class="weather-metrics">
-          <div>
-            <span>Humidity</span>
-            <strong>62%</strong>
-          </div>
-          <div>
-            <span>Wind</span>
-            <strong>8 mph</strong>
-          </div>
-          <div>
-            <span>Rain</span>
-            <strong>12%</strong>
-          </div>
-        </div>
-      </article>
-
-      <article class="imagery-card">
-        <div>
-          <span>Smart agriculture</span>
-          <strong>Monitor yields, inputs, and seasonal growth with one modern workspace.</strong>
-        </div>
-      </article>
-    </aside>
-  </section>
-
-  <section class="summary-grid" aria-label="Dashboard summary">
-    <article class="metric-card farms">
-      <div class="metric-icon">F</div>
-      <span>Farms</span>
-      <strong>{{ totalFarms }}</strong>
-      <p>Active properties in your portfolio</p>
-    </article>
-
-    <article class="metric-card crops">
-      <div class="metric-icon">C</div>
-      <span>Crops</span>
-      <strong>{{ totalCrops }}</strong>
-      <p>Crop records grouped across seasons</p>
-    </article>
-
-    <article class="metric-card records">
-      <div class="metric-icon">R</div>
-      <span>Records</span>
-      <strong>{{ totalRecords }}</strong>
-      <p>Financial entries tracked to date</p>
-    </article>
-
-    <article class="metric-card profit">
-      <div class="metric-icon">P</div>
-      <span>Net Profit</span>
-      <strong>{{ netProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
-      <p>Revenue less operating expenses</p>
-    </article>
-  </section>
-
-  <section class="recent-farms panel">
-    <div class="panel-header">
       <div>
-        <span class="panel-kicker">Recent Farms</span>
-        <h2>Latest farm entries</h2>
+        <span>{{ kpi.label }}</span>
+        <strong *ngIf="kpi.currency; else plainKpiValue">
+          {{ kpi.value | currency:'USD':'symbol':'1.0-0' }}
+        </strong>
+        <ng-template #plainKpiValue>
+          <strong>{{ kpi.value }}</strong>
+        </ng-template>
+        <p>{{ kpi.detail }}</p>
       </div>
-      <a routerLink="/farms" class="text-link">View farms</a>
-    </div>
-
-    <div class="farm-list">
-      <article class="farm-card" *ngFor="let farm of recentFarms">
-        <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
-        <div>
-          <h3>{{ farm.name }}</h3>
-          <p>{{ farm.location || 'Location not specified' }}</p>
-        </div>
-        <strong>{{ farm.size || 0 }} acres</strong>
-      </article>
-
-      <div class="empty-state" *ngIf="recentFarms.length === 0">
-        No farms have been added yet.
-      </div>
-    </div>
+    </article>
   </section>
 
-  <section class="insights-grid">
-    <article class="panel financial-panel">
+  <section class="analytics-grid">
+    <article class="panel revenue-analytics">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Financial Overview</span>
-          <h2>Revenue health</h2>
+          <span class="panel-kicker">Financial Performance</span>
+          <h2>Revenue vs Costs</h2>
         </div>
         <span class="panel-pill">{{ totalRecords }} records</span>
       </div>
 
-      <div class="money-strip">
-        <div>
-          <span>Revenue</span>
-          <strong>{{ totalRevenue | currency:'USD':'symbol':'1.0-0' }}</strong>
-        </div>
-        <div>
-          <span>Expenses</span>
-          <strong>{{ totalExpenses | currency:'USD':'symbol':'1.0-0' }}</strong>
-        </div>
+      <div class="chart-container command-chart" *ngIf="hasFinancialHistory; else insufficientFinancialHistory">
+        <canvas id="revenueCostsChart"></canvas>
       </div>
 
-      <div class="chart-container">
-        <canvas id="financeChart"></canvas>
-      </div>
+      <ng-template #insufficientFinancialHistory>
+        <div class="empty-state chart-empty">
+          <strong>Insufficient financial history</strong>
+          <span>Add dated income and expense records across multiple days to show a trend.</span>
+        </div>
+      </ng-template>
     </article>
 
-    <article class="panel season-panel">
+    <article class="panel crop-analytics">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Crop Planning</span>
-          <h2>Crops by season</h2>
+          <span class="panel-kicker">Crop Mix</span>
+          <h2>Crop Distribution</h2>
         </div>
         <span class="panel-pill">{{ totalCrops }} crops</span>
       </div>
 
-      <div class="season-layout">
-        <div class="chart-container compact">
-          <canvas id="seasonChart"></canvas>
-        </div>
+      <div class="chart-container command-donut" *ngIf="hasCropDistributionData; else noCropDistribution">
+        <canvas id="cropDistributionChart"></canvas>
+      </div>
 
-        <div class="season-list">
-          <div>
-            <span>Spring</span>
-            <strong>{{ seasonCounts.Spring }}</strong>
+      <ng-template #noCropDistribution>
+        <div class="empty-state chart-empty">
+          <strong>No crop distribution</strong>
+          <span>Create a farm and assign crops to fields to populate this chart.</span>
+        </div>
+      </ng-template>
+    </article>
+
+    <article class="panel smart-alerts">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Smart Alerts</span>
+          <h2>Priority signals</h2>
+        </div>
+        <span class="panel-pill" [class.alert-pill]="openAlerts">{{ openAlerts }} open</span>
+      </div>
+
+      <div class="alert-list" *ngIf="topRecommendations.length; else noAlerts">
+        <article class="alert-row" *ngFor="let recommendation of topRecommendations">
+          <div class="alert-icon" [ngSwitch]="getWeatherAlertIcon(recommendation.type)">
+            <svg *ngSwitchCase="'weather'" lucideCloudSun></svg>
+            <svg *ngSwitchCase="'irrigation'" lucideDroplet></svg>
+            <svg *ngSwitchCase="'health'" lucideActivity></svg>
+            <svg *ngSwitchCase="'crop'" lucideSprout></svg>
+            <svg *ngSwitchDefault lucideBell></svg>
           </div>
+          <span [class]="recommendation.priority === 'High' ? 'risk-high' : recommendation.priority === 'Medium' ? 'risk-medium' : 'risk-low'">
+            {{ recommendation.priority }}
+          </span>
           <div>
-            <span>Summer</span>
-            <strong>{{ seasonCounts.Summer }}</strong>
+            <h3>{{ recommendation.category }}</h3>
+            <p>{{ recommendation.target }}</p>
+            <small><strong>{{ recommendation.title }}.</strong> {{ recommendation.action }}</small>
           </div>
-          <div>
-            <span>Autumn</span>
-            <strong>{{ seasonCounts.Autumn }}</strong>
-          </div>
-          <div>
-            <span>Winter</span>
-            <strong>{{ seasonCounts.Winter }}</strong>
-          </div>
+        </article>
+      </div>
+
+      <ng-template #noAlerts>
+        <div class="empty-state">No active alerts from field, zone or weather signals.</div>
+      </ng-template>
+    </article>
+  </section>
+
+  <section class="field-command-grid">
+    <article class="panel field-overview-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Field Overview</span>
+          <h2>Satellite-ready operational map</h2>
+          <p>Farm and field boundaries are shown together for quick operational context.</p>
+        </div>
+        <a routerLink="/farms" class="text-link">View All Fields</a>
+      </div>
+
+      <div class="dashboard-map-shell">
+        <div id="all-farms-map" class="dashboard-map"></div>
+        <div class="map-empty-state" *ngIf="!hasDashboardData">
+          <strong>No farms to display</strong>
+          <span>Create a farm to show markers and boundaries on the dashboard map.</span>
         </div>
       </div>
     </article>
 
-    <article class="panel farm-size-panel">
+    <aside class="dashboard-side-rail">
+      <article class="panel weather-widget">
+        <div class="panel-header compact-header">
+          <div>
+          <span class="panel-kicker">Weather Today</span>
+          <h2>{{ weatherRiskLabel }}</h2>
+          <p>{{ selectedWeatherContext }}</p>
+          </div>
+          <span class="weather-icon"><svg lucideCloudSun></svg></span>
+        </div>
+
+        <ng-container *ngIf="weatherSummary; else weatherEmpty">
+          <strong class="weather-temp">{{ weatherSummary.temperature }}°C</strong>
+          <div class="weather-metrics compact-weather">
+            <div>
+              <span>Humidity</span>
+              <strong>{{ weatherSummary.humidity }}%</strong>
+            </div>
+            <div>
+              <span>Wind</span>
+              <strong>{{ weatherSummary.windSpeed }} km/h</strong>
+            </div>
+            <div>
+              <span>Rain</span>
+              <strong>{{ weatherSummary.rainProbability }}%</strong>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #weatherEmpty>
+          <div class="empty-state small-empty">Select farms with coordinates to show live weather context.</div>
+        </ng-template>
+      </article>
+
+      <article class="panel top-fields-panel">
+        <div class="panel-header compact-header">
+          <div>
+            <span class="panel-kicker">Top Performing Fields</span>
+            <h2>Best current signals</h2>
+          </div>
+        </div>
+
+        <div class="top-field-list" *ngIf="topPerformingFields.length; else noTopFields">
+          <article class="top-field-row" *ngFor="let item of topPerformingFields">
+            <span class="field-rank">{{ item.score }}%</span>
+            <div>
+              <h3>{{ item.field.name }}</h3>
+              <p>{{ getFieldCropLabel(item.field) }} | {{ formatArea(item.field.area) }} ha</p>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noTopFields>
+          <div class="empty-state small-empty">No fields available yet.</div>
+        </ng-template>
+      </article>
+    </aside>
+  </section>
+
+  <section class="lower-command-grid">
+    <article class="panel crop-status-panel">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Land Utilization</span>
-          <h2>Farm size distribution</h2>
+          <span class="panel-kicker">Crop Status Overview</span>
+          <h2>Lifecycle distribution</h2>
         </div>
-        <span class="panel-pill">{{ totalFarms }} farms</span>
       </div>
 
-      <div class="chart-container">
-        <canvas id="farmSizeChart"></canvas>
+      <div class="status-grid">
+        <div class="status-card" *ngFor="let item of cropStatusOverview" [ngClass]="item.tone">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.count }}</strong>
+          <p>Crops</p>
+        </div>
       </div>
     </article>
 
-    <article class="panel activity-panel">
+    <article class="panel irrigation-panel">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Recent Activity</span>
-          <h2>Latest financial records</h2>
+          <span class="panel-kicker">Irrigation Status</span>
+          <h2>Field water posture</h2>
         </div>
-        <span class="panel-pill">Live</span>
       </div>
 
-      <div class="activity-list">
-        <article class="activity-card" *ngFor="let record of recentRecords">
-          <div
-            class="activity-type"
-            [class.income]="record.type === 'Income'"
-            [class.expense]="record.type === 'Expense'"
-          >
+      <div class="irrigation-layout" *ngIf="hasIrrigationData; else noIrrigationData">
+        <div class="chart-container small-donut">
+          <canvas id="irrigationChart"></canvas>
+        </div>
+        <div class="irrigation-list">
+          <div *ngFor="let item of irrigationStatusOverview">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.count }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noIrrigationData>
+        <div class="empty-state">No field irrigation data is available.</div>
+      </ng-template>
+    </article>
+
+    <article class="panel recent-activity-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Recent Activities</span>
+          <h2>Latest records</h2>
+        </div>
+      </div>
+
+      <div class="activity-list" *ngIf="recentActivities.length; else noActivities">
+        <article class="activity-card" *ngFor="let record of recentActivities">
+          <span class="activity-type" [class.income]="record.type === 'Income'" [class.expense]="record.type === 'Expense'">
             {{ record.type }}
-          </div>
-
+          </span>
           <div>
-            <h3>{{ record.category }}</h3>
-            <p>{{ record.description || 'No description provided' }}</p>
+            <h3>{{ record.description || record.category || 'Financial record' }}</h3>
+            <p>{{ record.category || 'Uncategorized' }}</p>
           </div>
-
           <strong>{{ record.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
         </article>
-
-        <div class="empty-state" *ngIf="recentRecords.length === 0">
-          No recent records yet.
-        </div>
       </div>
+
+      <ng-template #noActivities>
+        <div class="empty-state">No recent financial activity has been recorded.</div>
+      </ng-template>
     </article>
   </section>
 </main>

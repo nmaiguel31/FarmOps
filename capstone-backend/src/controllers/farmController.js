@@ -1,4 +1,8 @@
 const Farm = require('../models/Farm');
+const Field = require('../models/Field');
+const Zone = require('../models/Zone');
+const Crop = require('../models/Crop');
+const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
 
 const normalizePolygonCoordinates = (coordinates) => {
@@ -128,17 +132,49 @@ const deleteFarm = async (req, res) => {
 
     }
 
+    const fields =
+      await Field.find({ farm: farm._id }).select('_id crop');
+    const fieldIds =
+      fields.map(field => field._id);
+
+    const deleteSummary = {
+      zones: 0,
+      fields: 0,
+      crops: 0,
+      financialRecords: 0
+    };
+
+    if (fieldIds.length) {
+      const zoneResult =
+        await Zone.deleteMany({ field: { $in: fieldIds } });
+      deleteSummary.zones = zoneResult.deletedCount || 0;
+
+      const fieldResult =
+        await Field.deleteMany({ _id: { $in: fieldIds } });
+      deleteSummary.fields = fieldResult.deletedCount || 0;
+    }
+
+    const cropResult =
+      await Crop.deleteMany({ farm: farm._id });
+    deleteSummary.crops = cropResult.deletedCount || 0;
+
+    const financialResult =
+      await FinancialRecord.deleteMany({ farm: farm._id });
+    deleteSummary.financialRecords = financialResult.deletedCount || 0;
+
     await farm.deleteOne();
 
     logEvent('info', 'FARM_DELETED', {
       farmId: farm._id,
       farmName: farm.name,
       deletedBy: req.user.id,
-      role: req.user.role
+      role: req.user.role,
+      cascadeDeleted: deleteSummary
     });
 
     res.json({
-      message: 'Farm deleted successfully'
+      message: 'Farm deleted successfully',
+      cascadeDeleted: deleteSummary
     });
 
   } catch (error) {

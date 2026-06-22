@@ -157,26 +157,42 @@
 
         <aside class="map-insight-card">
           <span class="panel-kicker">Selected Breakdown</span>
-          <h3>{{ selectedField?.name || 'Farm Overview' }}</h3>
-          <p>{{ selectedField ? selectedFieldCropLabel : selectedFarm.name }}</p>
+          <h3>{{ selectedZone?.name || selectedField?.name || 'Farm Overview' }}</h3>
+          <p>{{ selectedZone ? selectedZone.zoneType : (selectedField ? selectedFieldCropLabel : selectedFarm.name) }}</p>
           <div class="mini-monitoring">
-            <article>
+            <article *ngIf="!selectedZone">
               <span>Health</span>
               <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndex }}%</strong>
             </article>
-            <article>
+            <article *ngIf="!selectedZone">
               <span>Soil Moisture</span>
               <strong [ngClass]="getMoistureTone(selectedFieldSoilMoisture)">{{ selectedFieldSoilMoisture }}%</strong>
             </article>
-            <article>
+            <article *ngIf="!selectedZone">
               <span>NDVI Score</span>
               <strong [ngClass]="selectedFieldNdviTone">{{ selectedFieldNdviScore }}%</strong>
             </article>
-            <article>
+            <article *ngIf="!selectedZone">
               <span>Vegetation Status</span>
               <strong class="vegetation-status-value" [ngClass]="selectedFieldNdviTone">
                 {{ selectedFieldVegetationStatus }}
               </strong>
+            </article>
+            <article *ngIf="selectedZone">
+              <span>Zone Area</span>
+              <strong>{{ formatArea(selectedZone.area) }} ha</strong>
+            </article>
+            <article *ngIf="selectedZone">
+              <span>Health</span>
+              <strong [ngClass]="getIndexTone(selectedZone.healthScore)">{{ selectedZone.healthScore }}%</strong>
+            </article>
+            <article *ngIf="selectedZone">
+              <span>Moisture</span>
+              <strong [ngClass]="getMoistureTone(selectedZone.moistureScore)">{{ selectedZone.moistureScore }}%</strong>
+            </article>
+            <article *ngIf="selectedZone">
+              <span>NDVI</span>
+              <strong [ngClass]="getNdviTone(selectedZone.ndviScore)">{{ selectedZone.ndviScore }}%</strong>
             </article>
           </div>
         </aside>
@@ -323,6 +339,9 @@
             </div>
 
             <div class="card-actions">
+              <button type="button" class="secondary-btn" (click)="openCreateZone()">
+                Create Zone
+              </button>
               <button type="button" class="edit-btn" (click)="editField(selectedField)">
                 <svg lucidePencil aria-hidden="true"></svg>
                 Edit Field
@@ -394,6 +413,66 @@
             <span>Notes</span>
             <p>{{ selectedField.notes }}</p>
           </div>
+
+          <section class="zone-panel">
+            <div class="zone-panel-header">
+              <div>
+                <span class="panel-kicker">Management Zones</span>
+                <h4>Localized field zones</h4>
+                <p>Create smaller operational areas inside this field for future monitoring and recommendations.</p>
+              </div>
+              <button type="button" class="secondary-btn" (click)="openCreateZone()">Create Zone</button>
+            </div>
+
+            <div class="zone-grid" *ngIf="selectedFieldZones.length; else noZones">
+              <article
+                *ngFor="let zone of selectedFieldZones"
+                class="zone-card"
+                [class.active]="selectedZone?._id === zone._id"
+                (click)="selectZone(zone)"
+              >
+                <div class="zone-card-top">
+                  <div>
+                    <strong>{{ zone.name }}</strong>
+                    <span>{{ zone.zoneType }} | {{ formatArea(zone.area) }} ha</span>
+                  </div>
+                  <small>{{ zone.ndviScore }}% NDVI</small>
+                </div>
+                <div class="zone-score-row">
+                  <span>Health {{ zone.healthScore }}%</span>
+                  <span>Moisture {{ zone.moistureScore }}%</span>
+                </div>
+              </article>
+            </div>
+
+            <ng-template #noZones>
+              <div class="empty-state compact">No management zones have been drawn for this field yet.</div>
+            </ng-template>
+
+            <article class="selected-zone-card" *ngIf="selectedZone">
+              <div>
+                <span class="panel-kicker">Selected Zone</span>
+                <h4>{{ selectedZone.name }}</h4>
+                <p>{{ selectedZone.recommendation || 'No zone-specific recommendation recorded yet.' }}</p>
+              </div>
+              <div class="zone-detail-grid">
+                <span>Type <strong>{{ selectedZone.zoneType }}</strong></span>
+                <span>Area <strong>{{ formatArea(selectedZone.area) }} ha</strong></span>
+                <span>Health <strong [ngClass]="getIndexTone(selectedZone.healthScore)">{{ selectedZone.healthScore }}%</strong></span>
+                <span>Moisture <strong [ngClass]="getMoistureTone(selectedZone.moistureScore)">{{ selectedZone.moistureScore }}%</strong></span>
+                <span>NDVI <strong [ngClass]="getNdviTone(selectedZone.ndviScore)">{{ selectedZone.ndviScore }}%</strong></span>
+              </div>
+              <p *ngIf="selectedZone.notes">{{ selectedZone.notes }}</p>
+              <div class="card-actions">
+                <button type="button" class="edit-btn" (click)="editZone(selectedZone)">
+                  Edit Zone
+                </button>
+                <button type="button" class="delete-btn" (click)="deleteZone(selectedZone._id)">
+                  Delete Zone
+                </button>
+              </div>
+            </article>
+          </section>
 
           <section class="ai-recommendations-panel">
             <div class="ai-recommendations-header">
@@ -524,7 +603,7 @@
     </ng-template>
   </section>
 
-  <div class="drawer-backdrop" [class.visible]="farmFormOpen || fieldFormOpen" (click)="closeFarmForm(); closeFieldForm()"></div>
+  <div class="drawer-backdrop" [class.visible]="farmFormOpen || fieldFormOpen || zoneFormOpen" (click)="closeFarmForm(); closeFieldForm(); closeZoneForm()"></div>
 
   <aside class="farm-drawer" [class.open]="farmFormOpen">
     <div class="drawer-header">
@@ -668,6 +747,7 @@
         <p class="map-helper">
           {{ isDrawingFieldBoundary ? 'Click the map to add field boundary points, then finish the boundary.' : 'The farm boundary stays visible as context while drawing the field.' }}
         </p>
+        <p class="boundary-error" *ngIf="fieldBoundaryError">{{ fieldBoundaryError }}</p>
       </section>
 
       <div class="coordinate-grid">
@@ -712,6 +792,107 @@
 
       <button *ngIf="editingFieldId !== ''" class="primary-btn" type="button" (click)="updateField()">
         Update Field
+      </button>
+    </form>
+  </aside>
+
+  <aside class="field-drawer" [class.open]="zoneFormOpen">
+    <div class="drawer-header">
+      <div>
+        <span class="panel-kicker">Zone Form</span>
+        <h2>{{ editingZoneId === '' ? 'Create Zone' : 'Update Zone' }}</h2>
+      </div>
+      <button type="button" class="icon-close" (click)="closeZoneForm()" aria-label="Close zone form"></button>
+    </div>
+
+    <form class="farm-form">
+      <label>
+        Parent field
+        <input class="farmops-field" type="text" [value]="selectedField?.name || ''" disabled>
+      </label>
+
+      <label>
+        Zone name
+        <input class="farmops-field" type="text" placeholder="North irrigation zone" [(ngModel)]="zoneName" name="zoneName">
+      </label>
+
+      <div class="coordinate-grid">
+        <label>
+          Purpose
+          <select class="farmops-field" [(ngModel)]="zoneType" name="zoneType">
+            <option>Monitoring</option>
+            <option>Irrigation</option>
+            <option>Low Growth</option>
+            <option>High Yield</option>
+            <option>Inspection</option>
+          </select>
+        </label>
+
+        <label>
+          Calculated area (hectares)
+          <input class="farmops-field" type="number" placeholder="Draw zone to calculate" [(ngModel)]="zoneArea" name="zoneArea" readonly>
+        </label>
+      </div>
+
+      <section class="farm-map-selector">
+        <div>
+          <span class="panel-kicker">Zone Boundary</span>
+          <p>Draw a management zone inside the selected field boundary.</p>
+        </div>
+
+        <div class="boundary-map-shell">
+          <div id="zone-boundary-map" class="farm-location-map"></div>
+        </div>
+
+        <p class="map-helper">
+          {{ isDrawingZoneBoundary ? 'Click the map to add zone boundary points, then finish the zone.' : 'Farm and field boundaries remain visible as context while drawing.' }}
+        </p>
+        <p class="boundary-error" *ngIf="zoneBoundaryError">{{ zoneBoundaryError }}</p>
+      </section>
+
+      <div class="coordinate-grid">
+        <label>
+          Health score
+          <input class="farmops-field" type="number" min="0" max="100" [(ngModel)]="zoneHealthScore" name="zoneHealthScore">
+        </label>
+
+        <label>
+          Moisture score
+          <input class="farmops-field" type="number" min="0" max="100" [(ngModel)]="zoneMoistureScore" name="zoneMoistureScore">
+        </label>
+      </div>
+
+      <label>
+        NDVI score
+        <input class="farmops-field" type="number" min="0" max="100" [(ngModel)]="zoneNdviScore" name="zoneNdviScore">
+      </label>
+
+      <label>
+        Recommendation
+        <textarea class="farmops-field" rows="3" placeholder="Localized recommendation" [(ngModel)]="zoneRecommendation" name="zoneRecommendation"></textarea>
+      </label>
+
+      <label>
+        Notes
+        <textarea class="farmops-field" rows="3" placeholder="Optional zone notes" [(ngModel)]="zoneNotes" name="zoneNotes"></textarea>
+      </label>
+
+      <div class="coordinate-preview">
+        <span>Zone area</span>
+        <strong>{{ formatArea(zoneArea) }} hectares</strong>
+      </div>
+
+      <div class="coordinate-preview">
+        <span>Boundary points</span>
+        <strong>{{ zoneBoundaryCoordinates.length }} saved points</strong>
+      </div>
+
+      <button *ngIf="editingZoneId === ''" class="primary-btn" type="button" (click)="createZone()">
+        Create Zone
+      </button>
+
+      <button *ngIf="editingZoneId !== ''" class="primary-btn" type="button" (click)="updateZone()">
+        Update Zone
       </button>
     </form>
   </aside>

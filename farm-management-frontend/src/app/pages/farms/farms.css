@@ -639,6 +639,17 @@
   color: #c27a00;
 }
 
+.boundary-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  color: #b42318;
+  background: #fff1f0;
+  border: 1px solid #ffd2cc;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .tone-danger {
   color: #c72222;
 }
@@ -703,6 +714,75 @@
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.zone-panel,
+.selected-zone-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e1e8df;
+  border-radius: var(--radius-md);
+}
+
+.zone-panel-header,
+.zone-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.zone-panel-header h4,
+.selected-zone-card h4 {
+  margin: 4px 0;
+  font-size: 22px;
+}
+
+.zone-panel-header p,
+.selected-zone-card p {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+
+.zone-grid,
+.zone-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.zone-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  cursor: pointer;
+  background: #f8faf7;
+  border: 1px solid #e1e8df;
+  border-radius: var(--radius-sm);
+}
+
+.zone-card.active {
+  border-color: var(--color-primary);
+  box-shadow: inset 4px 0 0 var(--color-primary);
+}
+
+.zone-card strong,
+.zone-detail-grid strong {
+  display: block;
+}
+
+.zone-card span,
+.zone-card small,
+.zone-detail-grid span {
+  color: var(--color-muted-strong);
+}
+
+.zone-score-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
 }
 
 .ai-recommendations-panel {
@@ -1242,6 +1322,8 @@
   }
 
   .field-metric-grid,
+  .zone-grid,
+  .zone-detail-grid,
   .recommendation-grid,
   .lifecycle-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1266,6 +1348,8 @@
     .coordinate-grid,
     .farm-summary,
     .field-metric-grid,
+    .zone-grid,
+    .zone-detail-grid,
     .recommendation-grid,
     .lifecycle-summary-grid,
     .weather-metrics,

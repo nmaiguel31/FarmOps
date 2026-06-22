@@ -1,7 +1,13 @@
 const Field = require('../models/Field');
 const Farm = require('../models/Farm');
 const Crop = require('../models/Crop');
+const Zone = require('../models/Zone');
 const logEvent = require('../utils/logger');
+const {
+  isPolygonInsidePolygon,
+  normalizePolygon,
+  polygonsOverlap
+} = require('../utils/polygonValidation');
 
 const populateField = [
   {
@@ -114,6 +120,55 @@ const resolveFieldCrop = async ({ cropId, cropType, farmId, user }) => {
   return createdCrop._id;
 };
 
+const validateFieldBoundary = async ({ polygonCoordinates, farm, excludeFieldId }) => {
+  const fieldPolygon =
+    normalizePolygon(polygonCoordinates);
+
+  if (fieldPolygon.length < 3) {
+    return;
+  }
+
+  const farmPolygon =
+    normalizePolygon(farm.polygonCoordinates);
+
+  if (
+    farmPolygon.length < 3 ||
+    !isPolygonInsidePolygon(fieldPolygon, farmPolygon)
+  ) {
+    const error = new Error('Field boundary must stay inside the selected farm.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const query = {
+    farm: farm._id,
+    polygonCoordinates: {
+      $exists: true,
+      $ne: []
+    }
+  };
+
+  if (excludeFieldId) {
+    query._id = {
+      $ne: excludeFieldId
+    };
+  }
+
+  const existingFields =
+    await Field.find(query);
+
+  const overlaps =
+    existingFields.some(field =>
+      polygonsOverlap(fieldPolygon, field.polygonCoordinates)
+    );
+
+  if (overlaps) {
+    const error = new Error('Field boundary overlaps an existing field.');
+    error.statusCode = 400;
+    throw error;
+  }
+};
+
 const createField = async (req, res) => {
   try {
     const farm = await Farm.findById(req.body.farm);
@@ -144,6 +199,11 @@ const createField = async (req, res) => {
       cropType: req.body.cropType,
       farmId: farm._id,
       user: req.user
+    });
+
+    await validateFieldBoundary({
+      polygonCoordinates: req.body.polygonCoordinates,
+      farm
     });
 
     const field = await Field.create({
@@ -282,6 +342,21 @@ const updateField = async (req, res) => {
       user: req.user
     });
 
+    const nextFarm =
+      await Farm.findById(nextFarmId);
+
+    if (!nextFarm) {
+      return res.status(404).json({
+        message: 'Farm not found'
+      });
+    }
+
+    await validateFieldBoundary({
+      polygonCoordinates: req.body.polygonCoordinates,
+      farm: nextFarm,
+      excludeFieldId: field._id
+    });
+
     field.name = req.body.name;
     field.cropType = req.body.cropType || '';
     field.crop = crop;
@@ -338,17 +413,26 @@ const deleteField = async (req, res) => {
       });
     }
 
+    const zoneResult =
+      await Zone.deleteMany({ field: field._id });
+
     await field.deleteOne();
 
     logEvent('info', 'FIELD_DELETED', {
       fieldId: field._id,
       fieldName: field.name,
       deletedBy: req.user.id,
-      role: req.user.role
+      role: req.user.role,
+      cascadeDeleted: {
+        zones: zoneResult.deletedCount || 0
+      }
     });
 
     res.json({
-      message: 'Field deleted successfully'
+      message: 'Field deleted successfully',
+      cascadeDeleted: {
+        zones: zoneResult.deletedCount || 0
+      }
     });
   } catch (error) {
     res.status(500).json({

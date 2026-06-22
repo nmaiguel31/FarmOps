@@ -13,6 +13,7 @@ const protectedRoutes = require('./routes/protectedRoutes');
 const farmRoutes = require('./routes/farmRoutes');
 const cropRoutes = require('./routes/cropRoutes');
 const fieldRoutes = require('./routes/fieldRoutes');
+const zoneRoutes = require('./routes/zoneRoutes');
 const financialRoutes = require('./routes/financialRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 
@@ -47,6 +48,7 @@ app.use('/api/protected', protectedRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/crops', cropRoutes);
 app.use('/api/fields', fieldRoutes);
+app.use('/api/zones', zoneRoutes);
 app.use('/api/financial-records', financialRoutes);
 app.use('/api', systemRoutes);
 

@@ -1,5 +1,6 @@
 const Crop = require('../models/Crop');
 const Farm = require('../models/Farm');
+const Field = require('../models/Field');
 const logEvent = require('../utils/logger');
 
 // Create crop
@@ -153,17 +154,29 @@ const deleteCrop = async (req, res) => {
 
     }
 
+    const fieldResult =
+      await Field.updateMany(
+        { crop: crop._id },
+        {
+          $set: {
+            crop: null
+          }
+        }
+      );
+
     await crop.deleteOne();
 
     logEvent('info', 'CROP_DELETED', {
       cropId: crop._id,
       cropName: crop.name,
       deletedBy: req.user.id,
-      role: req.user.role
+      role: req.user.role,
+      detachedFields: fieldResult.modifiedCount || 0
     });
 
     res.json({
-      message: 'Crop deleted successfully'
+      message: 'Crop deleted successfully',
+      detachedFields: fieldResult.modifiedCount || 0
     });
 
   } catch (error) {

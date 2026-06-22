@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
+import { Zone } from '../../services/zone';
 import { Crop as CropService } from '../../services/crop';
 import { GoogleMapsLoader } from '../../services/google-maps-loader';
 import { WeatherInsights, WeatherService } from '../../services/weather';
@@ -68,9 +69,11 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   farms: any[] = [];
   filteredFarms: any[] = [];
   fields: any[] = [];
+  zones: any[] = [];
   crops: any[] = [];
   selectedFarm: any = null;
   selectedField: any = null;
+  selectedZone: any = null;
   expandedFarmIds = new Set<string>();
 
   searchLocation = '';
@@ -96,9 +99,23 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   fieldIrrigationStatus = 'Scheduled';
   fieldNotes = '';
   fieldBoundaryCoordinates: any[] = [];
+  fieldBoundaryError = '';
+  zoneFormOpen = false;
+  editingZoneId = '';
+  zoneName = '';
+  zoneType = 'Monitoring';
+  zoneArea = 0;
+  zoneHealthScore = 0;
+  zoneMoistureScore = 0;
+  zoneNdviScore = 0;
+  zoneRecommendation = '';
+  zoneNotes = '';
+  zoneBoundaryCoordinates: any[] = [];
+  zoneBoundaryError = '';
   mapsReady = false;
   isDrawingFarmBoundary = false;
   isDrawingFieldBoundary = false;
+  isDrawingZoneBoundary = false;
   weatherInsights: WeatherInsights | null = null;
   weatherLoading = false;
   weatherError = '';
@@ -128,6 +145,9 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private fieldBoundaryMap: any = null;
   private fieldBoundaryPolygon: any = null;
   private fieldBoundaryVertexMarkers: any[] = [];
+  private zoneBoundaryMap: any = null;
+  private zoneBoundaryPolygon: any = null;
+  private zoneBoundaryVertexMarkers: any[] = [];
   private ndviOverlays: any[] = [];
   private farmGeocoder: any = null;
   private activeMaps: any[] = [];
@@ -137,6 +157,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private mapsLoader = inject(GoogleMapsLoader);
   private farmService = inject(Farm);
   private fieldService = inject(Field);
+  private zoneService = inject(Zone);
   private cropService = inject(CropService);
   private weatherService = inject(WeatherService);
   private cdr = inject(ChangeDetectorRef);
@@ -145,6 +166,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadFarms();
     this.loadFields();
+    this.loadZones();
     this.loadCrops();
     this.lifecycleClock = setInterval(() => {
       this.cdr.detectChanges();
@@ -308,7 +330,10 @@ updateFarm() {
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.fieldBoundaryError = error?.error?.message || 'Unable to save field boundary.';
+        this.cdr.detectChanges();
+      }
 
     });
 
@@ -328,7 +353,32 @@ updateFarm() {
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.fieldBoundaryError = error?.error?.message || 'Unable to update field boundary.';
+        this.cdr.detectChanges();
+      }
+
+    });
+
+  }
+
+  loadZones() {
+
+    this.zoneService.getZones().subscribe({
+
+      next: (data: any) => {
+
+        this.zones = [...data];
+        this.syncSelectedZone();
+        this.renderSelectedFarmMap();
+        this.cdr.detectChanges();
+
+      },
+
+      error: (error) => {
+        this.zoneBoundaryError = error?.error?.message || 'Unable to save zone boundary.';
+        this.cdr.detectChanges();
+      }
 
     });
 
@@ -345,7 +395,10 @@ updateFarm() {
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.zoneBoundaryError = error?.error?.message || 'Unable to update zone boundary.';
+        this.cdr.detectChanges();
+      }
 
     });
 
@@ -358,6 +411,16 @@ updateFarm() {
 
     return this.fields.filter(field =>
       (field.farm?._id || field.farm) === this.selectedFarm._id
+    );
+  }
+
+  get selectedFieldZones() {
+    if (!this.selectedField) {
+      return [];
+    }
+
+    return this.zones.filter(zone =>
+      (zone.field?._id || zone.field) === this.selectedField._id
     );
   }
 
@@ -797,12 +860,21 @@ updateFarm() {
   selectField(field: any) {
 
     this.selectedField = field;
+    this.syncSelectedZone();
     this.pendingLifecycleStage = this.getSelectedCropStage();
     if (field.farm?._id || field.farm) {
       this.expandedFarmIds.add(field.farm?._id || field.farm);
     }
     this.renderSelectedFarmMap();
     this.loadWeatherForSelection();
+    this.cdr.detectChanges();
+
+  }
+
+  selectZone(zone: any) {
+
+    this.selectedZone = zone;
+    this.renderSelectedFarmMap();
     this.cdr.detectChanges();
 
   }
@@ -832,6 +904,10 @@ updateFarm() {
   createField() {
 
     if (!this.selectedFarm) {
+      return;
+    }
+
+    if (!this.validateFieldBoundaryBeforeSave()) {
       return;
     }
 
@@ -876,6 +952,10 @@ updateFarm() {
   }
 
   updateField() {
+
+    if (!this.validateFieldBoundaryBeforeSave()) {
+      return;
+    }
 
     this.fieldService.updateField(
       this.editingFieldId,
@@ -927,6 +1007,99 @@ updateFarm() {
 
   }
 
+  createZone() {
+
+    if (!this.selectedField) {
+      return;
+    }
+
+    if (!this.validateZoneBoundaryBeforeSave()) {
+      return;
+    }
+
+    this.zoneService.createZone(
+      this.getZoneData()
+    ).subscribe({
+
+      next: () => {
+        this.resetZoneForm();
+        this.zoneFormOpen = false;
+        this.loadZones();
+      },
+
+      error: (error) => console.error(error)
+
+    });
+
+  }
+
+  editZone(zone: any) {
+
+    this.editingZoneId = zone._id;
+    this.zoneName = zone.name;
+    this.zoneType = zone.zoneType || 'Monitoring';
+    this.zoneArea = zone.area || 0;
+    this.zoneHealthScore = zone.healthScore || 0;
+    this.zoneMoistureScore = zone.moistureScore || 0;
+    this.zoneNdviScore = zone.ndviScore || 0;
+    this.zoneRecommendation = zone.recommendation || '';
+    this.zoneNotes = zone.notes || '';
+    this.zoneBoundaryCoordinates = zone.polygonCoordinates || [];
+    this.zoneFormOpen = true;
+
+    setTimeout(() => {
+      this.initializeZoneBoundaryMap();
+    }, 150);
+
+  }
+
+  updateZone() {
+
+    if (!this.editingZoneId) {
+      return;
+    }
+
+    if (!this.validateZoneBoundaryBeforeSave()) {
+      return;
+    }
+
+    this.zoneService.updateZone(
+      this.editingZoneId,
+      this.getZoneData()
+    ).subscribe({
+
+      next: () => {
+        this.resetZoneForm();
+        this.zoneFormOpen = false;
+        this.loadZones();
+      },
+
+      error: (error) => console.error(error)
+
+    });
+
+  }
+
+  deleteZone(id: string) {
+
+    if (!confirm('Delete this zone?')) {
+      return;
+    }
+
+    this.zoneService.deleteZone(id).subscribe({
+      next: () => {
+        if (this.selectedZone?._id === id) {
+          this.selectedZone = null;
+        }
+
+        this.loadZones();
+      },
+
+      error: (error) => console.error(error)
+    });
+
+  }
+
   openCreateField() {
 
     if (!this.selectedFarm) {
@@ -942,10 +1115,34 @@ updateFarm() {
 
   }
 
+  openCreateZone() {
+
+    if (!this.selectedField) {
+      return;
+    }
+
+    this.resetZoneForm();
+    this.zoneFormOpen = true;
+
+    setTimeout(() => {
+      this.initializeZoneBoundaryMap();
+    }, 150);
+
+  }
+
   closeFieldForm() {
 
     this.fieldFormOpen = false;
     this.isDrawingFieldBoundary = false;
+    this.fieldBoundaryError = '';
+
+  }
+
+  closeZoneForm() {
+
+    this.zoneFormOpen = false;
+    this.isDrawingZoneBoundary = false;
+    this.zoneBoundaryError = '';
 
   }
 
@@ -1653,6 +1850,35 @@ clearFieldBoundary() {
 
 }
 
+drawZoneBoundary() {
+
+  this.initializeZoneBoundaryMap();
+  this.clearZoneBoundary();
+  this.isDrawingZoneBoundary = true;
+  this.cdr.detectChanges();
+
+}
+
+finishZoneBoundary() {
+
+  if (this.zoneBoundaryCoordinates.length < 3) {
+    return;
+  }
+
+  this.isDrawingZoneBoundary = false;
+  this.updateZoneBoundaryFromPolygon();
+  this.renderZoneFormBoundary();
+  this.cdr.detectChanges();
+
+}
+
+clearZoneBoundary() {
+
+  this.clearZoneBoundaryOverlays();
+  this.isDrawingZoneBoundary = false;
+
+}
+
 private initializeFarmFormMap() {
 
   if (!this.mapsReady) {
@@ -1807,6 +2033,48 @@ private renderFieldBoundariesOnMap(map: any) {
     });
 
   this.renderNdviLayerOnMap(map);
+  this.renderZoneBoundariesOnMap(map);
+
+}
+
+private renderZoneBoundariesOnMap(map: any) {
+
+  this.selectedFieldZones
+    .filter(zone => zone.polygonCoordinates?.length)
+    .forEach((zone, index) => {
+      const selected =
+        this.selectedZone?._id === zone._id;
+
+      const polygon = new google.maps.Polygon({
+        paths: zone.polygonCoordinates,
+        fillColor: this.getZoneColor(index),
+        fillOpacity: selected ? .46 : .3,
+        strokeColor: selected ? '#111827' : this.getZoneColor(index),
+        strokeOpacity: selected ? 1 : .9,
+        strokeWeight: selected ? 3 : 2,
+        clickable: true,
+        zIndex: selected ? 70 : 60,
+        map
+      });
+
+      polygon.addListener('click', () => this.selectZone(zone));
+      this.renderZoneBoundaryLabel(map, zone);
+    });
+
+}
+
+private getZoneColor(index: number) {
+
+  const colors = [
+    '#0ea5e9',
+    '#a855f7',
+    '#14b8a6',
+    '#f97316',
+    '#84cc16',
+    '#ec4899'
+  ];
+
+  return colors[index % colors.length];
 
 }
 
@@ -1869,6 +2137,313 @@ private getFieldNdviColor(field: any) {
   }
 
   return '#15803d';
+
+}
+
+private getPolygonCenter(coordinates: any[]) {
+
+  if (!coordinates.length) {
+    return null;
+  }
+
+  const center = coordinates.reduce(
+    (sum: any, point: any) => ({
+      lat: sum.lat + Number(point.lat),
+      lng: sum.lng + Number(point.lng)
+    }),
+    { lat: 0, lng: 0 }
+  );
+
+  return {
+    lat: center.lat / coordinates.length,
+    lng: center.lng / coordinates.length
+  };
+
+}
+
+private validateFieldBoundaryBeforeSave() {
+
+  this.fieldBoundaryError = '';
+
+  if (this.fieldBoundaryCoordinates.length < 3) {
+    return true;
+  }
+
+  const farmPolygon =
+    this.selectedFarm?.polygonCoordinates || [];
+
+  if (
+    farmPolygon.length < 3 ||
+    !this.isPolygonInsidePolygon(this.fieldBoundaryCoordinates, farmPolygon)
+  ) {
+    this.fieldBoundaryError =
+      'Field boundary must stay inside the selected farm.';
+    this.cdr.detectChanges();
+    return false;
+  }
+
+  const overlapsExistingField =
+    this.selectedFarmFields
+      .filter(field =>
+        field._id !== this.editingFieldId &&
+        field.polygonCoordinates?.length
+      )
+      .some(field =>
+        this.polygonsOverlap(
+          this.fieldBoundaryCoordinates,
+          field.polygonCoordinates
+        )
+      );
+
+  if (overlapsExistingField) {
+    this.fieldBoundaryError =
+      'Field boundary overlaps an existing field.';
+    this.cdr.detectChanges();
+    return false;
+  }
+
+  return true;
+
+}
+
+private validateZoneBoundaryBeforeSave() {
+
+  this.zoneBoundaryError = '';
+
+  if (this.zoneBoundaryCoordinates.length < 3) {
+    return true;
+  }
+
+  const fieldPolygon =
+    this.selectedField?.polygonCoordinates || [];
+
+  if (
+    fieldPolygon.length < 3 ||
+    !this.isPolygonInsidePolygon(this.zoneBoundaryCoordinates, fieldPolygon)
+  ) {
+    this.zoneBoundaryError =
+      'Zone boundary must stay inside the selected field.';
+    this.cdr.detectChanges();
+    return false;
+  }
+
+  const overlapsExistingZone =
+    this.selectedFieldZones
+      .filter(zone =>
+        zone._id !== this.editingZoneId &&
+        zone.polygonCoordinates?.length
+      )
+      .some(zone =>
+        this.polygonsOverlap(
+          this.zoneBoundaryCoordinates,
+          zone.polygonCoordinates
+        )
+      );
+
+  if (overlapsExistingZone) {
+    this.zoneBoundaryError =
+      'Zone boundary overlaps an existing zone.';
+    this.cdr.detectChanges();
+    return false;
+  }
+
+  return true;
+
+}
+
+private normalizePolygon(coordinates: any[]) {
+
+  if (!Array.isArray(coordinates)) {
+    return [];
+  }
+
+  return coordinates
+    .map(point => ({
+      lat: Number(point?.lat),
+      lng: Number(point?.lng)
+    }))
+    .filter(point =>
+      Number.isFinite(point.lat) &&
+      Number.isFinite(point.lng)
+    );
+
+}
+
+private pointsEqual(first: any, second: any) {
+
+  return (
+    Math.abs(first.lat - second.lat) < 1e-10 &&
+    Math.abs(first.lng - second.lng) < 1e-10
+  );
+
+}
+
+private orientation(first: any, second: any, third: any) {
+
+  const value =
+    (second.lng - first.lng) * (third.lat - second.lat) -
+    (second.lat - first.lat) * (third.lng - second.lng);
+
+  if (Math.abs(value) < 1e-10) {
+    return 0;
+  }
+
+  return value > 0 ? 1 : 2;
+
+}
+
+private pointOnSegment(first: any, point: any, second: any) {
+
+  return (
+    point.lat <= Math.max(first.lat, second.lat) + 1e-10 &&
+    point.lat + 1e-10 >= Math.min(first.lat, second.lat) &&
+    point.lng <= Math.max(first.lng, second.lng) + 1e-10 &&
+    point.lng + 1e-10 >= Math.min(first.lng, second.lng) &&
+    this.orientation(first, point, second) === 0
+  );
+
+}
+
+private segmentsIntersect(firstStart: any, firstEnd: any, secondStart: any, secondEnd: any) {
+
+  const firstOrientation =
+    this.orientation(firstStart, firstEnd, secondStart);
+  const secondOrientation =
+    this.orientation(firstStart, firstEnd, secondEnd);
+  const thirdOrientation =
+    this.orientation(secondStart, secondEnd, firstStart);
+  const fourthOrientation =
+    this.orientation(secondStart, secondEnd, firstEnd);
+
+  if (
+    firstOrientation !== secondOrientation &&
+    thirdOrientation !== fourthOrientation
+  ) {
+    return true;
+  }
+
+  return (
+    (firstOrientation === 0 && this.pointOnSegment(firstStart, secondStart, firstEnd)) ||
+    (secondOrientation === 0 && this.pointOnSegment(firstStart, secondEnd, firstEnd)) ||
+    (thirdOrientation === 0 && this.pointOnSegment(secondStart, firstStart, secondEnd)) ||
+    (fourthOrientation === 0 && this.pointOnSegment(secondStart, firstEnd, secondEnd))
+  );
+
+}
+
+private getPolygonEdges(polygon: any[]) {
+
+  return polygon.map((point, index) => [
+    point,
+    polygon[(index + 1) % polygon.length]
+  ]);
+
+}
+
+private isPointInPolygon(point: any, coordinates: any[]) {
+
+  const polygon =
+    this.normalizePolygon(coordinates);
+
+  if (polygon.length < 3) {
+    return false;
+  }
+
+  for (const [start, end] of this.getPolygonEdges(polygon)) {
+    if (this.pointOnSegment(start, point, end)) {
+      return true;
+    }
+  }
+
+  let inside = false;
+
+  for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index++) {
+    const current =
+      polygon[index];
+    const previous =
+      polygon[previousIndex];
+    const intersects =
+      current.lng > point.lng !== previous.lng > point.lng &&
+      point.lat < (
+        (previous.lat - current.lat) *
+        (point.lng - current.lng) /
+        (previous.lng - current.lng) +
+        current.lat
+      );
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+
+}
+
+private isPolygonInsidePolygon(childCoordinates: any[], parentCoordinates: any[]) {
+
+  const child =
+    this.normalizePolygon(childCoordinates);
+  const parent =
+    this.normalizePolygon(parentCoordinates);
+
+  if (child.length < 3 || parent.length < 3) {
+    return false;
+  }
+
+  const verticesInside =
+    child.every(point => this.isPointInPolygon(point, parent));
+
+  if (!verticesInside) {
+    return false;
+  }
+
+  const parentEdges =
+    this.getPolygonEdges(parent);
+
+  return this.getPolygonEdges(child).every(([childStart, childEnd]) =>
+    parentEdges.every(([parentStart, parentEnd]) => {
+      if (
+        this.pointsEqual(childStart, parentStart) ||
+        this.pointsEqual(childStart, parentEnd) ||
+        this.pointsEqual(childEnd, parentStart) ||
+        this.pointsEqual(childEnd, parentEnd)
+      ) {
+        return true;
+      }
+
+      return !this.segmentsIntersect(childStart, childEnd, parentStart, parentEnd);
+    })
+  );
+
+}
+
+private polygonsOverlap(firstCoordinates: any[], secondCoordinates: any[]) {
+
+  const first =
+    this.normalizePolygon(firstCoordinates);
+  const second =
+    this.normalizePolygon(secondCoordinates);
+
+  if (first.length < 3 || second.length < 3) {
+    return false;
+  }
+
+  const edgesIntersect =
+    this.getPolygonEdges(first).some(([firstStart, firstEnd]) =>
+      this.getPolygonEdges(second).some(([secondStart, secondEnd]) =>
+        this.segmentsIntersect(firstStart, firstEnd, secondStart, secondEnd)
+      )
+    );
+
+  if (edgesIntersect) {
+    return true;
+  }
+
+  return (
+    first.some(point => this.isPointInPolygon(point, second)) ||
+    second.some(point => this.isPointInPolygon(point, first))
+  );
 
 }
 
@@ -2058,6 +2633,7 @@ private initializeFieldBoundaryMap() {
     this.fieldBoundaryMap,
     this.selectedFarm.polygonCoordinates || []
   );
+  this.renderExistingFieldsForForm();
 
   this.fieldBoundaryMap.addListener('click', (event: any) => {
     if (!this.isDrawingFieldBoundary) {
@@ -2071,6 +2647,32 @@ private initializeFieldBoundaryMap() {
   });
 
   this.renderFieldFormBoundary();
+
+}
+
+private renderExistingFieldsForForm() {
+
+  if (!this.fieldBoundaryMap) {
+    return;
+  }
+
+  this.selectedFarmFields
+    .filter(field =>
+      field._id !== this.editingFieldId &&
+      field.polygonCoordinates?.length
+    )
+    .forEach(field => {
+      new google.maps.Polygon({
+        paths: field.polygonCoordinates,
+        fillColor: '#22c55e',
+        fillOpacity: .18,
+        strokeColor: '#16a34a',
+        strokeOpacity: .85,
+        strokeWeight: 2,
+        clickable: false,
+        map: this.fieldBoundaryMap
+      });
+    });
 
 }
 
@@ -2148,6 +2750,44 @@ private renderFieldBoundaryLabel(map: any, field: any) {
 
 }
 
+private renderZoneBoundaryLabel(map: any, zone: any) {
+
+  const coordinates = zone.polygonCoordinates || [];
+
+  if (!coordinates.length) {
+    return;
+  }
+
+  const center = coordinates.reduce(
+    (sum: any, point: any) => ({
+      lat: sum.lat + Number(point.lat),
+      lng: sum.lng + Number(point.lng)
+    }),
+    { lat: 0, lng: 0 }
+  );
+
+  const marker = new google.maps.Marker({
+    position: {
+      lat: center.lat / coordinates.length,
+      lng: center.lng / coordinates.length
+    },
+    map,
+    label: {
+      text: zone.name,
+      color: '#111827',
+      fontSize: '12px',
+      fontWeight: '800'
+    },
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 0
+    }
+  });
+
+  marker.addListener('click', () => this.selectZone(zone));
+
+}
+
 private watchFieldPolygonEdits() {
 
   if (!this.fieldBoundaryPolygon) {
@@ -2158,6 +2798,255 @@ private watchFieldPolygonEdits() {
   path.addListener('set_at', () => this.updateFieldBoundaryFromPolygon());
   path.addListener('insert_at', () => this.updateFieldBoundaryFromPolygon());
   path.addListener('remove_at', () => this.updateFieldBoundaryFromPolygon());
+
+}
+
+private initializeZoneBoundaryMap() {
+
+  if (!this.mapsReady || !this.selectedFarm || !this.selectedField) {
+    return;
+  }
+
+  const mapElement =
+    document.getElementById('zone-boundary-map');
+
+  if (!mapElement) {
+    return;
+  }
+
+  const coordinates =
+    this.selectedField.polygonCoordinates || [];
+  const center =
+    this.getPolygonCenter(coordinates);
+  const hasCenter =
+    Boolean(center);
+  const fallbackPosition = {
+    lat: this.selectedFarm.latitude ? Number(this.selectedFarm.latitude) : 4.5709,
+    lng: this.selectedFarm.longitude ? Number(this.selectedFarm.longitude) : -74.2973
+  };
+
+  this.zoneBoundaryMap = new google.maps.Map(
+    mapElement,
+    {
+      center: hasCenter ? center : fallbackPosition,
+      zoom: hasCenter ? 17 : 6,
+      mapTypeId: this.getGoogleMapTypeId(),
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: true
+    }
+  );
+  this.addMapBoundaryControls(this.zoneBoundaryMap, 'zone');
+  this.addMapLayerControls(this.zoneBoundaryMap);
+
+  this.renderFarmBoundaryOnMap(
+    this.zoneBoundaryMap,
+    this.selectedFarm.polygonCoordinates || []
+  );
+
+  this.renderZoneFieldContext();
+  this.renderExistingZonesForForm();
+
+  this.zoneBoundaryMap.addListener('click', (event: any) => {
+    if (!this.isDrawingZoneBoundary) {
+      return;
+    }
+
+    this.addZoneBoundaryVertex({
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng()
+    });
+  });
+
+  this.renderZoneFormBoundary();
+
+}
+
+private renderZoneFieldContext() {
+
+  if (
+    !this.zoneBoundaryMap ||
+    !this.selectedField?.polygonCoordinates?.length
+  ) {
+    return;
+  }
+
+  new google.maps.Polygon({
+    paths: this.selectedField.polygonCoordinates,
+    fillColor: '#f59e0b',
+    fillOpacity: .16,
+    strokeColor: '#f97316',
+    strokeOpacity: .95,
+    strokeWeight: 2,
+    clickable: false,
+    map: this.zoneBoundaryMap
+  });
+
+}
+
+private renderExistingZonesForForm() {
+
+  if (!this.zoneBoundaryMap) {
+    return;
+  }
+
+  this.selectedFieldZones
+    .filter(zone =>
+      zone._id !== this.editingZoneId &&
+      zone.polygonCoordinates?.length
+    )
+    .forEach((zone, index) => {
+      new google.maps.Polygon({
+        paths: zone.polygonCoordinates,
+        fillColor: this.getZoneColor(index),
+        fillOpacity: .22,
+        strokeColor: this.getZoneColor(index),
+        strokeOpacity: .75,
+        strokeWeight: 2,
+        clickable: false,
+        map: this.zoneBoundaryMap
+      });
+    });
+
+}
+
+private renderZoneFormBoundary() {
+
+  this.clearZoneBoundaryOverlays(false);
+
+  if (!this.zoneBoundaryCoordinates.length) {
+    this.zoneBoundaryPolygon = null;
+    return;
+  }
+
+  this.zoneBoundaryPolygon = new google.maps.Polygon({
+    paths: this.zoneBoundaryCoordinates,
+    fillColor: '#0ea5e9',
+    fillOpacity: .34,
+    strokeColor: '#0284c7',
+    strokeOpacity: .95,
+    strokeWeight: 2,
+    clickable: false,
+    editable: true,
+    map: this.zoneBoundaryMap
+  });
+
+  this.renderZoneBoundaryVertexMarkers();
+
+  const bounds = new google.maps.LatLngBounds();
+
+  this.zoneBoundaryCoordinates.forEach(point => {
+    bounds.extend(point);
+  });
+
+  this.zoneBoundaryMap.fitBounds(bounds);
+  this.watchZonePolygonEdits();
+
+}
+
+private watchZonePolygonEdits() {
+
+  if (!this.zoneBoundaryPolygon) {
+    return;
+  }
+
+  const path = this.zoneBoundaryPolygon.getPath();
+  path.addListener('set_at', () => this.updateZoneBoundaryFromPolygon());
+  path.addListener('insert_at', () => this.updateZoneBoundaryFromPolygon());
+  path.addListener('remove_at', () => this.updateZoneBoundaryFromPolygon());
+
+}
+
+private addZoneBoundaryVertex(position: any) {
+
+  this.zoneBoundaryCoordinates = [
+    ...this.zoneBoundaryCoordinates,
+    {
+      lat: position.lat,
+      lng: position.lng
+    }
+  ];
+
+  this.renderZoneFormBoundary();
+
+  if (this.zoneBoundaryCoordinates.length >= 3) {
+    this.updateZoneBoundaryFromPolygon();
+  }
+
+  this.cdr.detectChanges();
+
+}
+
+private clearZoneBoundaryOverlays(resetData = true) {
+
+  if (this.zoneBoundaryPolygon) {
+    this.zoneBoundaryPolygon.setMap(null);
+  }
+
+  this.zoneBoundaryVertexMarkers.forEach(marker => marker.setMap(null));
+  this.zoneBoundaryVertexMarkers = [];
+  this.zoneBoundaryPolygon = null;
+
+  if (resetData) {
+    this.zoneBoundaryCoordinates = [];
+    this.zoneArea = 0;
+  }
+
+}
+
+private renderZoneBoundaryVertexMarkers() {
+
+  if (!this.zoneBoundaryMap) {
+    return;
+  }
+
+  this.zoneBoundaryCoordinates.forEach((point, index) => {
+    const marker = new google.maps.Marker({
+      position: point,
+      map: this.zoneBoundaryMap,
+      label: `${index + 1}`,
+      title: `Zone boundary point ${index + 1}`,
+      draggable: true
+    });
+
+    marker.addListener('dragend', (event: any) => {
+      this.zoneBoundaryCoordinates[index] = {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng()
+      };
+      this.renderZoneFormBoundary();
+
+      if (this.zoneBoundaryCoordinates.length >= 3) {
+        this.updateZoneBoundaryFromPolygon();
+      }
+    });
+
+    this.zoneBoundaryVertexMarkers.push(marker);
+  });
+
+}
+
+private updateZoneBoundaryFromPolygon() {
+
+  if (!this.zoneBoundaryPolygon) {
+    return;
+  }
+
+  const path = this.zoneBoundaryPolygon.getPath();
+
+  this.zoneBoundaryCoordinates =
+    path.getArray().map((point: any) => ({
+      lat: point.lat(),
+      lng: point.lng()
+    }));
+
+  const areaSquareMeters =
+    google.maps.geometry.spherical.computeArea(path);
+
+  this.zoneArea =
+    Number((areaSquareMeters / 10000).toFixed(2));
+
+  this.cdr.detectChanges();
 
 }
 
@@ -2254,7 +3143,7 @@ private updateFieldBoundaryFromPolygon() {
 
 }
 
-private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
+private addMapBoundaryControls(map: any, mode: 'farm' | 'field' | 'zone') {
 
   if (!map || !google?.maps?.ControlPosition) {
     return;
@@ -2272,7 +3161,11 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
   control.style.boxShadow = '0 14px 40px rgba(15,23,42,.18)';
 
   const drawLabel =
-    mode === 'farm' ? 'Draw Boundary' : 'Draw Field';
+    mode === 'farm'
+      ? 'Draw Boundary'
+      : mode === 'field'
+        ? 'Draw Field'
+        : 'Draw Zone';
 
   const drawButton =
     this.createMapControlButton(drawLabel, true);
@@ -2287,9 +3180,12 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
     if (mode === 'farm') {
       this.clearFarmBoundary();
       this.isDrawingFarmBoundary = true;
-    } else {
+    } else if (mode === 'field') {
       this.clearFieldBoundary();
       this.isDrawingFieldBoundary = true;
+    } else {
+      this.clearZoneBoundary();
+      this.isDrawingZoneBoundary = true;
     }
 
     this.cdr.detectChanges();
@@ -2300,8 +3196,10 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
 
     if (mode === 'farm') {
       this.finishFarmBoundary();
-    } else {
+    } else if (mode === 'field') {
       this.finishFieldBoundary();
+    } else {
+      this.finishZoneBoundary();
     }
   });
 
@@ -2310,8 +3208,10 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field') {
 
     if (mode === 'farm') {
       this.clearFarmBoundary();
-    } else {
+    } else if (mode === 'field') {
       this.clearFieldBoundary();
+    } else {
+      this.clearZoneBoundary();
     }
 
     this.cdr.detectChanges();
@@ -2489,6 +3389,19 @@ private syncSelectedField() {
   }
 
   this.pendingLifecycleStage = this.getSelectedCropStage();
+  this.syncSelectedZone();
+
+}
+
+private syncSelectedZone() {
+
+  const zones = this.selectedFieldZones;
+
+  if (this.selectedZone) {
+    this.selectedZone =
+      zones.find(zone => zone._id === this.selectedZone._id) ||
+      null;
+  }
 
 }
 
@@ -2509,6 +3422,23 @@ private getFieldData() {
 
 }
 
+private getZoneData() {
+
+  return {
+    name: this.zoneName,
+    field: this.selectedField?._id,
+    polygonCoordinates: this.zoneBoundaryCoordinates,
+    area: this.zoneArea,
+    zoneType: this.zoneType,
+    healthScore: this.zoneHealthScore,
+    moistureScore: this.zoneMoistureScore,
+    ndviScore: this.zoneNdviScore,
+    recommendation: this.zoneRecommendation,
+    notes: this.zoneNotes
+  };
+
+}
+
 private resetFieldForm() {
 
   this.editingFieldId = '';
@@ -2522,6 +3452,23 @@ private resetFieldForm() {
   this.fieldNotes = '';
   this.fieldBoundaryCoordinates = [];
   this.isDrawingFieldBoundary = false;
+
+}
+
+private resetZoneForm() {
+
+  this.editingZoneId = '';
+  this.zoneName = '';
+  this.zoneType = 'Monitoring';
+  this.zoneArea = 0;
+  this.zoneHealthScore = this.selectedFieldHealthIndex;
+  this.zoneMoistureScore = this.selectedFieldSoilMoisture;
+  this.zoneNdviScore = this.selectedFieldNdviScore;
+  this.zoneRecommendation = this.getFieldRecommendations()[0]?.action || '';
+  this.zoneNotes = '';
+  this.zoneBoundaryCoordinates = [];
+  this.isDrawingZoneBoundary = false;
+  this.clearZoneBoundaryOverlays();
 
 }
 
