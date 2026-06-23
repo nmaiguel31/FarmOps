@@ -386,7 +386,7 @@
                 <svg lucideLeaf></svg>
               </span>
               <div>
-                <span>Crop Status</span>
+                <span>Field Status</span>
                 <strong [ngClass]="getFieldValueTone('crop', selectedField.status)">{{ selectedField.status }}</strong>
               </div>
             </article>
@@ -505,7 +505,7 @@
             </div>
           </section>
 
-          <div class="lifecycle-panel" *ngIf="getSelectedCrop(); else noLinkedCropLifecycle">
+          <div class="lifecycle-panel" *ngIf="shouldShowLifecycleTracking(); else noLinkedCropLifecycle">
             <div class="lifecycle-header">
               <div>
                 <h4>Lifecycle Tracking</h4>
@@ -572,6 +572,8 @@
               </button>
             </div>
 
+            <p class="boundary-error" *ngIf="lifecycleUpdateError">{{ lifecycleUpdateError }}</p>
+
             <p class="lifecycle-note">
               Days in stage are automatically calculated from the current stage start date.
             </p>
@@ -580,7 +582,8 @@
           <ng-template #noLinkedCropLifecycle>
             <div class="lifecycle-panel">
               <div class="empty-state compact">
-                Link this field to a crop to track lifecycle stages.
+                <strong>{{ getLifecycleUnavailableTitle() }}</strong>
+                <span>{{ getLifecycleUnavailableMessage() }}</span>
               </div>
             </div>
           </ng-template>
@@ -704,8 +707,8 @@
 
       <label>
         Linked crop
-        <select class="farmops-field" [(ngModel)]="selectedCrop" name="selectedCrop">
-          <option value="">Use crop type instead</option>
+        <select class="farmops-field" [(ngModel)]="selectedCrop" (ngModelChange)="onFieldCropAssignmentChange()" name="selectedCrop">
+          <option value="">No crop assigned</option>
           <option *ngFor="let crop of getCropsForSelectedFarm()" [value]="crop._id">
             {{ crop.name }} - {{ crop.type }}
           </option>
@@ -713,9 +716,25 @@
       </label>
 
       <label>
-        Crop type
-        <input class="farmops-field" type="text" placeholder="Corn, Wheat, Soybean" [(ngModel)]="fieldCropType" name="fieldCropType">
+        Crop type (optional)
+        <input class="farmops-field" type="text" placeholder="Corn, Wheat, Soybean" [(ngModel)]="fieldCropType" (ngModelChange)="onFieldCropAssignmentChange()" name="fieldCropType">
       </label>
+
+      <div class="coordinate-grid" *ngIf="hasFieldCropAssignment()">
+        <label>
+          {{ isPlantingDateRequiredForStage(fieldCurrentStage) ? 'Planting date' : 'Planting date (optional)' }}
+          <input class="farmops-field" type="date" [(ngModel)]="fieldPlantingDate" name="fieldPlantingDate">
+        </label>
+
+        <label>
+          Crop Stage
+          <select class="farmops-field" [ngModel]="fieldCurrentStage" (ngModelChange)="onFieldStageChange($event)" name="fieldCurrentStage">
+            <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="boundary-error" *ngIf="fieldLifecycleError">{{ fieldLifecycleError }}</p>
 
       <div class="coordinate-grid">
         <label>
@@ -724,10 +743,9 @@
         </label>
 
         <label>
-          Status
+          Field Status
           <select class="farmops-field" [(ngModel)]="fieldStatus" name="fieldStatus">
             <option>Active</option>
-            <option>Planned</option>
             <option>Resting</option>
             <option>Harvested</option>
           </select>

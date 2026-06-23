@@ -1095,7 +1095,9 @@
   color: var(--color-text);
   font-size: clamp(14px, .9vw, 16px);
   font-weight: 900;
-  white-space: nowrap;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .lifecycle-summary-grid small {
@@ -1182,7 +1184,19 @@
 }
 
 .empty-state.compact {
+  display: grid;
+  gap: 8px;
   padding: 24px;
+}
+
+.empty-state.compact strong {
+  color: var(--color-text);
+  font-size: 18px;
+}
+
+.empty-state.compact span {
+  color: var(--color-muted-strong);
+  font-size: 14px;
 }
 
 .empty-workspace {

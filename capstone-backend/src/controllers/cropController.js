@@ -3,6 +3,49 @@ const Farm = require('../models/Farm');
 const Field = require('../models/Field');
 const logEvent = require('../utils/logger');
 
+const lifecycleDurationDays = 120;
+
+const normalizeLifecycleDate = (date) => {
+  if (!date) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(date);
+  return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+};
+
+const calculateExpectedHarvestDate = (plantingDate) => {
+  const parsedDate = normalizeLifecycleDate(plantingDate);
+
+  if (!parsedDate) {
+    return undefined;
+  }
+
+  parsedDate.setDate(parsedDate.getDate() + lifecycleDurationDays);
+  return parsedDate;
+};
+
+const lifecycleStages = [
+  'Planning',
+  'Land Preparation',
+  'Planting',
+  'Vegetative Growth',
+  'Flowering',
+  'Ripening',
+  'Harvest'
+];
+
+const requiresPlantingDateForStage = (stage) => {
+  return lifecycleStages.indexOf(stage) >=
+    lifecycleStages.indexOf('Planting');
+};
+
+const createPlantingDateError = () => {
+  const error = new Error('Planting date is required for this crop stage.');
+  error.statusCode = 400;
+  return error;
+};
+
 // Create crop
 const createCrop = async (req, res) => {
 
@@ -37,15 +80,33 @@ const createCrop = async (req, res) => {
       
     }
     
+    const stage =
+      req.body.currentStage || 'Planning';
+    const plantingDate =
+      normalizeLifecycleDate(req.body.plantingDate) ||
+      (req.body.currentStage === 'Planning' ? new Date() : undefined);
+
+    if (
+      req.body.currentStage &&
+      requiresPlantingDateForStage(stage) &&
+      !plantingDate
+    ) {
+      throw createPlantingDateError();
+    }
+
+    const expectedHarvestDate =
+      normalizeLifecycleDate(req.body.expectedHarvestDate) ||
+      calculateExpectedHarvestDate(plantingDate);
+
     const crop = await Crop.create({
       name: req.body.name,
       type: req.body.type,
       season: req.body.season,
       farm: req.body.farm,
-      currentStage: req.body.currentStage || 'Planning',
+      currentStage: stage,
       stageStartedAt: req.body.stageStartedAt || new Date(),
-      plantingDate: req.body.plantingDate || undefined,
-      expectedHarvestDate: req.body.expectedHarvestDate || undefined
+      plantingDate,
+      expectedHarvestDate
     });
     
     logEvent('info', 'CROP_CREATED', {
@@ -58,7 +119,7 @@ const createCrop = async (req, res) => {
     
   } catch (error) {
     
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message
     });
     
@@ -225,13 +286,37 @@ const updateCrop = async (req, res) => {
 
     }
 
+    const nextStage =
+      req.body.currentStage ?? crop.currentStage;
+    const stageChanged =
+      nextStage !== crop.currentStage;
+    const plantingDate =
+      req.body.plantingDate === undefined
+        ? crop.plantingDate
+        : normalizeLifecycleDate(req.body.plantingDate);
+
+    if (
+      req.body.currentStage &&
+      requiresPlantingDateForStage(nextStage) &&
+      !plantingDate
+    ) {
+      throw createPlantingDateError();
+    }
+
+    const expectedHarvestDate =
+      req.body.expectedHarvestDate === undefined
+        ? crop.expectedHarvestDate || calculateExpectedHarvestDate(plantingDate)
+        : normalizeLifecycleDate(req.body.expectedHarvestDate) ||
+          calculateExpectedHarvestDate(plantingDate);
+
     crop.name = req.body.name ?? crop.name;
     crop.type = req.body.type ?? crop.type;
     crop.season = req.body.season ?? crop.season;
-    crop.currentStage = req.body.currentStage ?? crop.currentStage;
-    crop.stageStartedAt = req.body.stageStartedAt ?? crop.stageStartedAt;
-    crop.plantingDate = req.body.plantingDate ?? crop.plantingDate;
-    crop.expectedHarvestDate = req.body.expectedHarvestDate ?? crop.expectedHarvestDate;
+    crop.currentStage = nextStage;
+    crop.stageStartedAt = req.body.stageStartedAt ??
+      (stageChanged ? new Date() : crop.stageStartedAt);
+    crop.plantingDate = plantingDate;
+    crop.expectedHarvestDate = expectedHarvestDate;
 
     await crop.save();
 
@@ -246,7 +331,7 @@ const updateCrop = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message
     });
 

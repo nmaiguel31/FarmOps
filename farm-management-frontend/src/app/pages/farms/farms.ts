@@ -93,6 +93,9 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   fieldName = '';
   fieldCropType = '';
   selectedCrop = '';
+  fieldPlantingDate = '';
+  fieldCurrentStage = 'Planning';
+  fieldLifecycleError = '';
   fieldArea = 0;
   fieldStatus = 'Active';
   fieldHealthStatus = 'Good';
@@ -137,6 +140,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
     'Harvest'
   ];
   pendingLifecycleStage = 'Planning';
+  lifecycleUpdateError = '';
   readonly lifecycleDurationDays = 120;
   private farmFormMap: any = null;
   private farmFormMarker: any = null;
@@ -635,7 +639,7 @@ updateFarm() {
   get selectedFieldCropLabel() {
     return this.selectedField
       ? this.getFieldCropLabel(this.selectedField)
-      : 'Unassigned';
+      : 'No crop assigned';
   }
 
   get selectedFieldHealthIndex() {
@@ -841,7 +845,11 @@ updateFarm() {
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.fieldLifecycleError =
+          error?.error?.message || 'Unable to update field.';
+        console.error(error);
+      }
 
     });
 
@@ -907,6 +915,10 @@ updateFarm() {
       return;
     }
 
+    if (!this.validateFieldLifecycleBeforeSave()) {
+      return;
+    }
+
     if (!this.validateFieldBoundaryBeforeSave()) {
       return;
     }
@@ -925,7 +937,11 @@ updateFarm() {
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.fieldLifecycleError =
+          error?.error?.message || 'Unable to create field.';
+        console.error(error);
+      }
 
     });
 
@@ -933,16 +949,29 @@ updateFarm() {
 
   editField(field: any) {
 
+    const allowedFieldStatuses =
+      ['Active', 'Resting', 'Harvested'];
+
     this.editingFieldId = field._id;
     this.fieldName = field.name;
     this.fieldCropType = field.cropType || '';
     this.selectedCrop = field.crop?._id || field.crop || '';
+    const crop =
+      field.crop?._id
+        ? field.crop
+        : this.crops.find(item => item._id === field.crop);
+    this.fieldPlantingDate =
+      crop?.plantingDate ? this.toDateInputValue(crop.plantingDate) : '';
+    this.fieldCurrentStage =
+      crop?.currentStage || 'Planning';
     this.fieldArea = field.area || 0;
-    this.fieldStatus = field.status || 'Active';
+    this.fieldStatus =
+      allowedFieldStatuses.includes(field.status) ? field.status : 'Active';
     this.fieldHealthStatus = field.healthStatus || 'Good';
     this.fieldIrrigationStatus = field.irrigationStatus || 'Scheduled';
     this.fieldNotes = field.notes || '';
     this.fieldBoundaryCoordinates = field.polygonCoordinates || [];
+    this.onFieldCropAssignmentChange();
     this.fieldFormOpen = true;
 
     setTimeout(() => {
@@ -952,6 +981,10 @@ updateFarm() {
   }
 
   updateField() {
+
+    if (!this.validateFieldLifecycleBeforeSave()) {
+      return;
+    }
 
     if (!this.validateFieldBoundaryBeforeSave()) {
       return;
@@ -1095,7 +1128,11 @@ updateFarm() {
         this.loadZones();
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.lifecycleUpdateError =
+          error?.error?.message || 'Unable to update crop stage.';
+        console.error(error);
+      }
     });
 
   }
@@ -1135,6 +1172,7 @@ updateFarm() {
     this.fieldFormOpen = false;
     this.isDrawingFieldBoundary = false;
     this.fieldBoundaryError = '';
+    this.fieldLifecycleError = '';
 
   }
 
@@ -1154,7 +1192,7 @@ updateFarm() {
 
   getFieldCropLabel(field: any) {
 
-    return field.crop?.name || field.cropType || 'Unassigned';
+    return field.crop?.name || field.cropType || 'No crop assigned';
 
   }
 
@@ -1189,13 +1227,13 @@ updateFarm() {
       this.getSelectedCrop()?.plantingDate;
 
     if (!plantingDate) {
-      return 'Schedule pending';
+      return 'Not available';
     }
 
     const start = new Date(plantingDate);
 
     if (Number.isNaN(start.getTime())) {
-      return 'Schedule pending';
+      return 'Not available';
     }
 
     const daysPerStage =
@@ -1466,6 +1504,96 @@ updateFarm() {
 
   }
 
+  hasFieldCropAssignment() {
+
+    return Boolean(this.selectedCrop || this.fieldCropType.trim());
+
+  }
+
+  onFieldCropAssignmentChange() {
+
+    if (!this.hasFieldCropAssignment()) {
+      this.fieldLifecycleError = '';
+      return;
+    }
+
+    if (
+      this.fieldCurrentStage === 'Planning' &&
+      !this.fieldPlantingDate
+    ) {
+      this.fieldPlantingDate = this.toDateInputValue(new Date());
+    }
+
+  }
+
+  onFieldStageChange(stage: string) {
+
+    this.fieldCurrentStage = stage;
+    this.fieldLifecycleError = '';
+    this.onFieldCropAssignmentChange();
+
+  }
+
+  isPlantingDateRequiredForStage(stage: string) {
+
+    return this.lifecycleStages.indexOf(stage) >=
+      this.lifecycleStages.indexOf('Planting');
+
+  }
+
+  validateFieldLifecycleBeforeSave() {
+
+    this.fieldLifecycleError = '';
+
+    if (
+      this.hasFieldCropAssignment() &&
+      this.isPlantingDateRequiredForStage(this.fieldCurrentStage) &&
+      !this.fieldPlantingDate
+    ) {
+      this.fieldLifecycleError =
+        'Planting date is required for this crop stage.';
+      return false;
+    }
+
+    return true;
+
+  }
+
+  shouldShowLifecycleTracking() {
+
+    return this.selectedField?.status === 'Active' &&
+      Boolean(this.getSelectedCrop());
+
+  }
+
+  getLifecycleUnavailableTitle() {
+
+    if (this.selectedField?.status === 'Resting') {
+      return 'No active crop cycle';
+    }
+
+    if (this.selectedField?.status === 'Harvested') {
+      return 'Crop cycle completed';
+    }
+
+    return 'No crop assigned';
+
+  }
+
+  getLifecycleUnavailableMessage() {
+
+    if (this.selectedField?.status === 'Resting') {
+      return 'This field is currently resting.';
+    }
+
+    if (this.selectedField?.status === 'Harvested') {
+      return 'This field has been harvested. Start a new crop cycle to enable lifecycle tracking.';
+    }
+
+    return 'Assign or create a crop for this field to enable lifecycle tracking.';
+
+  }
+
   getSelectedCropProgress() {
 
     const currentIndex =
@@ -1513,6 +1641,22 @@ updateFarm() {
         year: 'numeric'
       }
     );
+
+  }
+
+  toDateInputValue(date: any) {
+
+    if (!date) {
+      return '';
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    return parsedDate.toISOString().slice(0, 10);
 
   }
 
@@ -1577,6 +1721,7 @@ updateFarm() {
 
     if (this.lifecycleStages.includes(stage)) {
       this.pendingLifecycleStage = stage;
+      this.lifecycleUpdateError = '';
     }
 
   }
@@ -1591,7 +1736,16 @@ updateFarm() {
     }
 
     const plantingDate =
-      crop.plantingDate || (stage === 'Planting' ? new Date().toISOString() : undefined);
+      crop.plantingDate || undefined;
+
+    if (
+      this.isPlantingDateRequiredForStage(stage) &&
+      !plantingDate
+    ) {
+      this.lifecycleUpdateError =
+        'Planting date is required for this crop stage.';
+      return;
+    }
 
     let expectedHarvestDate = crop.expectedHarvestDate || undefined;
 
@@ -1601,13 +1755,18 @@ updateFarm() {
       expectedHarvestDate = harvestDate.toISOString();
     }
 
+    const stageStartedAt =
+      stage === crop.currentStage
+        ? crop.stageStartedAt || new Date().toISOString()
+        : new Date().toISOString();
+
     const payload = {
       name: crop.name,
       type: crop.type,
       season: crop.season,
       farm: crop.farm?._id || crop.farm || this.selectedFarm?._id,
       currentStage: stage,
-      stageStartedAt: new Date().toISOString(),
+      stageStartedAt,
       plantingDate,
       expectedHarvestDate
     };
@@ -1615,10 +1774,15 @@ updateFarm() {
     this.cropService.updateCrop(crop._id, payload).subscribe({
       next: () => {
         this.pendingLifecycleStage = stage;
+        this.lifecycleUpdateError = '';
         this.loadCrops();
         this.loadFields();
       },
-      error: (error) => console.error(error)
+      error: (error) => {
+        this.lifecycleUpdateError =
+          error?.error?.message || 'Unable to update crop stage.';
+        console.error(error);
+      }
     });
 
   }
@@ -2664,10 +2828,10 @@ private renderExistingFieldsForForm() {
     .forEach(field => {
       new google.maps.Polygon({
         paths: field.polygonCoordinates,
-        fillColor: '#22c55e',
-        fillOpacity: .18,
-        strokeColor: '#16a34a',
-        strokeOpacity: .85,
+        fillColor: '#f63b3b',
+        fillOpacity: .16,
+        strokeColor: '#eb2525',
+        strokeOpacity: .9,
         strokeWeight: 2,
         clickable: false,
         map: this.fieldBoundaryMap
@@ -3389,6 +3553,7 @@ private syncSelectedField() {
   }
 
   this.pendingLifecycleStage = this.getSelectedCropStage();
+  this.lifecycleUpdateError = '';
   this.syncSelectedZone();
 
 }
@@ -3407,10 +3572,25 @@ private syncSelectedZone() {
 
 private getFieldData() {
 
+  const hasCropAssignment =
+    this.hasFieldCropAssignment();
+  const plantingDate =
+    hasCropAssignment &&
+    this.fieldCurrentStage === 'Planning' &&
+    !this.fieldPlantingDate
+      ? this.toDateInputValue(new Date())
+      : this.fieldPlantingDate;
+
   return {
     name: this.fieldName,
     cropType: this.selectedCrop ? '' : this.fieldCropType,
     crop: this.selectedCrop || null,
+    plantingDate: hasCropAssignment && plantingDate
+      ? plantingDate
+      : null,
+    currentStage: hasCropAssignment
+      ? this.fieldCurrentStage
+      : undefined,
     area: this.fieldArea,
     status: this.fieldStatus,
     healthStatus: this.fieldHealthStatus,
@@ -3445,6 +3625,9 @@ private resetFieldForm() {
   this.fieldName = '';
   this.fieldCropType = '';
   this.selectedCrop = '';
+  this.fieldPlantingDate = '';
+  this.fieldCurrentStage = 'Planning';
+  this.fieldLifecycleError = '';
   this.fieldArea = 0;
   this.fieldStatus = 'Active';
   this.fieldHealthStatus = 'Good';

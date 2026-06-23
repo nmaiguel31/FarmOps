@@ -73,12 +73,119 @@ const escapeRegExp = (value) => {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
-const resolveFieldCrop = async ({ cropId, cropType, farmId, user }) => {
+const lifecycleStages = [
+  'Planning',
+  'Land Preparation',
+  'Planting',
+  'Vegetative Growth',
+  'Flowering',
+  'Ripening',
+  'Harvest'
+];
+
+const lifecycleDurationDays = 120;
+
+const getValidStage = (stage) => {
+  return lifecycleStages.includes(stage) ? stage : 'Planning';
+};
+
+const requiresPlantingDateForStage = (stage) => {
+  return lifecycleStages.indexOf(stage) >=
+    lifecycleStages.indexOf('Planting');
+};
+
+const normalizeLifecycleDate = (date) => {
+  if (!date) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(date);
+  return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+};
+
+const calculateExpectedHarvestDate = (plantingDate) => {
+  const parsedDate = normalizeLifecycleDate(plantingDate);
+
+  if (!parsedDate) {
+    return undefined;
+  }
+
+  parsedDate.setDate(parsedDate.getDate() + lifecycleDurationDays);
+  return parsedDate;
+};
+
+const applyLifecycleInput = async (cropId, { plantingDate, currentStage }) => {
+  const crop = await Crop.findById(cropId);
+
+  if (!crop) {
+    return cropId;
+  }
+
+  let changed = false;
+  const parsedPlantingDate = normalizeLifecycleDate(plantingDate);
+  const nextStage =
+    currentStage && lifecycleStages.includes(currentStage)
+      ? currentStage
+      : crop.currentStage;
+  const nextPlantingDate =
+    parsedPlantingDate ||
+    crop.plantingDate ||
+    (nextStage === 'Planning' ? new Date() : undefined);
+
+  if (
+    requiresPlantingDateForStage(nextStage) &&
+    !nextPlantingDate
+  ) {
+    const error = new Error('Planting date is required for this crop stage.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (
+    nextPlantingDate &&
+    (
+      !crop.plantingDate ||
+      crop.plantingDate.getTime() !== nextPlantingDate.getTime()
+    )
+  ) {
+    crop.plantingDate = nextPlantingDate;
+    changed = true;
+
+    crop.expectedHarvestDate = calculateExpectedHarvestDate(nextPlantingDate);
+  }
+
+  if (currentStage && lifecycleStages.includes(currentStage)) {
+    if (crop.currentStage !== currentStage) {
+      crop.stageStartedAt = new Date();
+    }
+
+    crop.currentStage = currentStage;
+    changed = true;
+  }
+
+  if (changed) {
+    await crop.save();
+  }
+
+  return crop._id;
+};
+
+const resolveFieldCrop = async ({
+  cropId,
+  cropType,
+  farmId,
+  user,
+  plantingDate,
+  currentStage
+}) => {
   const selectedCrop =
     await validateCropForFarm(cropId, farmId, user);
 
   if (selectedCrop) {
-    return selectedCrop;
+    return applyLifecycleInput(selectedCrop, {
+      plantingDate,
+      currentStage
+    });
   }
 
   const manualCropType =
@@ -100,14 +207,38 @@ const resolveFieldCrop = async ({ cropId, cropType, farmId, user }) => {
   });
 
   if (existingCrop) {
-    return existingCrop._id;
+    return applyLifecycleInput(existingCrop._id, {
+      plantingDate,
+      currentStage
+    });
+  }
+
+  const parsedPlantingDate =
+    normalizeLifecycleDate(plantingDate);
+  const stage =
+    getValidStage(currentStage);
+  const cropPlantingDate =
+    parsedPlantingDate ||
+    (stage === 'Planning' ? new Date() : undefined);
+
+  if (
+    requiresPlantingDateForStage(stage) &&
+    !cropPlantingDate
+  ) {
+    const error = new Error('Planting date is required for this crop stage.');
+    error.statusCode = 400;
+    throw error;
   }
 
   const createdCrop = await Crop.create({
     name: manualCropType,
     type: manualCropType,
     season: 'Field Assigned',
-    farm: farmId
+    farm: farmId,
+    currentStage: stage,
+    stageStartedAt: new Date(),
+    plantingDate: cropPlantingDate,
+    expectedHarvestDate: calculateExpectedHarvestDate(cropPlantingDate)
   });
 
   logEvent('info', 'CROP_CREATED_FROM_FIELD', {
@@ -198,7 +329,9 @@ const createField = async (req, res) => {
       cropId: req.body.crop,
       cropType: req.body.cropType,
       farmId: farm._id,
-      user: req.user
+      user: req.user,
+      plantingDate: req.body.plantingDate,
+      currentStage: req.body.currentStage
     });
 
     await validateFieldBoundary({
@@ -339,7 +472,9 @@ const updateField = async (req, res) => {
       cropId: req.body.crop,
       cropType: req.body.cropType,
       farmId: nextFarmId,
-      user: req.user
+      user: req.user,
+      plantingDate: req.body.plantingDate,
+      currentStage: req.body.currentStage
     });
 
     const nextFarm =
