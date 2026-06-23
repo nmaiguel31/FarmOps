@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { APP_CONFIG } from '../config/app-config';
 
 @Injectable({
   providedIn: 'root'
@@ -8,13 +9,7 @@ export class FinancialRecord {
 
   private http = inject(HttpClient);
 
-  private apiBase =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:5000/api'
-      : 'https://farmops-api-nmaiguel.azurewebsites.net/api';
-
-  private apiUrl = `${this.apiBase}/financial-records`;
+  private apiUrl = `${APP_CONFIG.apiBaseUrl}/financial-records`;
 
   getRecords() {
 
@@ -53,7 +48,7 @@ export class FinancialRecord {
     });
 
     return this.http.get(
-      `${this.apiBase}/farms`,
+      `${APP_CONFIG.apiBaseUrl}/farms`,
       { headers }
     );
 
@@ -68,7 +63,7 @@ export class FinancialRecord {
     });
 
     return this.http.get(
-      `${this.apiBase}/fields`,
+      `${APP_CONFIG.apiBaseUrl}/fields`,
       { headers }
     );
 
@@ -83,7 +78,7 @@ export class FinancialRecord {
     });
 
     return this.http.get(
-      `${this.apiBase}/crops`,
+      `${APP_CONFIG.apiBaseUrl}/crops`,
       { headers }
     );
 

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { APP_CONFIG } from '../config/app-config';
 
 @Injectable({
   providedIn: 'root'
@@ -8,15 +9,9 @@ export class Crop {
 
   private http = inject(HttpClient);
 
-  private apiBase =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:5000/api'
-      : 'https://farmops-api-nmaiguel.azurewebsites.net/api';
+  private apiUrl = `${APP_CONFIG.apiBaseUrl}/crops`;
 
-  private apiUrl = `${this.apiBase}/crops`;
-
-  private farmsUrl = `${this.apiBase}/farms`;
+  private farmsUrl = `${APP_CONFIG.apiBaseUrl}/farms`;
 
   getFarms() {
 

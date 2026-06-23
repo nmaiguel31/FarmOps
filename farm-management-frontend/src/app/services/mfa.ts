@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
+import { APP_CONFIG } from '../config/app-config';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ export class Mfa {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/mfa';
+  private apiUrl = `${APP_CONFIG.apiBaseUrl}/mfa`;
 
   setupMFA() {
 

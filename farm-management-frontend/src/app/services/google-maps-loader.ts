@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
+import { APP_CONFIG } from '../config/app-config';
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +24,7 @@ export class GoogleMapsLoader {
       script.id = 'google-maps';
 
       script.src =
-        `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places,geometry`;
+        `https://maps.googleapis.com/maps/api/js?key=${APP_CONFIG.googleMapsApiKey}&libraries=places,geometry`;
 
       script.onload = () => resolve();
 

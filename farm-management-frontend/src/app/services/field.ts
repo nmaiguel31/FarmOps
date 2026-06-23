@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { APP_CONFIG } from '../config/app-config';
 
 @Injectable({
   providedIn: 'root'
@@ -8,17 +9,11 @@ export class Field {
 
   private http = inject(HttpClient);
 
-  private apiBase =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:5000/api'
-      : 'https://farmops-api-nmaiguel.azurewebsites.net/api';
+  private apiUrl = `${APP_CONFIG.apiBaseUrl}/fields`;
 
-  private apiUrl = `${this.apiBase}/fields`;
+  private farmsUrl = `${APP_CONFIG.apiBaseUrl}/farms`;
 
-  private farmsUrl = `${this.apiBase}/farms`;
-
-  private cropsUrl = `${this.apiBase}/crops`;
+  private cropsUrl = `${APP_CONFIG.apiBaseUrl}/crops`;
 
   private getHeaders() {
     const token = localStorage.getItem('token');
