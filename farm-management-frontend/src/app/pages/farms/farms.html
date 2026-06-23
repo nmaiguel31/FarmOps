@@ -49,6 +49,64 @@
             <strong>{{ selectedFieldHealthIndexLabel }}</strong>
           </div>
         </div>
+
+        <button
+          type="button"
+          class="primary-btn"
+          [disabled]="!hasValidFarmCoordinates(selectedFarm)"
+          (click)="findNearbyFarms()">
+          Find Nearby Farms
+        </button>
+      </section>
+
+      <section class="filters-card" *ngIf="showNearbyFarms && selectedFarm">
+        <div>
+          <div>
+            <span class="panel-kicker">Reverse Search</span>
+            <h2>Nearby farms</h2>
+          </div>
+
+          <label>
+            Radius
+            <select class="farmops-field" [(ngModel)]="nearbyRadiusKm" name="nearbyRadiusKm">
+              <option *ngFor="let radius of nearbyRadiusOptions" [ngValue]="radius">{{ radius }} km</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="empty-state compact" *ngIf="!hasValidFarmCoordinates(selectedFarm)">
+          Selected farm needs latitude and longitude before nearby farms can be searched.
+        </div>
+
+        <div class="nearby-list" *ngIf="hasValidFarmCoordinates(selectedFarm) && nearbyFarmResults.length > 0">
+          <article class="nearby-card" *ngFor="let result of nearbyFarmResults">
+            <div>
+              <strong>{{ result.farm.name }}</strong>
+              <span>{{ result.farm.location || 'No location saved' }}</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Distance</dt>
+                <dd>{{ formatDistance(result.distanceKm) }}</dd>
+              </div>
+              <div>
+                <dt>Size</dt>
+                <dd>{{ formatArea(result.farm.size) }}</dd>
+              </div>
+              <div>
+                <dt>Fields</dt>
+                <dd>{{ getFieldCountForFarm(result.farm) }}</dd>
+              </div>
+            </dl>
+            <button type="button" class="secondary-btn" (click)="viewNearbyFarm(result.farm)">
+              Select Farm
+            </button>
+          </article>
+        </div>
+
+        <div class="empty-state compact" *ngIf="hasValidFarmCoordinates(selectedFarm) && nearbyFarmResults.length === 0">
+          No nearby farms found within this radius.
+        </div>
       </section>
 
       <div class="filters-card">
@@ -709,17 +767,20 @@
 
       <label>
         Linked crop
+        <input
+          class="farmops-field"
+          type="search"
+          placeholder="Search crops by name or type"
+          [(ngModel)]="cropSelectorSearch"
+          name="cropSelectorSearch">
         <select class="farmops-field" [(ngModel)]="selectedCrop" (ngModelChange)="onFieldCropAssignmentChange()" name="selectedCrop">
           <option value="">No crop assigned</option>
-          <option *ngFor="let crop of getCropsForSelectedFarm()" [value]="crop._id">
-            {{ crop.name }} - {{ crop.type }}
-          </option>
+          <optgroup *ngFor="let group of getGroupedCropsForSelectedFarm()" [label]="group.type">
+            <option *ngFor="let crop of group.crops" [value]="crop._id">
+              {{ getCropIcon(crop) }} {{ crop.name }} · {{ crop.type }}
+            </option>
+          </optgroup>
         </select>
-      </label>
-
-      <label>
-        Crop type (optional)
-        <input class="farmops-field" type="text" placeholder="Corn, Wheat, Soybean" [(ngModel)]="fieldCropType" (ngModelChange)="onFieldCropAssignmentChange()" name="fieldCropType">
       </label>
 
       <div class="coordinate-grid" *ngIf="hasFieldCropAssignment()">

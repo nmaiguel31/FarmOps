@@ -77,6 +77,7 @@ export class FinancialRecords implements OnInit {
   filterPaymentStatus = 'All';
   filterStartDate = '';
   filterEndDate = '';
+  chartView: 'month' | 'day' = 'month';
 
   readonly incomeCategories = [
     'Crop Sale',
@@ -418,7 +419,7 @@ export class FinancialRecords implements OnInit {
   }
 
   get hasFinancialHistory() {
-    return this.getMonthlyFinancialSeries().labels.length >= 2;
+    return this.getFinancialPerformanceSeries().labels.length > 0;
   }
 
   get hasCategoryExpenses() {
@@ -484,6 +485,76 @@ export class FinancialRecords implements OnInit {
     return this.getEntityId(record.crop) ? 'Unavailable crop' : '-';
   }
 
+  getCropIcon(crop: any) {
+    const cropIcons: Record<string, string> = {
+      corn: '🌽',
+      wheat: '🌾',
+      rice: '🌾',
+      barley: '🌾',
+      oats: '🌾',
+      rye: '🌾',
+      sorghum: '🌾',
+      soybean: '🫘',
+      peas: '🫛',
+      lentils: '🫘',
+      chickpeas: '🫘',
+      beans: '🫘',
+      grapes: '🍇',
+      apples: '🍎',
+      oranges: '🍊',
+      lemons: '🍋',
+      avocado: '🥑',
+      banana: '🍌',
+      mango: '🥭',
+      strawberry: '🍓',
+      pineapple: '🍍',
+      tomato: '🍅',
+      potato: '🥔',
+      onion: '🧅',
+      carrot: '🥕',
+      lettuce: '🥬',
+      cucumber: '🥒',
+      'bell pepper': '🫑',
+      broccoli: '🥦',
+      cabbage: '🥬',
+      cotton: '🌿',
+      sugarcane: '🎋',
+      sunflower: '🌻',
+      coffee: '☕',
+      cocoa: '🍫',
+      tobacco: '🌿',
+      olives: '🫒',
+      almonds: '🌰',
+      walnuts: '🌰',
+      pistachios: '🌰',
+      tea: '🍃',
+      canola: '🌼',
+      cassava: '🌱',
+      quinoa: '🌾',
+      flax: '🌿'
+    };
+    const categoryIcons: Record<string, string> = {
+      cereal: '🌾',
+      grain: '🌾',
+      legume: '🫘',
+      'fruit crop': '🍇',
+      fruit: '🍇',
+      vegetable: '🥬',
+      'industrial crop': '🌿',
+      fiber: '🌿',
+      oilseed: '🌻',
+      'cash crop': '🌿',
+      'tree crop': '🌳',
+      'specialty crop': '🌱'
+    };
+    const nameKey =
+      String(crop?.name || '').trim().toLowerCase();
+    const typeKey =
+      String(crop?.type || '').trim().toLowerCase();
+
+    return crop?.icon || cropIcons[nameKey] || categoryIcons[typeKey] || '🌱';
+  }
+
   getRecordDate(record: any) {
     return this.formatDate(record.date || record.createdAt);
   }
@@ -497,6 +568,11 @@ export class FinancialRecords implements OnInit {
     this.filterPaymentStatus = 'All';
     this.filterStartDate = '';
     this.filterEndDate = '';
+  }
+
+  setChartView(view: 'month' | 'day') {
+    this.chartView = view;
+    this.renderChartsSoon();
   }
 
   exportCSV() {
@@ -749,7 +825,7 @@ export class FinancialRecords implements OnInit {
     }
 
     const series =
-      this.getMonthlyFinancialSeries();
+      this.getFinancialPerformanceSeries();
 
     new Chart(canvas, {
       type: 'line',
@@ -771,14 +847,6 @@ export class FinancialRecords implements OnInit {
             backgroundColor: 'rgba(249,115,22,.1)',
             tension: .35,
             fill: true
-          },
-          {
-            label: 'Profit',
-            data: series.profit,
-            borderColor: '#4f83a8',
-            backgroundColor: 'rgba(79,131,168,.1)',
-            tension: .35,
-            fill: false
           }
         ]
       },
@@ -820,7 +888,7 @@ export class FinancialRecords implements OnInit {
     });
   }
 
-  private getMonthlyFinancialSeries() {
+  private getFinancialPerformanceSeries() {
     const buckets = new Map<string, { income: number; expenses: number; timestamp: number }>();
 
     this.records.forEach(record => {
@@ -838,13 +906,19 @@ export class FinancialRecords implements OnInit {
 
       const parsedDate =
         new Date(date);
+      const isDayView =
+        this.chartView === 'day';
       const label =
-        new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(parsedDate);
-      const monthStart =
-        new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1).getTime();
+        isDayView
+          ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(parsedDate)
+          : new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(parsedDate);
+      const bucketStart =
+        isDayView
+          ? new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()).getTime()
+          : new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1).getTime();
 
       if (!buckets.has(label)) {
-        buckets.set(label, { income: 0, expenses: 0, timestamp: monthStart });
+        buckets.set(label, { income: 0, expenses: 0, timestamp: bucketStart });
       }
 
       const bucket = buckets.get(label)!;
@@ -864,8 +938,7 @@ export class FinancialRecords implements OnInit {
     return {
       labels: series.map(([label]) => label),
       income: series.map(([, value]) => value.income),
-      expenses: series.map(([, value]) => value.expenses),
-      profit: series.map(([, value]) => value.income - value.expenses)
+      expenses: series.map(([, value]) => value.expenses)
     };
   }
 

@@ -208,6 +208,33 @@
   white-space: nowrap;
 }
 
+.chart-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(78px, 1fr));
+  gap: 6px;
+  padding: 5px;
+  background: #f7faf6;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.chart-toggle button {
+  min-height: 32px;
+  padding: 0 12px;
+  color: var(--color-muted-strong);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.chart-toggle button.active {
+  color: #fff;
+  background: var(--color-primary);
+}
+
 .chart-shell {
   position: relative;
   height: 360px;

@@ -103,14 +103,16 @@ const normalizeLifecycleDate = (date) => {
   return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
 };
 
-const calculateExpectedHarvestDate = (plantingDate) => {
+const calculateExpectedHarvestDate = (plantingDate, durationDays = lifecycleDurationDays) => {
   const parsedDate = normalizeLifecycleDate(plantingDate);
 
   if (!parsedDate) {
     return undefined;
   }
 
-  parsedDate.setDate(parsedDate.getDate() + lifecycleDurationDays);
+  parsedDate.setDate(
+    parsedDate.getDate() + (Number(durationDays) || lifecycleDurationDays)
+  );
   return parsedDate;
 };
 
@@ -151,7 +153,11 @@ const applyLifecycleInput = async (cropId, { plantingDate, currentStage }) => {
     crop.plantingDate = nextPlantingDate;
     changed = true;
 
-    crop.expectedHarvestDate = calculateExpectedHarvestDate(nextPlantingDate);
+    crop.expectedHarvestDate =
+      calculateExpectedHarvestDate(
+        nextPlantingDate,
+        crop.lifecycleDays || lifecycleDurationDays
+      );
   }
 
   if (currentStage && lifecycleStages.includes(currentStage)) {
@@ -238,6 +244,16 @@ const resolveFieldCrop = async ({
     currentStage: stage,
     stageStartedAt: new Date(),
     plantingDate: cropPlantingDate,
+    lifecycleDays: lifecycleDurationDays,
+    growthStages: [
+      { name: 'Planning', startDay: 0, endDay: 8 },
+      { name: 'Land Preparation', startDay: 9, endDay: 18 },
+      { name: 'Planting', startDay: 19, endDay: 28 },
+      { name: 'Vegetative Growth', startDay: 29, endDay: 66 },
+      { name: 'Flowering', startDay: 67, endDay: 90 },
+      { name: 'Ripening', startDay: 91, endDay: 110 },
+      { name: 'Harvest', startDay: 111, endDay: 120 }
+    ],
     expectedHarvestDate: calculateExpectedHarvestDate(cropPlantingDate)
   });
 

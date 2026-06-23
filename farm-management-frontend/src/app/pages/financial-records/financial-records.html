@@ -49,9 +49,12 @@
       <div class="panel-header">
         <div>
           <h2>Financial Performance</h2>
-          <p>Revenue, Expenses and Profit (Monthly)</p>
+          <p>Revenue and Expenses by {{ chartView === 'month' ? 'month' : 'day' }}</p>
         </div>
-        <span class="panel-pill">This Year</span>
+        <div class="chart-toggle" aria-label="Financial chart view">
+          <button type="button" [class.active]="chartView === 'month'" (click)="setChartView('month')">Month</button>
+          <button type="button" [class.active]="chartView === 'day'" (click)="setChartView('day')">Day</button>
+        </div>
       </div>
 
       <div class="chart-shell performance-chart" *ngIf="hasFinancialHistory; else noFinanceHistory">
@@ -60,7 +63,7 @@
       <ng-template #noFinanceHistory>
         <div class="empty-state compact">
           <strong>Insufficient financial history</strong>
-          <span>Add dated income and expense records across at least two months.</span>
+          <span>Add dated income and expense records to show the chart.</span>
         </div>
       </ng-template>
     </article>
@@ -143,7 +146,7 @@
         Crop
         <select class="farmops-field" [(ngModel)]="filterCrop" name="filterCrop">
           <option value="All">All Crops</option>
-          <option *ngFor="let crop of filterCropOptions" [value]="crop._id">{{ crop.name }}</option>
+          <option *ngFor="let crop of filterCropOptions" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
         </select>
       </label>
 
@@ -265,7 +268,7 @@
           Crop
           <select class="farmops-field" [(ngModel)]="selectedCrop" name="selectedCrop">
             <option value="">Optional crop</option>
-            <option *ngFor="let crop of visibleCrops" [value]="crop._id">{{ crop.name }}</option>
+            <option *ngFor="let crop of visibleCrops" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
           </select>
         </label>
       </div>

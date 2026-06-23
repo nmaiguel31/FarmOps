@@ -17,6 +17,16 @@ const cropSchema = new mongoose.Schema(
       required: true
     },
 
+    status: {
+      type: String,
+      enum: ['Active', 'Inactive'],
+      default: 'Active'
+    },
+
+    icon: {
+      type: String
+    },
+
     farm: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Farm',
@@ -48,6 +58,61 @@ const cropSchema = new mongoose.Schema(
 
     expectedHarvestDate: {
       type: Date
+    },
+
+    lifecycleDays: {
+      type: Number,
+      default: 120
+    },
+
+    ndviTarget: {
+      type: Number
+    },
+
+    moistureTarget: {
+      type: Number
+    },
+
+    optimalTemperatureMin: {
+      type: Number
+    },
+
+    optimalTemperatureMax: {
+      type: Number
+    },
+
+    expectedYield: {
+      type: String
+    },
+
+    plantingSeason: {
+      type: String
+    },
+
+    description: {
+      type: String
+    },
+
+    growthStages: [
+      {
+        name: {
+          type: String,
+          required: true
+        },
+        startDay: {
+          type: Number,
+          required: true
+        },
+        endDay: {
+          type: Number,
+          required: true
+        }
+      }
+    ],
+
+    isDefaultTemplate: {
+      type: Boolean,
+      default: false
     }
   },
   {

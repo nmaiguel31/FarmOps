@@ -75,11 +75,15 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   selectedField: any = null;
   selectedZone: any = null;
   expandedFarmIds = new Set<string>();
+  showNearbyFarms = false;
+  nearbyRadiusKm = 20;
+  readonly nearbyRadiusOptions = [5, 10, 20, 50];
 
   searchLocation = '';
   searchOwner = '';
   fieldSearch = '';
   fieldFilter = 'All';
+  cropSelectorSearch = '';
   farmName = '';
   farmLocation = '';
   farmSize = 0;
@@ -91,7 +95,6 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   fieldFormOpen = false;
   editingFieldId = '';
   fieldName = '';
-  fieldCropType = '';
   selectedCrop = '';
   fieldPlantingDate = '';
   fieldCurrentStage = 'Planning';
@@ -798,15 +801,140 @@ updateFarm() {
 
   }
 
+  findNearbyFarms() {
+
+    this.showNearbyFarms = true;
+
+  }
+
+  viewNearbyFarm(farm: any) {
+
+    this.showNearbyFarms = false;
+    this.selectFarm(farm);
+
+  }
+
+  get nearbyFarmResults() {
+
+    if (!this.selectedFarm || !this.hasValidFarmCoordinates(this.selectedFarm)) {
+      return [];
+    }
+
+    return this.farms
+      .filter(farm =>
+        farm._id !== this.selectedFarm._id &&
+        this.hasValidFarmCoordinates(farm)
+      )
+      .map(farm => ({
+        farm,
+        distanceKm: this.calculateFarmDistanceKm(this.selectedFarm, farm)
+      }))
+      .filter(result => result.distanceKm <= this.nearbyRadiusKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  }
+
+  hasValidFarmCoordinates(farm: any) {
+
+    const latitude =
+      Number(farm?.latitude);
+    const longitude =
+      Number(farm?.longitude);
+
+    return Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180 &&
+      !(latitude === 0 && longitude === 0);
+
+  }
+
+  calculateFarmDistanceKm(originFarm: any, destinationFarm: any) {
+
+    const earthRadiusKm = 6371;
+    const originLat =
+      this.toRadians(Number(originFarm.latitude));
+    const destinationLat =
+      this.toRadians(Number(destinationFarm.latitude));
+    const latitudeDelta =
+      this.toRadians(Number(destinationFarm.latitude) - Number(originFarm.latitude));
+    const longitudeDelta =
+      this.toRadians(Number(destinationFarm.longitude) - Number(originFarm.longitude));
+    const haversineValue =
+      Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2) +
+      Math.cos(originLat) *
+      Math.cos(destinationLat) *
+      Math.sin(longitudeDelta / 2) *
+      Math.sin(longitudeDelta / 2);
+    const angularDistance =
+      2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue));
+
+    return earthRadiusKm * angularDistance;
+
+  }
+
+  formatDistance(distanceKm: number) {
+
+    return `${distanceKm.toFixed(distanceKm < 10 ? 1 : 0)} km`;
+
+  }
+
+  private toRadians(value: number) {
+
+    return value * (Math.PI / 180);
+
+  }
+
   getCropsForSelectedFarm() {
 
     if (!this.selectedFarm) {
       return [];
     }
 
-    return this.crops.filter(crop =>
-      (crop.farm?._id || crop.farm) === this.selectedFarm._id
-    );
+    const search =
+      this.cropSelectorSearch.trim().toLowerCase();
+
+    return this.crops
+      .filter(crop =>
+        (crop.farm?._id || crop.farm) === this.selectedFarm._id
+      )
+      .filter(crop => {
+        if (!search) {
+          return true;
+        }
+
+        return `${crop.name || ''} ${crop.type || ''}`
+          .toLowerCase()
+          .includes(search);
+      })
+      .sort((a, b) =>
+        String(a.type || '').localeCompare(String(b.type || '')) ||
+        String(a.name || '').localeCompare(String(b.name || ''))
+      );
+
+  }
+
+  getGroupedCropsForSelectedFarm() {
+
+    const groups = new Map<string, any[]>();
+
+    this.getCropsForSelectedFarm().forEach(crop => {
+      const type =
+        crop.type || 'Other';
+
+      if (!groups.has(type)) {
+        groups.set(type, []);
+      }
+
+      groups.get(type)?.push(crop);
+    });
+
+    return Array.from(groups.entries()).map(([type, crops]) => ({
+      type,
+      crops
+    }));
 
   }
 
@@ -880,6 +1008,7 @@ updateFarm() {
   selectFarm(farm: any) {
 
     this.selectedFarm = farm;
+    this.showNearbyFarms = false;
     this.expandedFarmIds.add(farm._id);
     this.syncSelectedField();
     this.renderSelectedFarmMap();
@@ -976,7 +1105,6 @@ updateFarm() {
 
     this.editingFieldId = field._id;
     this.fieldName = field.name;
-    this.fieldCropType = field.cropType || '';
     this.selectedCrop = field.crop?._id || field.crop || '';
     const crop =
       field.crop?._id
@@ -1218,6 +1346,78 @@ updateFarm() {
 
   }
 
+  getCropIcon(crop: any) {
+
+    const cropIcons: Record<string, string> = {
+      corn: '🌽',
+      wheat: '🌾',
+      rice: '🌾',
+      barley: '🌾',
+      oats: '🌾',
+      rye: '🌾',
+      sorghum: '🌾',
+      soybean: '🫘',
+      peas: '🫛',
+      lentils: '🫘',
+      chickpeas: '🫘',
+      beans: '🫘',
+      grapes: '🍇',
+      apples: '🍎',
+      oranges: '🍊',
+      lemons: '🍋',
+      avocado: '🥑',
+      banana: '🍌',
+      mango: '🥭',
+      strawberry: '🍓',
+      pineapple: '🍍',
+      tomato: '🍅',
+      potato: '🥔',
+      onion: '🧅',
+      carrot: '🥕',
+      lettuce: '🥬',
+      cucumber: '🥒',
+      'bell pepper': '🫑',
+      broccoli: '🥦',
+      cabbage: '🥬',
+      cotton: '🌿',
+      sugarcane: '🎋',
+      sunflower: '🌻',
+      coffee: '☕',
+      cocoa: '🍫',
+      tobacco: '🌿',
+      olives: '🫒',
+      almonds: '🌰',
+      walnuts: '🌰',
+      pistachios: '🌰',
+      tea: '🍃',
+      canola: '🌼',
+      cassava: '🌱',
+      quinoa: '🌾',
+      flax: '🌿'
+    };
+    const categoryIcons: Record<string, string> = {
+      cereal: '🌾',
+      grain: '🌾',
+      legume: '🫘',
+      'fruit crop': '🍇',
+      fruit: '🍇',
+      vegetable: '🥬',
+      'industrial crop': '🌿',
+      fiber: '🌿',
+      oilseed: '🌻',
+      'cash crop': '🌿',
+      'tree crop': '🌳',
+      'specialty crop': '🌱'
+    };
+    const nameKey =
+      String(crop?.name || '').trim().toLowerCase();
+    const typeKey =
+      String(crop?.type || '').trim().toLowerCase();
+
+    return crop?.icon || cropIcons[nameKey] || categoryIcons[typeKey] || '🌱';
+
+  }
+
   getBadgeClass(value: string) {
 
     return (value || 'unknown')
@@ -1245,8 +1445,12 @@ updateFarm() {
 
   getStageDateRange(index: number) {
 
+    const crop =
+      this.getSelectedCrop();
+    const templateStage =
+      crop?.growthStages?.[index];
     const plantingDate =
-      this.getSelectedCrop()?.plantingDate;
+      crop?.plantingDate;
 
     if (!plantingDate) {
       return 'Not available';
@@ -1258,8 +1462,21 @@ updateFarm() {
       return 'Not available';
     }
 
+    if (templateStage) {
+      const stageStart =
+        new Date(start.getTime() + ((Number(templateStage.startDay) || 0) * 86400000));
+      const stageEnd =
+        new Date(start.getTime() + ((Number(templateStage.endDay) || 0) * 86400000));
+      const dateFormat =
+        { month: 'short', day: 'numeric' } as Intl.DateTimeFormatOptions;
+
+      return `${stageStart.toLocaleDateString('en-US', dateFormat)} - ${stageEnd.toLocaleDateString('en-US', dateFormat)}`;
+    }
+
+    const lifecycleDays =
+      Number(crop?.lifecycleDays) || this.lifecycleDurationDays;
     const daysPerStage =
-      Math.max(Math.round(this.lifecycleDurationDays / this.lifecycleStages.length), 1);
+      Math.max(Math.round(lifecycleDays / this.lifecycleStages.length), 1);
     const stageStart =
       new Date(start.getTime() + (index * daysPerStage * 86400000));
     const stageEnd =
@@ -1489,7 +1706,7 @@ updateFarm() {
 
     const previewField = {
       crop: this.selectedCrop || null,
-      cropType: this.fieldCropType,
+      cropType: '',
       healthStatus: this.fieldHealthStatus,
       irrigationStatus: this.fieldIrrigationStatus,
       status: this.fieldStatus
@@ -1662,7 +1879,7 @@ updateFarm() {
 
   hasFieldCropAssignment() {
 
-    return Boolean(this.selectedCrop || this.fieldCropType.trim());
+    return Boolean(this.selectedCrop);
 
   }
 
@@ -1837,7 +2054,10 @@ updateFarm() {
       return null;
     }
 
-    plantedAt.setDate(plantedAt.getDate() + this.lifecycleDurationDays);
+    plantedAt.setDate(
+      plantedAt.getDate() +
+      (Number(crop?.lifecycleDays) || this.lifecycleDurationDays)
+    );
     return plantedAt.toISOString();
 
   }
@@ -1907,7 +2127,10 @@ updateFarm() {
 
     if (!expectedHarvestDate && plantingDate) {
       const harvestDate = new Date(plantingDate);
-      harvestDate.setDate(harvestDate.getDate() + this.lifecycleDurationDays);
+      harvestDate.setDate(
+        harvestDate.getDate() +
+        (Number(crop.lifecycleDays) || this.lifecycleDurationDays)
+      );
       expectedHarvestDate = harvestDate.toISOString();
     }
 
@@ -3739,7 +3962,7 @@ private getFieldData() {
 
   return {
     name: this.fieldName,
-    cropType: this.selectedCrop ? '' : this.fieldCropType,
+    cropType: '',
     crop: this.selectedCrop || null,
     plantingDate: hasCropAssignment && plantingDate
       ? plantingDate
@@ -3779,8 +4002,8 @@ private resetFieldForm() {
 
   this.editingFieldId = '';
   this.fieldName = '';
-  this.fieldCropType = '';
   this.selectedCrop = '';
+  this.cropSelectorSearch = '';
   this.fieldPlantingDate = '';
   this.fieldCurrentStage = 'Planning';
   this.fieldLifecycleError = '';

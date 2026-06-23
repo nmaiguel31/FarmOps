@@ -1,137 +1,383 @@
 <main class="crops-page">
-  <section class="crops-hero">
+  <section class="page-header">
     <div>
-      <p class="eyebrow">Crop Portfolio</p>
-      <h1>Plan crop cycles across farms and seasons.</h1>
-      <p>Track crop assignments now, with space reserved for parcel, zone, health, and satellite layers later.</p>
+      <h1>Crops</h1>
+      <p>Manage your crops, lifecycle templates and performance targets</p>
     </div>
 
-    <div class="hero-actions">
-      <div class="hero-metrics">
-        <div>
-          <span>Crops</span>
-          <strong>{{ crops.length }}</strong>
-        </div>
-        <div>
-          <span>Farms</span>
-          <strong>{{ farms.length }}</strong>
-        </div>
-      </div>
-
+    <div class="header-actions">
+      <button type="button" class="ghost-btn" (click)="exportCsv()">
+        <svg lucideDownload></svg>
+        Export CSV
+      </button>
+      <button type="button" class="ghost-btn" (click)="exportPdf()">
+        <svg lucideFileText></svg>
+        Export PDF
+      </button>
       <button type="button" class="primary-btn" (click)="openCreateCrop()">
-        Create Crop
+        <svg lucidePlus></svg>
+        Add Crop
       </button>
     </div>
   </section>
 
-  <section class="crop-grid" *ngIf="crops.length > 0; else noCrops">
-    <article class="crop-card" *ngFor="let crop of crops">
-      <div class="crop-visual" [class]="getSeasonClass(crop.season)">
-        <span class="season-badge">{{ crop.season || 'No season' }}</span>
-        <span class="crop-sprout"></span>
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <span class="kpi-icon green">
+        <svg lucideLeaf></svg>
+      </span>
+      <div>
+        <p>Total Crops</p>
+        <strong>{{ totalCrops }}</strong>
+        <small>Active in system</small>
       </div>
+    </article>
 
-      <div class="crop-content">
-        <div class="crop-heading">
-          <div>
-            <span class="panel-kicker">Crop Asset</span>
-            <h3>{{ crop.name }}</h3>
-            <p>{{ crop.type || 'Crop type not specified' }}</p>
-          </div>
-          <span class="status-badge" [class.unassigned]="!crop.farm">
-            {{ getCropStatus(crop) }}
-          </span>
-        </div>
+    <article class="kpi-card">
+      <span class="kpi-icon blue">
+        <svg lucideLeaf></svg>
+      </span>
+      <div>
+        <p>Most Planted</p>
+        <strong>{{ mostPlantedCrop?.name || 'Not available' }}</strong>
+        <small>{{ mostPlantedCrop ? getFieldsCount(mostPlantedCrop) + ' fields' : 'No field usage yet' }}</small>
+      </div>
+    </article>
 
-        <div class="crop-summary">
-          <div>
-            <span>Farm</span>
-            <strong>{{ crop.farm?.name || '-' }}</strong>
-          </div>
-          <div>
-            <span>Season</span>
-            <strong>{{ crop.season || '-' }}</strong>
-          </div>
-        </div>
+    <article class="kpi-card">
+      <span class="kpi-icon amber">
+        <svg lucideCalendarDays></svg>
+      </span>
+      <div>
+        <p>Avg. Lifecycle</p>
+        <strong>{{ averageLifecycle === null ? 'Not available' : formatNumber(averageLifecycle, 0) + ' days' }}</strong>
+        <small>Across all crops</small>
+      </div>
+    </article>
 
-        <div class="future-strip">
-          <span>Parcel</span>
-          <span>Zone</span>
-          <span>Health</span>
-          <span>Satellite</span>
-        </div>
+    <article class="kpi-card">
+      <span class="kpi-icon green">
+        <svg lucideTarget></svg>
+      </span>
+      <div>
+        <p>Avg. NDVI Target</p>
+        <strong>{{ averageNdviTarget === null ? 'Not available' : formatNdvi(averageNdviTarget) }}</strong>
+        <small>Across all crops</small>
+      </div>
+    </article>
 
-        <div class="card-actions">
-          <button type="button" class="edit-btn" (click)="editCrop(crop)">
-            Edit
-          </button>
-          <button type="button" class="delete-btn" (click)="deleteCrop(crop._id)">
-            Delete
-          </button>
-        </div>
+    <article class="kpi-card">
+      <span class="kpi-icon purple">
+        <svg lucideDroplet></svg>
+      </span>
+      <div>
+        <p>Avg. Moisture Target</p>
+        <strong>{{ averageMoistureTarget === null ? 'Not available' : formatPercent(averageMoistureTarget) }}</strong>
+        <small>Across all crops</small>
       </div>
     </article>
   </section>
 
-  <ng-template #noCrops>
-    <div class="empty-state">
-      No crops found.
-    </div>
-  </ng-template>
+  <section class="crop-workspace">
+    <article class="table-card">
+      <div class="card-heading">
+        <div>
+          <h2>All Crops</h2>
+          <p>View and manage all crops in your system</p>
+        </div>
+      </div>
+
+      <div class="filters-row">
+        <label class="search-field">
+          <svg lucideSearch></svg>
+          <input type="search" placeholder="Search crops..." [(ngModel)]="filterSearch" (ngModelChange)="onFiltersChanged()" name="filterSearch">
+        </label>
+
+        <label>
+          <span>Crop Type</span>
+          <select [(ngModel)]="filterType" (ngModelChange)="onFiltersChanged()" name="filterType">
+            <option value="All">All Types</option>
+            <option *ngFor="let type of uniqueCropTypes" [value]="type">{{ type }}</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select [(ngModel)]="filterStatus" (ngModelChange)="onFiltersChanged()" name="filterStatus">
+            <option value="All">All Statuses</option>
+            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+          </select>
+        </label>
+
+        <button type="button" class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+      </div>
+
+      <div class="table-wrap" *ngIf="filteredCrops.length > 0; else noCrops">
+        <table>
+          <thead>
+            <tr>
+              <th>Crop Name</th>
+              <th>Crop Type</th>
+              <th>Lifecycle Days</th>
+              <th>NDVI Target</th>
+              <th>Moisture Target</th>
+              <th>Fields</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let crop of paginatedCrops"
+              [class.selected]="selectedCrop?._id === crop._id"
+              (click)="selectCrop(crop)">
+              <td>
+                <div class="crop-name-cell">
+                  <span class="crop-avatar">{{ getCropIcon(crop) }}</span>
+                  <strong>{{ crop.name }}</strong>
+                </div>
+              </td>
+              <td>{{ crop.type || 'Not available' }}</td>
+              <td>{{ crop.lifecycleDays || 'Not available' }} days</td>
+              <td>{{ formatNdvi(crop.ndviTarget) }}</td>
+              <td>{{ formatPercent(crop.moistureTarget) }}</td>
+              <td>{{ getFieldsCount(crop) }}</td>
+              <td>
+                <span class="status-pill" [class.inactive]="getCropStatus(crop) === 'Inactive'">
+                  {{ getCropStatus(crop) }}
+                </span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="icon-btn" (click)="editCrop(crop); $event.stopPropagation()" aria-label="Edit crop">
+                    <svg lucidePencil></svg>
+                  </button>
+                  <button type="button" class="icon-btn danger" (click)="deleteCrop(crop._id); $event.stopPropagation()" aria-label="Delete crop">
+                    <svg lucideTrash2></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pagination" *ngIf="filteredCrops.length > 0">
+        <p>Showing {{ paginationStart }} to {{ paginationEnd }} of {{ filteredCrops.length }} crops</p>
+        <div class="pagination-actions">
+          <button type="button" class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)" aria-label="Previous page">
+            ‹
+          </button>
+          <button
+            type="button"
+            class="page-btn"
+            *ngFor="let page of pageNumbers"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+          <button type="button" class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)" aria-label="Next page">
+            ›
+          </button>
+        </div>
+      </div>
+
+      <ng-template #noCrops>
+        <div class="empty-state">
+          <strong>No crops found.</strong>
+          <span>Create a farm first, then FarmOps can seed crop templates for that farm.</span>
+        </div>
+      </ng-template>
+
+      <div class="about-card">
+        <span class="kpi-icon green">
+          <svg lucideLeaf></svg>
+        </span>
+        <div>
+          <strong>About Crop Management</strong>
+          <p>Crops define expected lifecycle, performance targets, and growth stages used across FarmOps. These settings help power lifecycle tracking, NDVI analysis, AI recommendations, and field performance insights.</p>
+        </div>
+      </div>
+    </article>
+
+    <aside class="details-card" *ngIf="selectedCrop; else noSelectedCrop">
+      <h2>Crop Details</h2>
+      <div class="crop-banner">
+        <div class="banner-overlay">
+          <span class="crop-emblem">{{ getCropIcon(selectedCrop) }}</span>
+        </div>
+      </div>
+
+      <div class="details-title">
+        <span class="crop-icon">{{ getCropIcon(selectedCrop) }}</span>
+        <div>
+          <h3>{{ selectedCrop.name }}</h3>
+          <p>{{ selectedCrop.type || 'Crop type not specified' }}</p>
+        </div>
+        <span class="status-pill" [class.inactive]="getCropStatus(selectedCrop) === 'Inactive'">
+          {{ getCropStatus(selectedCrop) }}
+        </span>
+      </div>
+
+      <dl class="details-list">
+        <div>
+          <dt>Typical Lifecycle</dt>
+          <dd>{{ selectedCrop.lifecycleDays || 'Not available' }} days</dd>
+        </div>
+        <div>
+          <dt>NDVI Target</dt>
+          <dd>{{ formatNdvi(selectedCrop.ndviTarget) }}</dd>
+        </div>
+        <div>
+          <dt>Moisture Target</dt>
+          <dd>{{ formatPercent(selectedCrop.moistureTarget) }}</dd>
+        </div>
+        <div>
+          <dt>Optimal Temperature</dt>
+          <dd>{{ formatTemperature(selectedCrop) }}</dd>
+        </div>
+        <div>
+          <dt>Expected Yield</dt>
+          <dd>{{ selectedCrop.expectedYield || 'Not available' }}</dd>
+        </div>
+        <div>
+          <dt>Planting Season</dt>
+          <dd>{{ selectedCrop.plantingSeason || selectedCrop.season || 'Not available' }}</dd>
+        </div>
+      </dl>
+
+      <div class="description-block">
+        <span>Description</span>
+        <p>{{ selectedCrop.description || 'No description has been added for this crop template.' }}</p>
+      </div>
+
+      <div class="growth-card">
+        <h3>Growth Stages</h3>
+        <ol>
+          <li *ngFor="let stage of selectedCrop.growthStages || []">
+            <span></span>
+            <strong>{{ stage.name }}</strong>
+            <small>{{ getStageRange(stage) }}</small>
+          </li>
+        </ol>
+      </div>
+    </aside>
+
+    <ng-template #noSelectedCrop>
+      <aside class="details-card empty-details">
+        Select a crop to view lifecycle settings and performance targets.
+      </aside>
+    </ng-template>
+  </section>
 
   <div class="drawer-backdrop" [class.visible]="cropFormOpen" (click)="closeCropForm()"></div>
 
   <aside class="crop-drawer" [class.open]="cropFormOpen">
     <div class="drawer-header">
       <div>
-        <span class="panel-kicker">Crop Form</span>
-        <h2>{{ editingCropId ? 'Update Crop' : 'Create Crop' }}</h2>
+        <span>Crop Template</span>
+        <h2>{{ editingCropId ? 'Edit Crop' : 'Add Crop' }}</h2>
       </div>
-      <button type="button" class="icon-close" (click)="closeCropForm()" aria-label="Close form"></button>
+      <button type="button" class="close-btn" (click)="closeCropForm()" aria-label="Close crop form"></button>
     </div>
 
     <form class="crop-form">
-      <label>
-        Crop name
-        <input class="farmops-field" type="text" placeholder="Crop Name" [(ngModel)]="cropName" name="cropName">
-      </label>
+      <div class="form-grid">
+        <label>
+          Name
+          <input type="text" [(ngModel)]="cropName" name="cropName" placeholder="Corn">
+        </label>
 
-      <label>
-        Type
-        <input class="farmops-field" type="text" placeholder="Type" [(ngModel)]="cropType" name="cropType">
-      </label>
+        <label>
+          Crop Type
+          <input type="text" [(ngModel)]="cropType" name="cropType" placeholder="Grain">
+        </label>
 
-      <label>
-        Season
-        <select class="farmops-field" [(ngModel)]="cropSeason" name="cropSeason">
-          <option value="">Select Season</option>
-          <option value="Spring">Spring</option>
-          <option value="Summer">Summer</option>
-          <option value="Autumn">Autumn</option>
-          <option value="Winter">Winter</option>
-        </select>
-      </label>
+        <label>
+          Crop Icon
+          <input type="text" [(ngModel)]="cropIcon" name="cropIcon" placeholder="🌽">
+        </label>
 
-      <label>
-        Farm
-        <select class="farmops-field" [(ngModel)]="selectedFarm" name="selectedFarm">
-          <option value="">Select Farm</option>
-          <option *ngFor="let farm of farms" [value]="farm._id">
-            {{ farm.name }}
-          </option>
-        </select>
-      </label>
+        <label>
+          Status
+          <select [(ngModel)]="cropStatus" name="cropStatus">
+            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+          </select>
+        </label>
 
-      <div class="future-panel">
-        <span>Future integrations</span>
-        <strong>Parcel assignment, zone assignment, crop health, and satellite analytics.</strong>
+        <label>
+          Farm
+          <select [(ngModel)]="selectedFarm" name="selectedFarm">
+            <option value="">Select Farm</option>
+            <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+          </select>
+        </label>
+
+        <label>
+          Typical Lifecycle Days
+          <input type="number" min="1" [(ngModel)]="cropLifecycleDays" name="cropLifecycleDays">
+        </label>
+
+        <label>
+          NDVI Target
+          <input type="number" min="0" max="1" step="0.01" [(ngModel)]="cropNdviTarget" name="cropNdviTarget">
+        </label>
+
+        <label>
+          Moisture Target
+          <input type="number" min="0" max="100" [(ngModel)]="cropMoistureTarget" name="cropMoistureTarget">
+        </label>
+
+        <label>
+          Optimal Temperature Min
+          <input type="number" [(ngModel)]="cropTemperatureMin" name="cropTemperatureMin">
+        </label>
+
+        <label>
+          Optimal Temperature Max
+          <input type="number" [(ngModel)]="cropTemperatureMax" name="cropTemperatureMax">
+        </label>
+
+        <label>
+          Expected Yield
+          <input type="text" [(ngModel)]="cropExpectedYield" name="cropExpectedYield" placeholder="8 - 12 ton/ha">
+        </label>
+
+        <label>
+          Planting Season
+          <input type="text" [(ngModel)]="cropPlantingSeason" name="cropPlantingSeason" placeholder="Spring, Summer">
+        </label>
+
+        <label>
+          Season
+          <input type="text" [(ngModel)]="cropSeason" name="cropSeason" placeholder="Spring, Summer">
+        </label>
       </div>
 
-      <button *ngIf="editingCropId === ''" class="primary-btn" type="button" (click)="createCrop()">
-        Create Crop
-      </button>
+      <label class="full-field">
+        Description
+        <textarea rows="4" [(ngModel)]="cropDescription" name="cropDescription"></textarea>
+      </label>
 
-      <button *ngIf="editingCropId !== ''" class="primary-btn" type="button" (click)="updateCrop()">
+      <section class="stages-editor">
+        <h3>Growth Stage Durations</h3>
+        <div class="stage-row" *ngFor="let stage of cropGrowthStages; let i = index">
+          <strong>{{ stage.name }}</strong>
+          <label>
+            Start
+            <input type="number" min="0" [(ngModel)]="stage.startDay" [name]="'stageStart' + i">
+          </label>
+          <label>
+            End
+            <input type="number" min="0" [(ngModel)]="stage.endDay" [name]="'stageEnd' + i">
+          </label>
+        </div>
+      </section>
+
+      <button *ngIf="!editingCropId" type="button" class="primary-btn full-width" (click)="createCrop()">
+        Add Crop
+      </button>
+      <button *ngIf="editingCropId" type="button" class="primary-btn full-width" (click)="updateCrop()">
         Update Crop
       </button>
     </form>

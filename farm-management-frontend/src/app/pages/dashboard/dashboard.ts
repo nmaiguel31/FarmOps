@@ -157,7 +157,7 @@ export class Dashboard implements OnInit {
           .map(date => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)))
       );
 
-    return datedBuckets.size >= 2;
+    return datedBuckets.size > 0;
   }
 
   get profitMargin() {
@@ -1053,37 +1053,29 @@ export class Dashboard implements OnInit {
     }
 
     new Chart(canvas, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: this.getFinancialSeries().labels,
         datasets: [
           {
             label: 'Revenue',
             data: this.getFinancialSeries().income,
-            backgroundColor: '#14915f',
             borderColor: '#14915f',
-            borderRadius: 8,
-            borderSkipped: false
+            backgroundColor: 'rgba(20,145,95,.12)',
+            tension: .35,
+            fill: true
           },
           {
             label: 'Costs',
             data: this.getFinancialSeries().expenses,
-            backgroundColor: '#f97316',
             borderColor: '#f97316',
-            borderRadius: 8,
-            borderSkipped: false
-          },
-          {
-            label: 'Profit',
-            data: this.getFinancialSeries().profit,
-            backgroundColor: '#4f83a8',
-            borderColor: '#4f83a8',
-            borderRadius: 8,
-            borderSkipped: false
+            backgroundColor: 'rgba(249,115,22,.1)',
+            tension: .35,
+            fill: true
           }
         ]
       },
-      options: this.getGroupedBarChartOptions()
+      options: this.getLineChartOptions()
     });
 
   }
@@ -1197,8 +1189,7 @@ export class Dashboard implements OnInit {
     return {
       labels: series.map(([label]) => label),
       income: series.map(([, value]) => value.income),
-      expenses: series.map(([, value]) => value.expenses),
-      profit: series.map(([, value]) => value.income - value.expenses)
+      expenses: series.map(([, value]) => value.expenses)
     };
 
   }
@@ -1405,55 +1396,6 @@ export class Dashboard implements OnInit {
           backgroundColor: '#142018',
           padding: 12,
           cornerRadius: 8
-        }
-      }
-    };
-
-  }
-
-  private getGroupedBarChartOptions(): any {
-
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-          align: 'start',
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            padding: 24,
-            color: '#53645a'
-          }
-        },
-        tooltip: {
-          backgroundColor: '#142018',
-          padding: 12,
-          cornerRadius: 8
-        }
-      },
-      scales: {
-        x: {
-          stacked: false,
-          grid: {
-            display: false
-          },
-          ticks: {
-            color: '#53645a'
-          }
-        },
-        y: {
-          beginAtZero: true,
-          border: {
-            display: false
-          },
-          grid: {
-            color: '#e4ece1'
-          },
-          ticks: {
-            color: '#7a897f'
-          }
         }
       }
     };
