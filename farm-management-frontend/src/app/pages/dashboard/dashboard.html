@@ -43,7 +43,7 @@
       <div class="panel-header">
         <div>
           <span class="panel-kicker">Financial Performance</span>
-          <h2>Revenue vs Costs</h2>
+          <h2>Revenue, Costs and Profit</h2>
         </div>
         <span class="panel-pill">{{ totalRecords }} records</span>
       </div>
@@ -63,20 +63,33 @@
     <article class="panel crop-analytics">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Crop Mix</span>
-          <h2>Crop Distribution</h2>
+          <span class="panel-kicker">Crop Profitability</span>
+          <h2>Profit by Crop</h2>
         </div>
-        <span class="panel-pill">{{ totalCrops }} crops</span>
+        <span class="panel-pill">{{ totalCropProfit | currency:'USD':'symbol':'1.0-0' }}</span>
       </div>
 
       <div class="chart-container command-donut" *ngIf="hasCropDistributionData; else noCropDistribution">
-        <canvas id="cropDistributionChart"></canvas>
+        <div class="profit-donut-visual">
+          <canvas id="cropDistributionChart"></canvas>
+          <div class="donut-center">
+            <span>Total Profit</span>
+            <strong>{{ totalCropProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
+          </div>
+        </div>
+        <div class="profit-crop-list">
+          <div *ngFor="let item of getProfitByCropBreakdown().entries">
+            <span>{{ item.crop }}</span>
+            <strong>{{ item.profit | currency:'USD':'symbol':'1.0-0' }}</strong>
+            <small>{{ item.percent }}%</small>
+          </div>
+        </div>
       </div>
 
       <ng-template #noCropDistribution>
         <div class="empty-state chart-empty">
-          <strong>No crop distribution</strong>
-          <span>Create a farm and assign crops to fields to populate this chart.</span>
+          <strong>Not enough crop financial data yet.</strong>
+          <span>Link income and expense records to crops to calculate profit by crop.</span>
         </div>
       </ng-template>
     </article>
@@ -180,10 +193,17 @@
 
         <div class="top-field-list" *ngIf="topPerformingFields.length; else noTopFields">
           <article class="top-field-row" *ngFor="let item of topPerformingFields">
-            <span class="field-rank">{{ item.score }}%</span>
+            <span class="field-rank" aria-hidden="true">
+              <svg lucideLeaf></svg>
+            </span>
             <div>
-              <h3>{{ item.field.name }}</h3>
-              <p>{{ getFieldCropLabel(item.field) }} | {{ formatArea(item.field.area) }} ha</p>
+              <h3>{{ item.name }} - {{ item.crop }}</h3>
+              <p *ngIf="item.financial; else fieldSignalFallback">
+                ROI: {{ item.roi }}% | Profit: {{ item.profit | currency:'USD':'symbol':'1.0-0' }} | Area: {{ formatArea(item.area) }} ha
+              </p>
+              <ng-template #fieldSignalFallback>
+                <p>{{ item.crop }} | Health ranking | Area: {{ formatArea(item.area) }} ha</p>
+              </ng-template>
             </div>
           </article>
         </div>

@@ -46,7 +46,7 @@
           </div>
           <div>
             <span>Health</span>
-            <strong>{{ selectedFieldHealthIndex }}%</strong>
+            <strong>{{ selectedFieldHealthIndexLabel }}</strong>
           </div>
         </div>
       </section>
@@ -162,7 +162,7 @@
           <div class="mini-monitoring">
             <article *ngIf="!selectedZone">
               <span>Health</span>
-              <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndex }}%</strong>
+              <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndexLabel }}</strong>
             </article>
             <article *ngIf="!selectedZone">
               <span>Soil Moisture</span>
@@ -369,7 +369,8 @@
               </span>
               <div>
                 <span>Health</span>
-                <strong [ngClass]="getFieldValueTone('health', selectedField.healthStatus)">{{ selectedField.healthStatus }}</strong>
+                <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthStatus }}</strong>
+                <small>Auto-calculated from NDVI, moisture and irrigation signals.</small>
               </div>
             </article>
             <article class="field-metric-card">
@@ -396,7 +397,8 @@
               </span>
               <div>
                 <span>Health Index</span>
-                <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndex }}%</strong>
+                <strong [ngClass]="getIndexTone(selectedFieldHealthIndex)">{{ selectedFieldHealthIndexLabel }}</strong>
+                <small>Auto-calculated from NDVI, moisture and irrigation signals.</small>
               </div>
             </article>
             <article class="field-metric-card">
@@ -770,15 +772,6 @@
 
       <div class="coordinate-grid">
         <label>
-          Health
-          <select class="farmops-field" [(ngModel)]="fieldHealthStatus" name="fieldHealthStatus">
-            <option>Good</option>
-            <option>Watch</option>
-            <option>Critical</option>
-          </select>
-        </label>
-
-        <label>
           Irrigation
           <select class="farmops-field" [(ngModel)]="fieldIrrigationStatus" name="fieldIrrigationStatus">
             <option>Scheduled</option>
@@ -789,9 +782,15 @@
         </label>
       </div>
 
+      <div class="coordinate-preview">
+        <span>Auto Health Index</span>
+        <strong>{{ getFieldFormHealthPreview() }}</strong>
+        <small>Estimated from NDVI, soil moisture and irrigation signals.</small>
+      </div>
+
       <label>
-        Notes
-        <textarea class="farmops-field" rows="4" placeholder="Optional field notes" [(ngModel)]="fieldNotes" name="fieldNotes"></textarea>
+        Manual observation / Field notes
+        <textarea class="farmops-field" rows="4" placeholder="Optional notes from scouting, satellite review or sensor observations" [(ngModel)]="fieldNotes" name="fieldNotes"></textarea>
       </label>
 
       <div class="coordinate-preview">

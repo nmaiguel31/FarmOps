@@ -152,12 +152,20 @@ export class Dashboard implements OnInit {
     const datedBuckets =
       new Set(
         this.records
-          .map(record => record.createdAt || record.date || record.updatedAt)
+          .map(record => record.date)
           .filter(Boolean)
           .map(date => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)))
       );
 
     return datedBuckets.size >= 2;
+  }
+
+  get profitMargin() {
+    if (!this.totalRevenue) {
+      return 0;
+    }
+
+    return Math.round((this.netProfit / this.totalRevenue) * 100);
   }
 
   get commandKpis() {
@@ -201,11 +209,11 @@ export class Dashboard implements OnInit {
         icon: 'health'
       },
       {
-        label: 'Avg NDVI',
-        value: `${this.averageNdviScore}%`,
-        detail: 'Vegetation score',
-        tone: 'ndvi',
-        icon: 'ndvi'
+        label: 'Profit Margin',
+        value: `${this.profitMargin}%`,
+        detail: 'Net profit share of revenue',
+        tone: 'profit',
+        icon: 'profit'
       }
     ];
   }
@@ -221,18 +229,16 @@ export class Dashboard implements OnInit {
             this.getFieldSoilMoisture(field);
           const ndvi =
             this.getFieldNdviScore(field);
-          const healthStatus =
-            String(field.healthStatus || '').toLowerCase();
           const irrigationStatus =
             String(field.irrigationStatus || '').toLowerCase();
 
-          if (healthStatus.includes('critical') || health < 50) {
+          if (health !== null && health < 50) {
             alerts.push({
               priority: 'High',
               category: 'Health Alert',
-              title: 'Critical health status',
+              title: 'Low field health',
               target: field.name,
-              action: `${field.name} needs inspection based on health status and field condition signals.`,
+              action: `${field.name} needs inspection based on NDVI, moisture and irrigation signals.`,
               type: 'health'
             });
           }
@@ -363,13 +369,26 @@ export class Dashboard implements OnInit {
     ];
   }
 
-  get topPerformingFields() {
+  get topPerformingFields(): any[] {
+    const financialFields =
+      this.getFieldFinancialPerformance();
+
+    if (financialFields.length) {
+      return financialFields.slice(0, 3);
+    }
+
     return this.fields
       .map(field => ({
         field,
-        score: this.getFieldPerformanceScore(field)
+        name: field.name,
+        crop: this.getFieldCropLabel(field),
+        area: field.area,
+        score: this.getFieldPerformanceScore(field),
+        profit: null,
+        roi: null,
+        financial: false
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 3);
   }
 
@@ -447,7 +466,15 @@ export class Dashboard implements OnInit {
   }
 
   get hasCropDistributionData() {
-    return this.hasDashboardData && (this.fields.length > 0 || this.crops.length > 0);
+    return this.hasProfitByCropData;
+  }
+
+  get hasProfitByCropData() {
+    return this.getProfitByCropBreakdown().entries.length > 0;
+  }
+
+  get totalCropProfit() {
+    return this.getProfitByCropBreakdown().totalProfit;
   }
 
   get hasIrrigationData() {
@@ -556,26 +583,39 @@ export class Dashboard implements OnInit {
 
   getFieldHealthIndex(field: any) {
 
-    const normalized =
-      String(field?.healthStatus || '').toLowerCase();
-
-    if (normalized.includes('critical') || normalized.includes('poor')) {
-      return 28;
+    if (!this.canCalculateCropHealth(field)) {
+      return null;
     }
 
-    if (
-      normalized.includes('watch') ||
-      normalized.includes('fair') ||
-      normalized.includes('warning')
-    ) {
-      return 55;
+    let health =
+      this.getFieldNdviScore(field);
+    const moisture =
+      this.getFieldSoilMoisture(field);
+    const irrigationStatus =
+      String(field?.irrigationStatus || '').toLowerCase();
+
+    if (moisture < 30) {
+      health -= 20;
+    } else if (moisture <= 50) {
+      health -= 10;
     }
 
-    return 91;
+    if (irrigationStatus.includes('dry')) {
+      health -= 15;
+    }
+
+    return this.clampHealthScore(health);
 
   }
 
   getFieldSoilMoisture(field: any) {
+
+    const explicitMoisture =
+      Number(field?.soilMoisture ?? field?.moistureScore);
+
+    if (Number.isFinite(explicitMoisture) && explicitMoisture > 0) {
+      return this.clampHealthScore(explicitMoisture);
+    }
 
     const normalized =
       String(field?.irrigationStatus || '').toLowerCase();
@@ -594,7 +634,59 @@ export class Dashboard implements OnInit {
 
   getFieldNdviScore(field: any) {
 
-    return this.getFieldHealthIndex(field);
+    return this.getFieldManualNdviScore(field);
+
+  }
+
+  getFieldManualNdviScore(field: any) {
+
+    const explicitNdvi =
+      Number(field?.ndviScore ?? field?.ndvi ?? field?.vegetationScore);
+
+    if (Number.isFinite(explicitNdvi) && explicitNdvi > 0) {
+      return this.clampHealthScore(explicitNdvi);
+    }
+
+    const normalized =
+      String(field?.healthStatus || '').toLowerCase();
+
+    if (normalized.includes('critical') || normalized.includes('poor')) {
+      return 28;
+    }
+
+    if (
+      normalized.includes('watch') ||
+      normalized.includes('fair') ||
+      normalized.includes('warning') ||
+      normalized.includes('moderate')
+    ) {
+      return 55;
+    }
+
+    return 91;
+
+  }
+
+  fieldHasCrop(field: any) {
+
+    return Boolean(field?.crop?._id || field?.crop || field?.cropType);
+
+  }
+
+  canCalculateCropHealth(field: any) {
+
+    const status =
+      String(field?.status || '').toLowerCase();
+
+    return this.fieldHasCrop(field) &&
+      !status.includes('resting') &&
+      !status.includes('harvested');
+
+  }
+
+  clampHealthScore(value: number) {
+
+    return Math.max(0, Math.min(100, Math.round(value)));
 
   }
 
@@ -623,7 +715,7 @@ export class Dashboard implements OnInit {
     const ndvi =
       this.getFieldNdviScore(field);
 
-    return health < 50 || ndvi < 50 || moisture < 40 ? 'High' : 'Low';
+    return (health !== null && health < 50) || ndvi < 50 || moisture < 40 ? 'High' : 'Low';
 
   }
 
@@ -636,9 +728,12 @@ export class Dashboard implements OnInit {
   }
 
   getFieldPerformanceScore(field: any) {
+    const health =
+      this.getFieldHealthIndex(field) ?? 0;
+
     return Math.round(
       (
-        this.getFieldHealthIndex(field) +
+        health +
         this.getFieldSoilMoisture(field) +
         this.getFieldNdviScore(field)
       ) / 3
@@ -665,7 +760,9 @@ export class Dashboard implements OnInit {
   private calculateOperationalMetrics() {
 
     const fieldHealth =
-      this.fields.map(field => this.getFieldHealthIndex(field));
+      this.fields
+        .map(field => this.getFieldHealthIndex(field))
+        .filter((value): value is number => value !== null);
     const fieldMoisture =
       this.fields.map(field => this.getFieldSoilMoisture(field));
     const fieldNdvi =
@@ -678,7 +775,7 @@ export class Dashboard implements OnInit {
       this.zones.map(zone => Number(zone.ndviScore || 0)).filter(Boolean);
 
     this.averageHealthIndex =
-      this.average(zoneHealth.length ? zoneHealth : fieldHealth);
+      this.average([...fieldHealth, ...zoneHealth]);
     this.averageSoilMoisture =
       this.average(zoneMoisture.length ? zoneMoisture : fieldMoisture);
     this.averageNdviScore =
@@ -852,7 +949,7 @@ export class Dashboard implements OnInit {
 
     setTimeout(() => {
       this.renderRevenueCostsChart();
-      this.renderCropDistributionChart();
+      this.renderProfitByCropChart();
       this.renderIrrigationChart();
     }, 200);
 
@@ -956,38 +1053,42 @@ export class Dashboard implements OnInit {
     }
 
     new Chart(canvas, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels: this.getFinancialSeries().labels,
         datasets: [
           {
             label: 'Revenue',
             data: this.getFinancialSeries().income,
+            backgroundColor: '#14915f',
             borderColor: '#14915f',
-            backgroundColor: 'rgba(20,145,95,.12)',
-            tension: .35,
-            fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: '#14915f'
+            borderRadius: 8,
+            borderSkipped: false
           },
           {
             label: 'Costs',
             data: this.getFinancialSeries().expenses,
+            backgroundColor: '#f97316',
             borderColor: '#f97316',
-            backgroundColor: 'rgba(249,115,22,.1)',
-            tension: .35,
-            fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: '#f97316'
+            borderRadius: 8,
+            borderSkipped: false
+          },
+          {
+            label: 'Profit',
+            data: this.getFinancialSeries().profit,
+            backgroundColor: '#4f83a8',
+            borderColor: '#4f83a8',
+            borderRadius: 8,
+            borderSkipped: false
           }
         ]
       },
-      options: this.getLineChartOptions()
+      options: this.getGroupedBarChartOptions()
     });
 
   }
 
-  private renderCropDistributionChart() {
+  private renderProfitByCropChart() {
 
     const canvas =
       document.getElementById('cropDistributionChart') as HTMLCanvasElement;
@@ -998,23 +1099,27 @@ export class Dashboard implements OnInit {
 
     Chart.getChart(canvas)?.destroy();
 
-    const distribution =
-      this.getCropDistribution();
+    if (!this.hasProfitByCropData) {
+      return;
+    }
+
+    const profitByCrop =
+      this.getProfitByCropBreakdown();
 
     new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: distribution.labels,
+        labels: profitByCrop.entries.map(item => item.crop),
         datasets: [
           {
             backgroundColor: ['#14915f', '#4f83a8', '#f59e0b', '#79ad32', '#8b5cf6'],
             borderColor: '#ffffff',
             borderWidth: 4,
-            data: distribution.values
+            data: profitByCrop.entries.map(item => Math.abs(item.profit))
           }
         ]
       },
-      options: this.getDoughnutChartOptions()
+      options: this.getProfitDoughnutChartOptions()
     });
 
   }
@@ -1052,13 +1157,23 @@ export class Dashboard implements OnInit {
 
     const buckets = new Map<string, { income: number; expenses: number; timestamp: number }>();
 
-    this.records.forEach((record, index) => {
+    this.records.forEach(record => {
       const date =
-        record.createdAt || record.date || record.updatedAt;
+        record.date;
+
+      if (!date) {
+        return;
+      }
+
       const timestamp =
-        date ? new Date(date).getTime() : index;
+        new Date(date).getTime();
+
+      if (!Number.isFinite(timestamp)) {
+        return;
+      }
+
       const label =
-        date ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)) : `Record ${index + 1}`;
+        new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date));
 
       if (!buckets.has(label)) {
         buckets.set(label, { income: 0, expenses: 0, timestamp });
@@ -1082,31 +1197,123 @@ export class Dashboard implements OnInit {
     return {
       labels: series.map(([label]) => label),
       income: series.map(([, value]) => value.income),
-      expenses: series.map(([, value]) => value.expenses)
+      expenses: series.map(([, value]) => value.expenses),
+      profit: series.map(([, value]) => value.income - value.expenses)
     };
 
   }
 
-  private getCropDistribution() {
+  getProfitByCropBreakdown() {
 
-    const buckets = new Map<string, number>();
+    const validCropIds =
+      new Set(this.crops.map(crop => this.getEntityId(crop)).filter(Boolean));
+    const buckets =
+      new Map<string, { income: number; expenses: number; crop: string }>();
 
-    const source =
-      this.fields.length ? this.fields : this.crops;
+    this.records
+      .filter(record => validCropIds.has(this.getEntityId(record.crop)))
+      .forEach(record => {
+        const cropId =
+          this.getEntityId(record.crop);
+        const cropName =
+          record.crop?.name ||
+          this.crops.find(crop => this.getEntityId(crop) === cropId)?.name ||
+          'Unavailable crop';
 
-    source.forEach(item => {
-      const label =
-        this.fields.length ? this.getFieldCropLabel(item) : item.type || item.name || 'Unspecified';
-      buckets.set(label, (buckets.get(label) || 0) + 1);
-    });
+        if (!buckets.has(cropId)) {
+          buckets.set(cropId, { income: 0, expenses: 0, crop: cropName });
+        }
 
-    const series = Array.from(buckets.entries()).slice(0, 5);
+        const bucket =
+          buckets.get(cropId)!;
+
+        if (record.type === 'Income') {
+          bucket.income += Number(record.amount || 0);
+        }
+
+        if (record.type === 'Expense') {
+          bucket.expenses += Number(record.amount || 0);
+        }
+      });
+
+    const entries =
+      Array.from(buckets.values())
+        .map(bucket => ({
+          crop: bucket.crop,
+          profit: bucket.income - bucket.expenses
+        }))
+        .filter(item => item.profit !== 0)
+        .sort((a, b) => Math.abs(b.profit) - Math.abs(a.profit))
+        .slice(0, 5);
+
+    const totalProfit =
+      entries.reduce((sum, item) => sum + item.profit, 0);
+    const absoluteTotal =
+      entries.reduce((sum, item) => sum + Math.abs(item.profit), 0);
 
     return {
-      labels: series.length ? series.map(([label]) => label) : ['No crops'],
-      values: series.length ? series.map(([, value]) => value) : [0]
+      entries: entries.map(item => ({
+        ...item,
+        percent: absoluteTotal
+          ? Math.round((Math.abs(item.profit) / absoluteTotal) * 100)
+          : 0
+      })),
+      totalProfit
     };
 
+  }
+
+  private getFieldFinancialPerformance() {
+    const validFieldIds =
+      new Set(this.fields.map(field => this.getEntityId(field)).filter(Boolean));
+    const buckets =
+      new Map<string, { income: number; expenses: number; field: any }>();
+
+    this.records
+      .filter(record => validFieldIds.has(this.getEntityId(record.field)))
+      .forEach(record => {
+        const fieldId =
+          this.getEntityId(record.field);
+        const field =
+          this.fields.find(item => this.getEntityId(item) === fieldId) || record.field;
+
+        if (!buckets.has(fieldId)) {
+          buckets.set(fieldId, { income: 0, expenses: 0, field });
+        }
+
+        const bucket =
+          buckets.get(fieldId)!;
+
+        if (record.type === 'Income') {
+          bucket.income += Number(record.amount || 0);
+        }
+
+        if (record.type === 'Expense') {
+          bucket.expenses += Number(record.amount || 0);
+        }
+      });
+
+    return Array.from(buckets.values())
+      .map(bucket => {
+        const profit =
+          bucket.income - bucket.expenses;
+        const roi =
+          bucket.income
+            ? Math.round((profit / bucket.income) * 100)
+            : 0;
+
+        return {
+          field: bucket.field,
+          name: bucket.field?.name || 'Unavailable field',
+          crop: this.getFieldCropLabel(bucket.field),
+          area: bucket.field?.area,
+          profit,
+          roi,
+          score: null,
+          financial: true
+        };
+      })
+      .sort((a, b) => b.profit - a.profit);
   }
 
   private getLineChartOptions(): any {
@@ -1177,6 +1384,76 @@ export class Dashboard implements OnInit {
           backgroundColor: '#142018',
           padding: 12,
           cornerRadius: 8
+        }
+      }
+    };
+
+  }
+
+  private getProfitDoughnutChartOptions(): any {
+
+    return {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#142018',
+          padding: 12,
+          cornerRadius: 8
+        }
+      }
+    };
+
+  }
+
+  private getGroupedBarChartOptions(): any {
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'start',
+          labels: {
+            usePointStyle: true,
+            boxWidth: 8,
+            padding: 24,
+            color: '#53645a'
+          }
+        },
+        tooltip: {
+          backgroundColor: '#142018',
+          padding: 12,
+          cornerRadius: 8
+        }
+      },
+      scales: {
+        x: {
+          stacked: false,
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#53645a'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          border: {
+            display: false
+          },
+          grid: {
+            color: '#e4ece1'
+          },
+          ticks: {
+            color: '#7a897f'
+          }
         }
       }
     };

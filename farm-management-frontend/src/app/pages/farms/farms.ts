@@ -643,7 +643,17 @@ updateFarm() {
   }
 
   get selectedFieldHealthIndex() {
-    return this.selectedField ? this.getFieldHealthIndex(this.selectedField) : 0;
+    return this.selectedField ? this.getFieldHealthIndex(this.selectedField) : null;
+  }
+
+  get selectedFieldHealthIndexLabel() {
+    return this.formatHealthIndex(this.selectedFieldHealthIndex);
+  }
+
+  get selectedFieldHealthStatus() {
+    return this.selectedField
+      ? this.getFieldHealthStatus(this.selectedField)
+      : 'No crop assigned';
   }
 
   get selectedFieldSoilMoisture() {
@@ -651,11 +661,23 @@ updateFarm() {
       return 0;
     }
 
-    if (this.selectedField.irrigationStatus === 'Dry') {
+    return this.getFieldSoilMoisture(this.selectedField);
+  }
+
+  getFieldSoilMoisture(field: any) {
+
+    const explicitMoisture =
+      Number(field?.soilMoisture ?? field?.moistureScore);
+
+    if (Number.isFinite(explicitMoisture) && explicitMoisture > 0) {
+      return this.clampHealthScore(explicitMoisture);
+    }
+
+    if (field?.irrigationStatus === 'Dry') {
       return 38;
     }
 
-    if (this.selectedField.irrigationStatus === 'Irrigated') {
+    if (field?.irrigationStatus === 'Irrigated') {
       return 84;
     }
 
@@ -1308,7 +1330,11 @@ updateFarm() {
 
   }
 
-  getIndexTone(value: number) {
+  getIndexTone(value: number | null) {
+
+    if (value === null) {
+      return 'tone-muted';
+    }
 
     if (value < 50) {
       return 'tone-danger';
@@ -1323,6 +1349,65 @@ updateFarm() {
   }
 
   getFieldHealthIndex(field: any) {
+
+    if (!this.canCalculateCropHealth(field)) {
+      return null;
+    }
+
+    let health =
+      this.getFieldNdviScore(field);
+    const moisture =
+      this.getFieldSoilMoisture(field);
+    const irrigationStatus =
+      String(field?.irrigationStatus || '').toLowerCase();
+
+    if (moisture < 30) {
+      health -= 20;
+    } else if (moisture <= 50) {
+      health -= 10;
+    }
+
+    if (irrigationStatus.includes('dry')) {
+      health -= 15;
+    }
+
+    if (this.hasHighRainRisk()) {
+      health -= 10;
+    }
+
+    return this.clampHealthScore(health);
+
+  }
+
+  getFieldHealthStatus(field: any) {
+
+    const status =
+      String(field?.status || '').toLowerCase();
+
+    if (status.includes('resting')) {
+      return 'No active crop health';
+    }
+
+    if (status.includes('harvested')) {
+      return 'Harvested';
+    }
+
+    if (!this.fieldHasCrop(field)) {
+      return 'No crop assigned';
+    }
+
+    return this.getHealthStatusFromIndex(this.getFieldHealthIndex(field));
+
+  }
+
+  getFieldManualNdviScore(field: any) {
+
+    const explicitNdvi =
+      Number(field?.ndviScore ?? field?.ndvi ?? field?.vegetationScore);
+
+    if (Number.isFinite(explicitNdvi) && explicitNdvi > 0) {
+      return this.clampHealthScore(explicitNdvi);
+    }
 
     const normalized =
       String(field?.healthStatus || '').toLowerCase();
@@ -1345,7 +1430,78 @@ updateFarm() {
 
   getFieldNdviScore(field: any) {
 
-    return this.getFieldHealthIndex(field);
+    return this.getFieldManualNdviScore(field);
+
+  }
+
+  fieldHasCrop(field: any) {
+
+    return Boolean(field?.crop?._id || field?.crop || field?.cropType);
+
+  }
+
+  canCalculateCropHealth(field: any) {
+
+    const status =
+      String(field?.status || '').toLowerCase();
+
+    return this.fieldHasCrop(field) &&
+      !status.includes('resting') &&
+      !status.includes('harvested');
+
+  }
+
+  clampHealthScore(value: number) {
+
+    return Math.max(0, Math.min(100, Math.round(value)));
+
+  }
+
+  getHealthStatusFromIndex(value: number | null) {
+
+    if (value === null) {
+      return 'Not available';
+    }
+
+    if (value >= 80) {
+      return 'Good';
+    }
+
+    if (value >= 60) {
+      return 'Moderate';
+    }
+
+    if (value >= 40) {
+      return 'Warning';
+    }
+
+    return 'Critical';
+
+  }
+
+  formatHealthIndex(value: number | null) {
+
+    return value === null ? 'Not available' : `${value}%`;
+
+  }
+
+  getFieldFormHealthPreview() {
+
+    const previewField = {
+      crop: this.selectedCrop || null,
+      cropType: this.fieldCropType,
+      healthStatus: this.fieldHealthStatus,
+      irrigationStatus: this.fieldIrrigationStatus,
+      status: this.fieldStatus
+    };
+    const score =
+      this.getFieldHealthIndex(previewField);
+
+    if (score === null) {
+      return this.getFieldHealthStatus(previewField);
+    }
+
+    return `${score}% - ${this.getHealthStatusFromIndex(score)}`;
 
   }
 
@@ -1431,11 +1587,11 @@ updateFarm() {
       });
     }
 
-    if (healthIndex < 50 || ndviScore < 50) {
+    if ((healthIndex !== null && healthIndex < 50) || ndviScore < 50) {
       recommendations.push({
         title: 'Field inspection needed',
         priority: 'High',
-        reason: `Health index is ${healthIndex}% and NDVI score is ${ndviScore}%, indicating possible crop stress.`,
+        reason: `Health index is ${this.formatHealthIndex(healthIndex)} and NDVI score is ${ndviScore}%, indicating possible crop stress.`,
         action: 'Inspect the field for pests, disease, nutrient deficiency, irrigation gaps or uneven growth.'
       });
     }
@@ -3644,7 +3800,7 @@ private resetZoneForm() {
   this.zoneName = '';
   this.zoneType = 'Monitoring';
   this.zoneArea = 0;
-  this.zoneHealthScore = this.selectedFieldHealthIndex;
+  this.zoneHealthScore = this.selectedFieldHealthIndex ?? 0;
   this.zoneMoistureScore = this.selectedFieldSoilMoisture;
   this.zoneNdviScore = this.selectedFieldNdviScore;
   this.zoneRecommendation = this.getFieldRecommendations()[0]?.action || '';
@@ -3656,5 +3812,3 @@ private resetZoneForm() {
 }
 
 }
-
-

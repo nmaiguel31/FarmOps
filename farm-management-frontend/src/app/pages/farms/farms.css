@@ -581,6 +581,15 @@
   font-weight: 900;
 }
 
+.field-metric-card small,
+.coordinate-preview small {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .metric-icon,
 .info-icon {
   display: grid;

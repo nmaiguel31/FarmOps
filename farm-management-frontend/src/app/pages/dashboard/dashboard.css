@@ -948,6 +948,94 @@
   height: 300px !important;
 }
 
+.crop-analytics .command-donut {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(150px, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: center;
+}
+
+.profit-donut-visual {
+  position: relative;
+  display: grid;
+  width: min(240px, 100%);
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  min-width: 0;
+  justify-self: center;
+}
+
+.profit-donut-visual canvas {
+  min-height: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.donut-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 110px;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.donut-center span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.donut-center strong {
+  display: block;
+  margin-top: 4px;
+  color: #101812;
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.profit-crop-list {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.profit-crop-list div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 10px;
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-sm);
+}
+
+.profit-crop-list span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted-strong);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profit-crop-list strong {
+  color: #101812;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.profit-crop-list small {
+  grid-column: 1 / -1;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
 .small-donut,
 .small-donut canvas {
   min-height: 210px;
@@ -1023,6 +1111,12 @@
   border-radius: 999px;
   font-size: 13px;
   font-weight: 900;
+}
+
+.field-rank svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.2;
 }
 
 .weather-widget {
@@ -1189,5 +1283,10 @@
 
   .field-overview-panel .dashboard-map {
     height: 430px;
+  }
+
+  .crop-analytics .command-donut {
+    grid-template-columns: 1fr;
+    height: auto !important;
   }
 }

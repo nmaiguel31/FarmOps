@@ -8,7 +8,13 @@ export class FinancialRecord {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'https://farmops-api-nmaiguel.azurewebsites.net/api/financial-records';
+  private apiBase =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:5000/api'
+      : 'https://farmops-api-nmaiguel.azurewebsites.net/api';
+
+  private apiUrl = `${this.apiBase}/financial-records`;
 
   getRecords() {
 
@@ -47,7 +53,37 @@ export class FinancialRecord {
     });
 
     return this.http.get(
-      'https://farmops-api-nmaiguel.azurewebsites.net/api/farms',
+      `${this.apiBase}/farms`,
+      { headers }
+    );
+
+  }
+
+  getFields() {
+
+    const token = localStorage.getItem('token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get(
+      `${this.apiBase}/fields`,
+      { headers }
+    );
+
+  }
+
+  getCrops() {
+
+    const token = localStorage.getItem('token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get(
+      `${this.apiBase}/crops`,
       { headers }
     );
 

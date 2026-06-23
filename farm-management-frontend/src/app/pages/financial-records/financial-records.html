@@ -1,89 +1,215 @@
 <main class="finance-page">
-  <section class="finance-hero">
+  <section class="finance-header">
     <div>
-      <p class="eyebrow">Farm Finance</p>
-      <h1>Track income, expenses, and farm profitability.</h1>
-      <p>Review financial activity across farm operations with export-ready records.</p>
+      <h1>Financial Records</h1>
+      <p>Track income, expenses and profitability</p>
     </div>
 
-    <div class="hero-actions">
-      <button type="button" class="export-btn" (click)="exportCSV()">Export CSV</button>
-      <button type="button" class="export-btn" (click)="exportPDF()">Export PDF</button>
-      <button type="button" class="primary-btn" (click)="openCreateRecord()">Create Record</button>
+    <div class="header-actions">
+      <button type="button" class="ghost-btn" (click)="exportCSV()">
+        <svg lucideDownload></svg>
+        Export CSV
+      </button>
+      <button type="button" class="ghost-btn" (click)="exportPDF()">
+        <svg lucideFileText></svg>
+        Export PDF
+      </button>
+      <button type="button" class="primary-btn" (click)="openCreateRecord()">
+        <svg lucidePlus></svg>
+        Add Record
+      </button>
     </div>
   </section>
 
   <section class="summary-grid" aria-label="Financial summary">
-    <article class="summary-card income-summary">
-      <span>Total Income</span>
-      <strong>{{ totalIncome | currency:'USD':'symbol':'1.0-0' }}</strong>
-      <p>Revenue logged from farm operations</p>
+    <article class="summary-card" *ngFor="let item of financialSummaryCards" [ngClass]="item.tone">
+      <div class="summary-icon" [ngSwitch]="item.icon">
+        <svg *ngSwitchCase="'revenue'" lucideBadgeDollarSign></svg>
+        <svg *ngSwitchCase="'expenses'" lucideReceipt></svg>
+        <svg *ngSwitchCase="'profit'" lucideTrendingUp></svg>
+        <svg *ngSwitchCase="'margin'" lucideChartPie></svg>
+        <svg *ngSwitchCase="'pending'" lucideClock3></svg>
+      </div>
+      <div>
+        <span>{{ item.label }}</span>
+        <strong *ngIf="!item.plain; else plainSummary">
+          {{ item.value | currency:'USD':'symbol':'1.0-0' }}
+        </strong>
+        <ng-template #plainSummary>
+          <strong>{{ item.value }}</strong>
+        </ng-template>
+        <p>{{ item.detail }}</p>
+        <small>{{ item.helper }}</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="finance-analytics-grid">
+    <article class="analytics-card performance-card">
+      <div class="panel-header">
+        <div>
+          <h2>Financial Performance</h2>
+          <p>Revenue, Expenses and Profit (Monthly)</p>
+        </div>
+        <span class="panel-pill">This Year</span>
+      </div>
+
+      <div class="chart-shell performance-chart" *ngIf="hasFinancialHistory; else noFinanceHistory">
+        <canvas id="financeRevenueExpenseChart"></canvas>
+      </div>
+      <ng-template #noFinanceHistory>
+        <div class="empty-state compact">
+          <strong>Insufficient financial history</strong>
+          <span>Add dated income and expense records across at least two months.</span>
+        </div>
+      </ng-template>
     </article>
 
-    <article class="summary-card expense-summary">
-      <span>Total Expenses</span>
-      <strong>{{ totalExpenses | currency:'USD':'symbol':'1.0-0' }}</strong>
-      <p>Operating costs and outgoing records</p>
-    </article>
+    <article class="analytics-card crop-profit-card">
+      <div class="panel-header">
+        <div>
+          <h2>Profit by Crop</h2>
+          <p>This Year</p>
+        </div>
+        <span class="panel-pill">Real records</span>
+      </div>
 
-    <article class="summary-card profit-summary">
-      <span>Net Profit</span>
-      <strong>{{ netProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
-      <p>Income minus expenses</p>
-    </article>
+      <div class="profit-by-crop" *ngIf="hasCropProfit; else noCropProfit">
+        <div class="profit-donut">
+          <canvas id="financeProfitByCropChart"></canvas>
+          <div class="donut-center">
+            <span>Total Profit</span>
+            <strong>{{ getProfitByCropBreakdown().totalProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
+          </div>
+        </div>
 
-    <article class="summary-card records-summary">
-      <span>Records</span>
-      <strong>{{ records.length }}</strong>
-      <p>Total financial entries</p>
+        <div class="crop-profit-list">
+          <div *ngFor="let item of getProfitByCropBreakdown().entries">
+            <span>{{ item.crop }}</span>
+            <strong>{{ item.profit | currency:'USD':'symbol':'1.0-0' }}</strong>
+            <small>{{ item.percent }}%</small>
+          </div>
+        </div>
+      </div>
+      <ng-template #noCropProfit>
+        <div class="empty-state compact">Not enough crop financial data yet.</div>
+      </ng-template>
     </article>
   </section>
 
   <section class="records-panel">
     <div class="panel-header">
       <div>
-        <span class="panel-kicker">Transactions</span>
-        <h2>Financial records</h2>
+        <h2>Financial Records</h2>
+        <p>{{ filteredRecords.length }} of {{ records.length }} records shown</p>
       </div>
-      <span class="panel-pill">{{ records.length }} entries</span>
     </div>
 
-    <div class="transaction-list" *ngIf="records.length > 0; else noRecords">
+    <div class="finance-filters">
+      <label>
+        Type
+        <select class="farmops-field" [(ngModel)]="filterType" name="filterType">
+          <option>All</option>
+          <option>Income</option>
+          <option>Expense</option>
+        </select>
+      </label>
+
+      <label>
+        Category
+        <select class="farmops-field" [(ngModel)]="filterCategory" name="filterCategory">
+          <option value="All">All Categories</option>
+          <option *ngFor="let category of allCategories" [value]="category">{{ category }}</option>
+        </select>
+      </label>
+
+      <label>
+        Farm
+        <select class="farmops-field" [(ngModel)]="filterFarm" (ngModelChange)="onFilterFarmChange()" name="filterFarm">
+          <option value="All">All Farms</option>
+          <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+        </select>
+      </label>
+
+      <label>
+        Field
+        <select class="farmops-field" [(ngModel)]="filterField" (ngModelChange)="onFilterFieldChange()" name="filterField">
+          <option value="All">All Fields</option>
+          <option *ngFor="let field of filterFieldOptions" [value]="field._id">{{ field.name }}</option>
+        </select>
+      </label>
+
+      <label>
+        Crop
+        <select class="farmops-field" [(ngModel)]="filterCrop" name="filterCrop">
+          <option value="All">All Crops</option>
+          <option *ngFor="let crop of filterCropOptions" [value]="crop._id">{{ crop.name }}</option>
+        </select>
+      </label>
+
+      <label>
+        Payment Status
+        <select class="farmops-field" [(ngModel)]="filterPaymentStatus" name="filterPaymentStatus">
+          <option value="All">All Statuses</option>
+          <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+        </select>
+      </label>
+
+      <label class="date-filter">
+        Date Range
+        <span>
+          <input class="farmops-field" type="date" [(ngModel)]="filterStartDate" name="filterStartDate">
+          <input class="farmops-field" type="date" [(ngModel)]="filterEndDate" name="filterEndDate">
+        </span>
+      </label>
+
+      <button type="button" class="reset-btn" (click)="resetFilters()">Reset</button>
+    </div>
+
+    <div class="records-table" *ngIf="filteredRecords.length > 0; else noRecords">
+      <div class="table-head">
+        <span>Date</span>
+        <span>Type</span>
+        <span>Category</span>
+        <span>Farm</span>
+        <span>Field</span>
+        <span>Crop</span>
+        <span>Description</span>
+        <span>Amount</span>
+        <span>Payment Status</span>
+        <span>Actions</span>
+      </div>
+
       <article
-        class="transaction-row"
-        *ngFor="let record of records"
+        class="table-row"
+        *ngFor="let record of filteredRecords"
         [class.income-row]="record.type === 'Income'"
         [class.expense-row]="record.type === 'Expense'"
       >
-        <div class="transaction-type">
-          <span class="type-badge" [class.expense]="record.type === 'Expense'">
-            {{ record.type }}
-          </span>
-        </div>
-
-        <div class="transaction-main">
-          <h3>{{ record.category }}</h3>
-          <p>{{ record.description || 'No description provided' }}</p>
-        </div>
-
-        <div class="transaction-farm">
-          <span>Farm</span>
-          <strong>{{ record.farm?.name || '-' }}</strong>
-        </div>
-
-        <strong class="transaction-amount">
+        <span>{{ getRecordDate(record) }}</span>
+        <span class="type-badge" [class.expense]="record.type === 'Expense'">{{ record.type }}</span>
+        <strong>{{ record.category }}</strong>
+        <span>{{ getFarmName(record) }}</span>
+        <span>{{ getFieldName(record) }}</span>
+        <span>{{ getCropName(record) }}</span>
+        <span>{{ record.description || record.notes || '-' }}</span>
+        <strong class="transaction-amount" [class.expense-amount]="record.type === 'Expense'">
           {{ record.amount | currency:'USD':'symbol':'1.0-0' }}
         </strong>
-
+        <span class="payment-badge" [ngClass]="record.paymentStatus || 'Paid'">{{ record.paymentStatus || 'Paid' }}</span>
         <div class="row-actions">
-          <button type="button" class="edit-btn" (click)="editRecord(record)">Edit</button>
-          <button type="button" class="delete-btn" (click)="deleteRecord(record._id)">Delete</button>
+          <button type="button" class="icon-action" (click)="editRecord(record)" aria-label="Edit record">
+            <svg lucidePencil></svg>
+          </button>
+          <button type="button" class="icon-action danger" (click)="deleteRecord(record._id)" aria-label="Delete record">
+            <svg lucideTrash2></svg>
+          </button>
         </div>
       </article>
     </div>
 
     <ng-template #noRecords>
-      <div class="empty-state">No financial records found.</div>
+      <div class="empty-state">No financial records match the current filters.</div>
     </ng-template>
   </section>
 
@@ -93,58 +219,128 @@
     <div class="drawer-header">
       <div>
         <span class="panel-kicker">Financial Form</span>
-        <h2>{{ editingRecordId ? 'Update Record' : 'Create Record' }}</h2>
+        <h2>{{ editingRecordId ? 'Update Record' : 'Add Record' }}</h2>
       </div>
       <button type="button" class="icon-close" (click)="closeRecordForm()" aria-label="Close form"></button>
     </div>
 
     <form class="finance-form">
+      <div class="type-toggle">
+        <button type="button" [class.active]="recordType === 'Income'" (click)="recordType = 'Income'; onTypeChange()">Income</button>
+        <button type="button" [class.active]="recordType === 'Expense'" (click)="recordType = 'Expense'; onTypeChange()">Expense</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Category
+          <select class="farmops-field" [(ngModel)]="recordCategory" name="recordCategory">
+            <option *ngFor="let category of getCategoryOptions()" [value]="category">{{ category }}</option>
+          </select>
+        </label>
+
+        <label>
+          Date
+          <input class="farmops-field" type="date" [(ngModel)]="recordDate" name="recordDate">
+        </label>
+      </div>
+
       <label>
-        Type
-        <select class="farmops-field" [(ngModel)]="recordType" name="recordType">
-          <option value="">Select Type</option>
-          <option value="Income">Income</option>
-          <option value="Expense">Expense</option>
+        Farm
+        <select class="farmops-field" [(ngModel)]="selectedFarm" (ngModelChange)="onFarmChange()" name="selectedFarm">
+          <option value="">Select Farm</option>
+          <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
         </select>
       </label>
 
-      <label>
-        Category
-        <input class="farmops-field" type="text" placeholder="Category" [(ngModel)]="recordCategory" name="recordCategory">
-      </label>
+      <div class="form-grid">
+        <label>
+          Field
+          <select class="farmops-field" [(ngModel)]="selectedField" (ngModelChange)="onFieldChange()" name="selectedField">
+            <option value="">Optional field</option>
+            <option *ngFor="let field of visibleFields" [value]="field._id">{{ field.name }}</option>
+          </select>
+        </label>
+
+        <label>
+          Crop
+          <select class="farmops-field" [(ngModel)]="selectedCrop" name="selectedCrop">
+            <option value="">Optional crop</option>
+            <option *ngFor="let crop of visibleCrops" [value]="crop._id">{{ crop.name }}</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-grid three-up">
+        <label>
+          Quantity
+          <input class="farmops-field" type="number" placeholder="0" [(ngModel)]="recordQuantity" name="recordQuantity">
+        </label>
+
+        <label>
+          Unit
+          <input class="farmops-field" type="text" placeholder="kg, tons, hours" [(ngModel)]="recordUnit" name="recordUnit">
+        </label>
+
+        <label>
+          Unit Price
+          <input class="farmops-field" type="number" placeholder="0" [(ngModel)]="recordUnitPrice" name="recordUnitPrice">
+        </label>
+      </div>
 
       <label>
         Amount
         <input class="farmops-field" type="number" placeholder="Amount" [(ngModel)]="recordAmount" name="recordAmount">
       </label>
 
+      <div class="form-grid">
+        <label *ngIf="recordType === 'Income'">
+          {{ getPartyLabel() }}
+          <input
+            class="farmops-field"
+            type="text"
+            placeholder="Buyer name"
+            [(ngModel)]="recordBuyer"
+            name="recordBuyer"
+          >
+        </label>
+
+        <label *ngIf="recordType === 'Expense'">
+          {{ getPartyLabel() }}
+          <input
+            class="farmops-field"
+            type="text"
+            placeholder="Vendor name"
+            [(ngModel)]="recordVendor"
+            name="recordVendor"
+          >
+        </label>
+
+        <label>
+          Payment Status
+          <select class="farmops-field" [(ngModel)]="recordPaymentStatus" name="recordPaymentStatus">
+            <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </label>
+      </div>
+
       <label>
         Description
-        <input class="farmops-field" type="text" placeholder="Description" [(ngModel)]="recordDescription" name="recordDescription">
+        <input class="farmops-field" type="text" placeholder="Short record description" [(ngModel)]="recordDescription" name="recordDescription">
       </label>
 
       <label>
-        Farm
-        <select class="farmops-field" [(ngModel)]="selectedFarm" name="selectedFarm">
-          <option value="">Select Farm</option>
-          <option *ngFor="let farm of farms" [value]="farm._id">
-            {{ farm.name }}
-          </option>
-        </select>
+        Notes
+        <textarea class="farmops-field" rows="4" placeholder="Optional finance notes" [(ngModel)]="recordNotes" name="recordNotes"></textarea>
       </label>
 
       <div class="form-preview" [class.expense]="recordType === 'Expense'">
-        <span>{{ recordType || 'Record' }}</span>
-        <strong>{{ recordAmount | currency:'USD':'symbol':'1.0-0' }}</strong>
+        <span>{{ recordType || 'Record' }} amount</span>
+        <strong>{{ getAmountPreview() | currency:'USD':'symbol':'1.0-0' }}</strong>
+        <small *ngIf="recordQuantity && recordUnitPrice">Auto-calculated from quantity x unit price.</small>
       </div>
 
-      <button *ngIf="editingRecordId === ''" class="primary-btn" type="button" (click)="createRecord()">
-        Create Record
-      </button>
-
-      <button *ngIf="editingRecordId !== ''" class="primary-btn" type="button" (click)="updateRecord()">
-        Update Record
-      </button>
+      <button *ngIf="editingRecordId === ''" class="primary-btn full-width" type="button" (click)="createRecord()">Create Record</button>
+      <button *ngIf="editingRecordId !== ''" class="primary-btn full-width" type="button" (click)="updateRecord()">Update Record</button>
     </form>
   </aside>
 </main>
