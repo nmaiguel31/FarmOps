@@ -1,5 +1,7 @@
 # FarmOps BDD Scenarios
 
+
+
 ## Feature: Geospatial Farm Monitoring
 
 ### Scenario: Identify fields within a selected farm boundary
@@ -13,6 +15,8 @@ And the manager should be able to inspect each field’s crop, health, weather, 
 Business value:
 This helps farm managers monitor land usage and field-level performance without needing physical inspections for every plot.
 
+---
+
 ## Feature: Financial Profitability Analysis
 
 ### Scenario: Calculate profit by crop
@@ -24,6 +28,8 @@ And the manager should identify which crops are most profitable
 
 Business value:
 This supports better planting and investment decisions by showing which crops generate the highest return.
+
+---
 
 ## Feature: AI Agronomic Recommendations
 
@@ -37,6 +43,8 @@ Then the system should display an irrigation recommendation with priority level 
 
 Business value:
 This helps managers take timely action to reduce crop stress and avoid yield loss.
+
+---
 
 ## Feature: User Authentication
 
