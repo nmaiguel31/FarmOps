@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { clearAuthSession } from '../../guards/auth-guard';
 
 @Component({
   selector: 'app-navbar',
@@ -12,13 +13,9 @@ export class Navbar {
 
   logout() {
 
-    localStorage.removeItem('token');
+    clearAuthSession();
 
-    localStorage.removeItem('mfaVerified');
-
-    localStorage.removeItem('mfaVerifiedAt');
-
-    this.router.navigate(['/']);
+    this.router.navigate(['/login']);
 
   }
 }

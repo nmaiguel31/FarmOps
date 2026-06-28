@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Mfa } from '../../services/mfa';
+import { clearAuthSession } from '../../guards/auth-guard';
 
 @Component({
   selector: 'app-mfa',
@@ -155,11 +156,9 @@ export class MfaComponent
 
           this.qrCode = '';
 
-          localStorage.removeItem(
-            'mfaVerified'
-          );
+          clearAuthSession();
 
-          this.generateQR();
+          this.router.navigate(['/login']);
 
           this.cdr.detectChanges();
 

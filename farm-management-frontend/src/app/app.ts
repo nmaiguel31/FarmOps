@@ -1,6 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
+import {
+  hasActiveMfaSession,
+  hasValidToken
+} from './guards/auth-guard';
 
 @Component({
   selector: 'app-root',
@@ -13,14 +17,8 @@ export class App {
 
   get isLoggedIn() {
 
-  const token =
-    localStorage.getItem('token');
-
-  const mfaVerified =
-    localStorage.getItem('mfaVerified');
-
-  return !!token &&
-         mfaVerified === 'true';
+  return hasValidToken() &&
+         hasActiveMfaSession();
 
 }
 

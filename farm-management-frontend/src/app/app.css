@@ -6,7 +6,7 @@
 .app-shell-content {
   min-height: 100vh;
   margin-left: var(--sidebar-width);
-  padding-top: var(--topbar-height);
+  padding-top: 0;
   background: var(--color-page);
   transition: margin-left 180ms ease;
 }
@@ -14,6 +14,6 @@
 @media (max-width: 760px) {
   .app-shell-content {
     margin-left: 0;
-    padding-top: calc(var(--topbar-height) + 64px);
+    padding-top: 64px;
   }
 }

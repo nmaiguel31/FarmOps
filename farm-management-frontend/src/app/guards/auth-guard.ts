@@ -5,73 +5,102 @@ CanActivateFn,
 Router
 } from '@angular/router';
 
-export const authGuard: CanActivateFn = () => {
+const HOURS_24 =
+24 * 60 * 60 * 1000;
 
-const router = inject(Router);
+export function clearAuthSession() {
+
+localStorage.removeItem('token');
+localStorage.removeItem('mfaVerified');
+localStorage.removeItem('mfaVerifiedAt');
+
+}
+
+export function hasValidToken() {
 
 const token =
 localStorage.getItem('token');
 
-const mfaVerified =
-localStorage.getItem('mfaVerified');
+if (!token) {
+  return false;
+}
+
+try {
+  const payload =
+    JSON.parse(
+      atob(token.split('.')[1] || '')
+    );
+
+  if (
+    payload?.exp &&
+    Date.now() >= payload.exp * 1000
+  ) {
+    clearAuthSession();
+    return false;
+  }
+} catch {
+  clearAuthSession();
+  return false;
+}
+
+return true;
+
+}
+
+export function hasActiveMfaSession() {
 
 const verifiedAt =
-localStorage.getItem(
-'mfaVerifiedAt'
-);
-
-const HOURS_24 =
-24 * 60 * 60 * 1000;
+localStorage.getItem('mfaVerifiedAt');
 
 if (
 verifiedAt &&
 Date.now() - Number(verifiedAt) > HOURS_24
 ) {
+  localStorage.removeItem('mfaVerified');
+  localStorage.removeItem('mfaVerifiedAt');
+  return false;
+}
 
-console.log(
-  'MFA SESSION EXPIRED'
-);
-
-localStorage.removeItem(
-  'mfaVerified'
-);
-
-localStorage.removeItem(
-  'mfaVerifiedAt'
-);
+return localStorage.getItem('mfaVerified') === 'true';
 
 }
 
-if (!token) {
+export const authGuard: CanActivateFn = () => {
 
-console.log('NO TOKEN');
+const router = inject(Router);
 
-router.navigate(['/']);
-
-return false;
-
+if (!hasValidToken()) {
+  return router.createUrlTree(['/login']);
 }
 
-if (
-localStorage.getItem(
-'mfaVerified'
-) !== 'true'
-) {
-
-console.log(
-  'MFA NOT VERIFIED'
-);
-
-router.navigate(['/mfa']);
-
-return false;
-
+if (!hasActiveMfaSession()) {
+  return router.createUrlTree(['/mfa']);
 }
-
-console.log(
-'ACCESS GRANTED'
-);
 
 return true;
+
+};
+
+export const publicAuthGuard: CanActivateFn = () => {
+
+const router = inject(Router);
+
+if (!hasValidToken()) {
+  return true;
+}
+
+return hasActiveMfaSession()
+  ? router.createUrlTree(['/dashboard'])
+  : router.createUrlTree(['/mfa']);
+
+};
+
+export const mfaAccessGuard: CanActivateFn = () => {
+
+const router = inject(Router);
+
+return hasValidToken()
+  ? true
+  : router.createUrlTree(['/login']);
 
 };

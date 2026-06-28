@@ -5,12 +5,26 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Farms } from './pages/farms/farms';
 import { Crops } from './pages/crops/crops';
 import { FinancialRecords } from './pages/financial-records/financial-records';
-import { authGuard } from './guards/auth-guard';
+import {
+  authGuard,
+  mfaAccessGuard,
+  publicAuthGuard
+} from './guards/auth-guard';
 import { MfaComponent } from './pages/mfa/mfa';
 
 export const routes: Routes = [
 
-  { path: '', component: Login },
+  {
+    path: '',
+    component: Login,
+    canActivate: [publicAuthGuard]
+  },
+
+  {
+    path: 'login',
+    component: Login,
+    canActivate: [publicAuthGuard]
+  },
 
   {
     path: 'dashboard',
@@ -39,6 +53,7 @@ export const routes: Routes = [
   {
   path: 'mfa',
   component: MfaComponent,
+  canActivate: [mfaAccessGuard]
   }
 
 ];
