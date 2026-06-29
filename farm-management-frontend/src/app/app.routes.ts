@@ -8,6 +8,7 @@ import { FinancialRecords } from './pages/financial-records/financial-records';
 import { OperationsCenter } from './pages/operations-center/operations-center';
 import { Weather } from './pages/weather/weather';
 import { NdviAnalysis } from './pages/ndvi-analysis/ndvi-analysis';
+import { ExecutiveReports } from './pages/executive-reports/executive-reports';
 import {
   authGuard,
   mfaAccessGuard,
@@ -68,6 +69,12 @@ export const routes: Routes = [
   {
     path: 'ndvi',
     component: NdviAnalysis,
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'reports',
+    component: ExecutiveReports,
     canActivate: [authGuard]
   },
 

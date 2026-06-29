@@ -1,0 +1,198 @@
+<main class="reports-page">
+  <section class="reports-hero">
+    <div>
+      <span class="eyebrow">Executive reporting</span>
+      <h1>Executive Reports</h1>
+      <p>Generate strategic reports and executive summaries to support agricultural decision-making.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button type="button" class="report-button secondary" (click)="exportCSV()" [disabled]="loading">
+        <svg lucideDownload></svg>
+        Export CSV
+      </button>
+      <button type="button" class="report-button" (click)="exportPDF()" [disabled]="loading">
+        <svg lucideFileText></svg>
+        Export PDF
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="loading" class="report-skeleton-grid" aria-label="Loading executive reports">
+    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6,7]"></div>
+  </section>
+
+  <section *ngIf="!loading && loadError" class="empty-state error-state">
+    {{ loadError }}
+  </section>
+
+  <section *ngIf="!loading && !loadError && !hasOperationalData" class="empty-state">
+    <h2>No operational data is available yet.</h2>
+    <p>Create farms, fields, crops, and financial records to generate executive reports.</p>
+  </section>
+
+  <ng-container *ngIf="!loading && !loadError && hasOperationalData">
+    <section class="summary-grid" aria-label="Executive summary">
+      <article class="summary-card" *ngFor="let card of summaryCards" [class]="'summary-card ' + card.tone">
+        <span class="summary-icon" [class]="card.icon">
+          <svg *ngIf="card.icon === 'health'" lucideActivity></svg>
+          <svg *ngIf="card.icon === 'profit'" lucideBadgeDollarSign></svg>
+          <svg *ngIf="card.icon === 'ndvi'" lucideLeaf></svg>
+          <svg *ngIf="card.icon === 'operations'" lucideShieldAlert></svg>
+          <svg *ngIf="card.icon === 'weather'" lucideCloudSun></svg>
+          <svg *ngIf="card.icon === 'farms'" lucideBarChart3></svg>
+          <svg *ngIf="card.icon === 'crops'" lucideSprout></svg>
+        </span>
+        <div>
+          <p>{{ card.label }}</p>
+          <strong>{{ card.value }}</strong>
+          <small>{{ card.helper }}</small>
+        </div>
+      </article>
+    </section>
+
+    <section class="report-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Farm performance</span>
+          <h2>Operational and Financial Performance by Farm</h2>
+        </div>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Farm</th>
+              <th>Area</th>
+              <th>Fields</th>
+              <th>Average NDVI</th>
+              <th>Active Alerts</th>
+              <th>Revenue</th>
+              <th>Expenses</th>
+              <th>Profit</th>
+              <th>Operational Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of farmPerformanceRows">
+              <td>
+                <strong>{{ row.farm.name }}</strong>
+                <small>{{ row.farm.location || 'Location not specified' }}</small>
+              </td>
+              <td>{{ row.area }} ha</td>
+              <td>{{ row.fields }}</td>
+              <td>{{ row.averageNdvi }}</td>
+              <td>{{ row.activeAlerts }}</td>
+              <td>{{ formatCurrency(row.revenue) }}</td>
+              <td>{{ formatCurrency(row.expenses) }}</td>
+              <td [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
+              <td><span class="status-pill" [class]="getStatusClass(row.status)">{{ row.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Crop performance</span>
+          <h2>Crop Profitability and Growth Status</h2>
+        </div>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Crop</th>
+              <th>Farm</th>
+              <th>Revenue</th>
+              <th>Expenses</th>
+              <th>Profit</th>
+              <th>Average Health</th>
+              <th>NDVI</th>
+              <th>Lifecycle Stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of cropPerformanceRows">
+              <td><strong>{{ row.crop.name }}</strong><small>{{ row.crop.type || 'Crop' }}</small></td>
+              <td>{{ row.farm }}</td>
+              <td>{{ formatCurrency(row.revenue) }}</td>
+              <td>{{ formatCurrency(row.expenses) }}</td>
+              <td [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
+              <td>{{ row.averageHealth }}</td>
+              <td>{{ row.ndvi }}</td>
+              <td>{{ row.stage }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-grid two-column">
+      <article class="report-card">
+        <div class="section-heading compact">
+          <div>
+            <span class="eyebrow">Financial summary</span>
+            <h2>Monthly Financial Trend</h2>
+          </div>
+        </div>
+        <div *ngIf="hasFinancialData; else noFinancialTrend" class="chart-wrap">
+          <canvas id="executiveFinancialTrendChart"></canvas>
+        </div>
+        <ng-template #noFinancialTrend>
+          <div class="mini-empty">Financial reports will appear after recording transactions.</div>
+        </ng-template>
+      </article>
+
+      <article class="report-card">
+        <div class="section-heading compact">
+          <div>
+            <span class="eyebrow">Revenue, expenses, profit</span>
+            <h2>Financial Composition</h2>
+          </div>
+        </div>
+        <div *ngIf="hasFinancialData; else noFinancialSummary" class="chart-wrap">
+          <canvas id="executiveFinancialSummaryChart"></canvas>
+        </div>
+        <ng-template #noFinancialSummary>
+          <div class="mini-empty">Financial reports will appear after recording transactions.</div>
+        </ng-template>
+      </article>
+    </section>
+
+    <section class="report-grid operations-layout">
+      <article class="report-card">
+        <div class="section-heading compact">
+          <div>
+            <span class="eyebrow">Operations summary</span>
+            <h2>Signal Status by Category</h2>
+          </div>
+        </div>
+        <div class="operations-grid">
+          <div class="operation-tile" *ngFor="let item of operationsSummary" [class]="item.tone">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="report-card recommendations-card">
+        <div class="section-heading compact">
+          <div>
+            <span class="eyebrow">Executive recommendations</span>
+            <h2>Rule-Based Decision Support</h2>
+          </div>
+        </div>
+        <ul class="recommendation-list">
+          <li *ngFor="let recommendation of executiveRecommendations">
+            {{ recommendation }}
+          </li>
+        </ul>
+      </article>
+    </section>
+  </ng-container>
+</main>

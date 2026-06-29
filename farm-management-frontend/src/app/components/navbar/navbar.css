@@ -114,6 +114,7 @@
 .operations-icon,
 .weather-icon,
 .ndvi-icon,
+.reports-icon,
 .security-icon,
 .logout-icon {
   border: 2px solid currentColor;
@@ -226,6 +227,30 @@
 
 .security-icon {
   border-radius: 999px 999px 6px 6px;
+}
+
+.reports-icon::before {
+  position: absolute;
+  left: 4px;
+  bottom: 3px;
+  width: 2px;
+  height: 7px;
+  content: "";
+  background: currentColor;
+  box-shadow:
+    4px -3px 0 currentColor,
+    8px -7px 0 currentColor;
+}
+
+.reports-icon::after {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  content: "";
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
 }
 
 .security-icon::before {
