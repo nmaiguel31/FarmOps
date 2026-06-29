@@ -40,6 +40,7 @@ import {
 })
 export class OperationsCenter implements OnInit {
 
+  allSignals: any[] = [];
   signals: any[] = [];
   loading = false;
   message = '';
@@ -82,21 +83,16 @@ export class OperationsCenter implements OnInit {
     this.loadSignals();
   }
 
-  loadSignals(clearMessage = true) {
-    this.loading = true;
+  loadSignals(clearMessage = true, showLoading = true) {
+    this.loading = showLoading;
     if (clearMessage) {
       this.message = '';
     }
 
-    this.operationSignalService.getSignals({
-      status: this.filterStatus,
-      category: this.filterCategory,
-      priority: this.filterPriority,
-      farm: this.filterFarm,
-      field: this.filterField
-    }).subscribe({
+    this.operationSignalService.getSignals().subscribe({
       next: (data: any) => {
-        this.signals = [...data];
+        this.allSignals = Array.isArray(data) ? [...data] : [];
+        this.applyFilters();
         this.loading = false;
       },
       error: (error) => {
@@ -104,6 +100,54 @@ export class OperationsCenter implements OnInit {
         this.message = 'Unable to load operation signals.';
         this.loading = false;
       }
+    });
+  }
+
+  onFilterChange() {
+    if (
+      this.filterFarm !== 'All' &&
+      this.filterField !== 'All'
+    ) {
+      const selectedField = this.allSignals
+        .map(signal => signal.field)
+        .find(field => this.getEntityId(field) === this.filterField);
+      const selectedFieldFarmId =
+        this.getEntityId(selectedField?.farm);
+
+      if (
+        selectedFieldFarmId &&
+        selectedFieldFarmId !== this.filterFarm
+      ) {
+        this.filterField = 'All';
+      }
+    }
+
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    this.signals = this.allSignals.filter(signal => {
+      const statusMatches =
+        this.filterStatus === 'All' ||
+        signal.status === this.filterStatus;
+      const categoryMatches =
+        this.filterCategory === 'All' ||
+        signal.category === this.filterCategory;
+      const priorityMatches =
+        this.filterPriority === 'All' ||
+        signal.priority === this.filterPriority;
+      const farmMatches =
+        this.filterFarm === 'All' ||
+        this.getSignalFarmId(signal) === this.filterFarm;
+      const fieldMatches =
+        this.filterField === 'All' ||
+        this.getSignalFieldId(signal) === this.filterField;
+
+      return statusMatches &&
+        categoryMatches &&
+        priorityMatches &&
+        farmMatches &&
+        fieldMatches;
     });
   }
 
@@ -125,17 +169,13 @@ export class OperationsCenter implements OnInit {
           resolvedAt: resolvedSignal?.resolvedAt || new Date().toISOString()
         };
 
-        if (this.filterStatus === 'Active') {
-          this.signals = this.signals.filter(item => item._id !== signalId);
-        } else {
-          this.signals = this.signals.map(item =>
-            item._id === signalId ? updatedSignal : item
-          );
-        }
+        this.allSignals = this.allSignals.map(item =>
+          item._id === signalId ? updatedSignal : item
+        );
+        this.applyFilters();
 
         this.resolvingSignalIds.delete(signalId);
         this.message = 'Operation signal resolved.';
-        this.loadSignals(false);
       },
       error: (error) => {
         console.error(error);
@@ -155,7 +195,8 @@ export class OperationsCenter implements OnInit {
     this.filterPriority = 'All';
     this.filterFarm = 'All';
     this.filterField = 'All';
-    this.loadSignals();
+    this.message = '';
+    this.applyFilters();
   }
 
   viewFarm(signal: any) {
@@ -194,32 +235,32 @@ export class OperationsCenter implements OnInit {
   }
 
   get activeAlerts() {
-    return this.signals.filter(signal => signal.status === 'Active').length;
+    return this.allSignals.filter(signal => signal.status === 'Active').length;
   }
 
   get criticalAlerts() {
-    return this.signals.filter(signal =>
+    return this.allSignals.filter(signal =>
       signal.status === 'Active' &&
       signal.priority === 'Critical'
     ).length;
   }
 
   get highPriorityAlerts() {
-    return this.signals.filter(signal =>
+    return this.allSignals.filter(signal =>
       signal.status === 'Active' &&
       ['Critical', 'High'].includes(signal.priority)
     ).length;
   }
 
   get resolvedAlerts() {
-    return this.signals.filter(signal => signal.status === 'Resolved').length;
+    return this.allSignals.filter(signal => signal.status === 'Resolved').length;
   }
 
   get farms() {
     const farmMap =
       new Map<string, any>();
 
-    this.signals.forEach(signal => {
+    this.allSignals.forEach(signal => {
       const farmId =
         this.getEntityId(signal.farm);
 
@@ -235,7 +276,7 @@ export class OperationsCenter implements OnInit {
     const fieldMap =
       new Map<string, any>();
 
-    this.signals.forEach(signal => {
+    this.allSignals.forEach(signal => {
       const fieldId =
         this.getEntityId(signal.field);
 
