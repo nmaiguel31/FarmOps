@@ -1,0 +1,190 @@
+<main class="ndvi-page">
+  <section class="ndvi-hero">
+    <div>
+      <p class="eyebrow">Vegetation Monitoring</p>
+      <h1>NDVI Analysis</h1>
+      <p>Monitor vegetation health, detect crop stress, and evaluate field performance.</p>
+    </div>
+
+    <label class="farm-selector" *ngIf="farms.length">
+      <span>Select Farm</span>
+      <select [(ngModel)]="selectedFarmId" (change)="selectFarm()">
+        <option *ngFor="let farm of farms" [value]="farm._id">
+          {{ farm.name }}{{ farm.location ? ' · ' + farm.location : '' }}
+        </option>
+      </select>
+    </label>
+  </section>
+
+  <section class="loading-grid" *ngIf="loading">
+    <article class="skeleton-card large"></article>
+    <article class="skeleton-card"></article>
+    <article class="skeleton-card"></article>
+  </section>
+
+  <p class="ndvi-message" *ngIf="!loading && error">{{ error }}</p>
+
+  <section class="empty-state" *ngIf="!loading && !farms.length">
+    <svg lucideLeaf></svg>
+    <h2>Create a farm to start NDVI analysis.</h2>
+    <p>FarmOps derives simulated NDVI from field health signals until real satellite data is connected.</p>
+    <a routerLink="/farms">Open Farm Operations</a>
+  </section>
+
+  <ng-container *ngIf="!loading && selectedFarm">
+    <section class="farm-context">
+      <div>
+        <span class="panel-kicker">Selected Farm</span>
+        <h2>{{ selectedFarm.name }}</h2>
+        <p>{{ selectedFarm.location || 'No location label saved' }}</p>
+      </div>
+      <div class="simulation-note">
+        <svg lucideActivity></svg>
+        <span>Simulation-ready model</span>
+        <strong>Derived from field health, saved NDVI, and trend signals.</strong>
+      </div>
+    </section>
+
+    <section class="health-summary">
+      <article class="overall-card" [ngClass]="getClassTone(vegetationClassification)">
+        <div class="summary-icon">
+          <svg lucideLeaf></svg>
+        </div>
+        <div>
+          <span class="panel-kicker">Average NDVI Score</span>
+          <strong>{{ averageNdvi | number:'1.2-2' }}</strong>
+          <h2>{{ vegetationClassification }}</h2>
+          <p>Overall health status: {{ overallHealthStatus }}</p>
+        </div>
+      </article>
+
+      <article class="summary-stat">
+        <span>Healthy Fields</span>
+        <strong>{{ healthyFields }}</strong>
+        <small>Excellent or Good classification</small>
+      </article>
+
+      <article class="summary-stat">
+        <span>At-Risk Fields</span>
+        <strong>{{ atRiskFields }}</strong>
+        <small>Poor or Critical classification</small>
+      </article>
+
+      <article class="summary-stat">
+        <span>Fields Analyzed</span>
+        <strong>{{ rankedFields.length }}</strong>
+        <small>Current selected farm</small>
+      </article>
+    </section>
+
+    <section class="empty-state compact" *ngIf="!rankedFields.length">
+      <svg lucideSprout></svg>
+      <h2>No fields available for this farm.</h2>
+      <p>Create fields and add health or crop status information to generate simulated NDVI analysis.</p>
+    </section>
+
+    <ng-container *ngIf="rankedFields.length">
+      <section class="analysis-grid">
+        <article class="ranking-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Field Health Ranking</span>
+              <h2>Fields ordered by vegetation performance</h2>
+            </div>
+          </div>
+
+          <div class="field-ranking">
+            <article class="field-rank-card" *ngFor="let item of rankedFields" [ngClass]="getClassTone(item.classification)">
+              <div>
+                <strong>{{ item.name }}</strong>
+                <span>{{ item.crop }}</span>
+              </div>
+              <div class="ndvi-score">
+                <span>NDVI</span>
+                <strong>{{ item.ndvi | number:'1.2-2' }}</strong>
+              </div>
+              <span class="class-badge" [ngClass]="getClassTone(item.classification)">
+                {{ item.classification }}
+              </span>
+              <span class="trend-badge" [class.declining]="item.trend === 'Declining'" [class.improving]="item.trend === 'Improving'">
+                {{ item.trend }}
+              </span>
+            </article>
+          </div>
+        </article>
+
+        <article class="trend-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Vegetation Trend</span>
+              <h2>Simulated 30-day NDVI trend</h2>
+            </div>
+            <svg lucideLineChart></svg>
+          </div>
+          <div class="chart-shell">
+            <canvas id="ndviTrendChart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="lower-grid">
+        <article class="interpretation-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">AI Interpretation</span>
+              <h2>Rule-based vegetation insight</h2>
+            </div>
+            <svg lucideBarChart3></svg>
+          </div>
+          <p>{{ aiInterpretation }}</p>
+        </article>
+
+        <article class="recommendations-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Recommendations</span>
+              <h2>Suggested actions</h2>
+            </div>
+          </div>
+          <div class="recommendation-list">
+            <div class="recommendation-card" *ngFor="let recommendation of recommendations">
+              <svg lucideCheckCircle2></svg>
+              <span>{{ recommendation }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="signals-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Related Operations Signals</span>
+              <h2>NDVI Signals</h2>
+            </div>
+            <a routerLink="/operations-center">
+              View Operations Center
+              <svg lucideExternalLink></svg>
+            </a>
+          </div>
+
+          <div class="signal-loading" *ngIf="signalLoading">Refreshing NDVI signals...</div>
+
+          <div class="related-signals" *ngIf="!signalLoading && ndviSignals.length; else noSignals">
+            <div class="ndvi-signal" *ngFor="let signal of ndviSignals">
+              <span class="signal-priority" [ngClass]="signal.priority.toLowerCase()">{{ signal.priority }}</span>
+              <div>
+                <strong>{{ signal.title }}</strong>
+                <small>{{ signal.field?.name || selectedFarm.name }}</small>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noSignals>
+            <p class="quiet-state" *ngIf="!signalLoading">
+              No active NDVI signals for this farm.
+            </p>
+          </ng-template>
+        </article>
+      </section>
+    </ng-container>
+  </ng-container>
+</main>

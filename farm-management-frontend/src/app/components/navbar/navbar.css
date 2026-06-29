@@ -113,6 +113,7 @@
 .finance-icon,
 .operations-icon,
 .weather-icon,
+.ndvi-icon,
 .security-icon,
 .logout-icon {
   border: 2px solid currentColor;
@@ -195,6 +196,32 @@
   border: 2px solid currentColor;
   border-top: 0;
   border-radius: 0 0 999px 999px;
+}
+
+.ndvi-icon {
+  border: 0;
+}
+
+.ndvi-icon::before {
+  position: absolute;
+  inset: 2px 7px 2px 7px;
+  content: "";
+  background: currentColor;
+  border-radius: 999px 999px 2px 2px;
+}
+
+.ndvi-icon::after {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 12px;
+  height: 12px;
+  content: "";
+  border: 2px solid currentColor;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 999px 999px 999px 0;
+  transform: rotate(-28deg);
 }
 
 .security-icon {

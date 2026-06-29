@@ -1,0 +1,496 @@
+.ndvi-page {
+  display: grid;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(20, 145, 95, .1), transparent 32rem),
+    radial-gradient(circle at bottom left, rgba(121, 173, 50, .1), transparent 28rem),
+    var(--color-page);
+}
+
+.ndvi-hero,
+.farm-context,
+.overall-card,
+.summary-stat,
+.ranking-panel,
+.trend-panel,
+.interpretation-panel,
+.recommendations-panel,
+.signals-panel,
+.empty-state,
+.skeleton-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.ndvi-hero,
+.farm-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+}
+
+.eyebrow,
+.panel-kicker,
+.farm-selector span,
+.summary-stat span,
+.ndvi-score span {
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.ndvi-hero h1 {
+  margin: 4px 0 8px;
+  color: var(--color-text);
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1;
+}
+
+.ndvi-hero p,
+.farm-context p,
+.summary-stat small,
+.field-rank-card span,
+.quiet-state {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+
+.farm-selector {
+  display: grid;
+  gap: 8px;
+  min-width: min(420px, 100%);
+}
+
+.farm-selector select {
+  height: 44px;
+  padding: 0 14px;
+  color: var(--color-text);
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 700;
+}
+
+.farm-context h2,
+.section-heading h2 {
+  margin: 4px 0;
+  color: var(--color-text);
+}
+
+.simulation-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  max-width: 420px;
+  padding: 16px;
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(20, 145, 95, .16);
+  border-radius: var(--radius-md);
+}
+
+.simulation-note svg {
+  grid-row: span 2;
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
+}
+
+.simulation-note span {
+  color: var(--color-primary-strong);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.simulation-note strong {
+  color: var(--color-text);
+}
+
+.health-summary {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.4fr) repeat(3, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.overall-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 26px;
+  border-color: rgba(20, 145, 95, .2);
+}
+
+.summary-icon {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  place-items: center;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 24px;
+}
+
+.summary-icon svg {
+  width: 38px;
+  height: 38px;
+}
+
+.overall-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: var(--color-text);
+  font-size: 48px;
+  line-height: 1;
+}
+
+.overall-card h2 {
+  margin: 0 0 6px;
+  color: var(--color-primary-strong);
+}
+
+.summary-stat {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 150px;
+  padding: 22px;
+}
+
+.summary-stat strong {
+  color: var(--color-text);
+  font-size: 34px;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, .9fr) minmax(0, 1.1fr);
+  gap: 16px;
+}
+
+.ranking-panel,
+.trend-panel,
+.interpretation-panel,
+.recommendations-panel,
+.signals-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.section-heading > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--color-primary);
+}
+
+.section-heading a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary-strong);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.section-heading a svg {
+  width: 16px;
+  height: 16px;
+}
+
+.field-ranking {
+  display: grid;
+  gap: 12px;
+}
+
+.field-rank-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  background: #f7faf6;
+  border: 1px solid var(--color-border);
+  border-left: 5px solid var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
+.field-rank-card.poor {
+  border-left-color: #f59e0b;
+}
+
+.field-rank-card.critical {
+  border-left-color: var(--color-danger);
+}
+
+.field-rank-card strong {
+  color: var(--color-text);
+}
+
+.field-rank-card > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ndvi-score {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.ndvi-score strong {
+  font-size: 22px;
+}
+
+.class-badge,
+.trend-badge,
+.signal-priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.class-badge.excellent,
+.class-badge.good {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.class-badge.moderate {
+  color: #577b12;
+  background: #edf7d8;
+}
+
+.class-badge.poor {
+  color: #9a5b00;
+  background: #fff3d7;
+}
+
+.class-badge.critical {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.trend-badge {
+  color: #53645a;
+  background: #eef2ed;
+}
+
+.trend-badge.improving {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.trend-badge.declining {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.chart-shell {
+  height: 360px;
+  min-height: 360px;
+}
+
+.chart-shell canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) minmax(320px, .9fr);
+  gap: 16px;
+}
+
+.interpretation-panel p {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.recommendation-list,
+.related-signals {
+  display: grid;
+  gap: 12px;
+}
+
+.recommendation-card,
+.ndvi-signal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  background: #f7faf6;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.recommendation-card svg {
+  width: 22px;
+  height: 22px;
+  color: var(--color-primary);
+}
+
+.ndvi-signal div {
+  display: grid;
+  gap: 3px;
+}
+
+.ndvi-signal small {
+  color: var(--color-muted-strong);
+}
+
+.signal-priority.critical,
+.signal-priority.high {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.signal-priority.medium {
+  color: #9a5b00;
+  background: #fff3d7;
+}
+
+.signal-priority.low {
+  color: #2f6685;
+  background: #e7f2fb;
+}
+
+.signal-loading,
+.ndvi-message {
+  padding: 14px 18px;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(20, 145, 95, .16);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 44px;
+  text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 240px;
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-primary);
+}
+
+.empty-state h2 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+
+.empty-state a {
+  color: var(--color-primary-strong);
+  font-weight: 800;
+}
+
+.loading-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.4fr) repeat(2, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.skeleton-card {
+  min-height: 170px;
+  overflow: hidden;
+  position: relative;
+}
+
+.skeleton-card.large {
+  min-height: 230px;
+}
+
+.skeleton-card::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, .74),
+    transparent
+  );
+  animation: skeleton-shimmer 1.25s infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 1200px) {
+  .health-summary,
+  .analysis-grid,
+  .lower-grid,
+  .loading-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .ndvi-page {
+    padding: 20px;
+  }
+
+  .ndvi-hero,
+  .farm-context,
+  .overall-card,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .field-rank-card {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .ndvi-score {
+    text-align: left;
+  }
+}

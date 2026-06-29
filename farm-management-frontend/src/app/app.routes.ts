@@ -7,6 +7,7 @@ import { Crops } from './pages/crops/crops';
 import { FinancialRecords } from './pages/financial-records/financial-records';
 import { OperationsCenter } from './pages/operations-center/operations-center';
 import { Weather } from './pages/weather/weather';
+import { NdviAnalysis } from './pages/ndvi-analysis/ndvi-analysis';
 import {
   authGuard,
   mfaAccessGuard,
@@ -61,6 +62,12 @@ export const routes: Routes = [
   {
     path: 'weather',
     component: Weather,
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'ndvi',
+    component: NdviAnalysis,
     canActivate: [authGuard]
   },
 
