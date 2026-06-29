@@ -1,6 +1,8 @@
 <aside class="sidebar" aria-label="Primary navigation">
   <a class="brand" routerLink="/dashboard" aria-label="FarmOps dashboard">
-    <span class="brand-mark">Fo</span>
+    <span class="farmops-logo compact" aria-hidden="true">
+      <img src="/brand/farmops-mark.png" alt="">
+    </span>
     <span>
       <strong>FarmOps</strong>
       <small>Agriculture SaaS</small>
@@ -9,47 +11,47 @@
 
   <nav class="menu" aria-label="Application pages">
     <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <span class="nav-icon dashboard-icon"></span>
+      <svg class="nav-icon" lucideLayoutDashboard></svg>
       <span>Dashboard</span>
     </a>
 
     <a routerLink="/farms" routerLinkActive="active">
-      <span class="nav-icon farms-icon"></span>
+      <svg class="nav-icon" lucideMap></svg>
       <span>Farms</span>
     </a>
 
     <a routerLink="/crops" routerLinkActive="active">
-      <span class="nav-icon crops-icon"></span>
+      <svg class="nav-icon" lucideSprout></svg>
       <span>Crops</span>
     </a>
 
     <a routerLink="/financial-records" routerLinkActive="active">
-      <span class="nav-icon finance-icon"></span>
+      <svg class="nav-icon" lucideBadgeDollarSign></svg>
       <span>Financial Records</span>
     </a>
 
     <a routerLink="/operations-center" routerLinkActive="active">
-      <span class="nav-icon operations-icon"></span>
+      <svg class="nav-icon" lucideShieldAlert></svg>
       <span>Operations</span>
     </a>
 
     <a routerLink="/weather" routerLinkActive="active">
-      <span class="nav-icon weather-icon"></span>
+      <svg class="nav-icon" lucideCloudSun></svg>
       <span>Weather</span>
     </a>
 
     <a routerLink="/ndvi" routerLinkActive="active">
-      <span class="nav-icon ndvi-icon"></span>
+      <svg class="nav-icon" lucideLeaf></svg>
       <span>NDVI Analysis</span>
     </a>
 
     <a routerLink="/reports" routerLinkActive="active">
-      <span class="nav-icon reports-icon"></span>
+      <svg class="nav-icon" lucideFileText></svg>
       <span>Reports</span>
     </a>
 
     <a routerLink="/mfa" routerLinkActive="active">
-      <span class="nav-icon security-icon"></span>
+      <svg class="nav-icon" lucideShieldCheck></svg>
       <span>Security</span>
     </a>
   </nav>
@@ -63,7 +65,7 @@
   </section>
 
   <button type="button" class="logout-button" (click)="logout()">
-    <span class="nav-icon logout-icon"></span>
+    <svg class="nav-icon" lucideLogOut></svg>
     <span>Logout</span>
   </button>
 </aside>

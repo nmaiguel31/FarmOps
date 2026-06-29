@@ -2,6 +2,18 @@
   --sidebar-width: 280px;
   --topbar-height: 72px;
 
+  --brand-primary-green: #14915f;
+  --brand-secondary-green: #79ad32;
+  --brand-cloud-blue: #4f83a8;
+  --brand-success: #14915f;
+  --brand-warning: #c8891f;
+  --brand-danger: #b44435;
+  --brand-background: #f6f8f3;
+  --brand-surface: #ffffff;
+  --brand-border: #dfe8dc;
+  --brand-text-primary: #142018;
+  --brand-text-secondary: #53645a;
+
   --color-page: #f6f8f3;
   --color-surface: #ffffff;
   --color-sidebar: #fbfdf8;
@@ -18,6 +30,12 @@
   --color-warning: #c8891f;
   --color-danger: #b44435;
   --color-danger-soft: #fae8e4;
+  --color-warning-soft: #fff7df;
+  --color-sky-soft: #e8f3fb;
+  --color-success-soft: #e2f6e9;
+  --color-table-header: #f4f8f1;
+  --color-focus-ring: rgba(20, 145, 95, 0.12);
+  --color-focus-border: rgba(20, 145, 95, 0.55);
 
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --space-1: 4px;
@@ -30,8 +48,10 @@
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
+  --radius-xl: 14px;
   --shadow-card: 0 10px 26px rgba(31, 54, 40, 0.06);
   --shadow-soft: 0 16px 40px rgba(20, 145, 95, 0.18);
+  --shadow-elevated: 0 20px 54px rgba(31, 54, 40, 0.1);
 }
 
 * {
@@ -74,10 +94,79 @@ a {
   color: inherit;
 }
 
+h1,
+.farmops-h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(34px, 4vw, 56px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+h2,
+.farmops-h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+h3,
+.farmops-h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.farmops-body {
+  color: var(--color-muted-strong);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.farmops-caption,
+.farmops-eyebrow {
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.farmops-eyebrow {
+  text-transform: uppercase;
+}
+
+.farmops-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.farmops-logo img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+}
+
+.farmops-logo.compact img {
+  width: 42px;
+  height: 42px;
+}
+
+.farmops-logo.full img {
+  width: 198px;
+  height: auto;
+}
+
 .farmops-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
 
@@ -99,11 +188,12 @@ a {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(20, 145, 95, 0.55);
-  box-shadow: 0 0 0 4px rgba(20, 145, 95, 0.12);
+  border-color: var(--color-focus-border);
+  box-shadow: 0 0 0 4px var(--color-focus-ring);
 }
 
-.farmops-button {
+.farmops-button,
+.farmops-button-primary {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
@@ -119,11 +209,78 @@ textarea:focus {
   box-shadow: var(--shadow-soft);
 }
 
-.farmops-button.secondary {
+.farmops-button.secondary,
+.farmops-button-secondary {
   color: var(--color-primary-strong);
   background: var(--color-primary-soft);
   border-color: rgba(20, 145, 95, 0.12);
   box-shadow: none;
+}
+
+.farmops-kpi-card {
+  display: flex;
+  min-height: 124px;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.farmops-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 var(--space-3);
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.farmops-badge.warning {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.farmops-badge.danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.farmops-empty-state,
+.farmops-alert {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  padding: var(--space-8);
+  color: var(--color-muted-strong);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.farmops-skeleton {
+  background:
+    linear-gradient(90deg, #eef4eb 25%, #f7faf4 37%, #eef4eb 63%);
+  background-size: 400% 100%;
+  animation: farmops-shimmer 1.35s ease infinite;
+}
+
+@keyframes farmops-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
 }
 
 table {
@@ -133,7 +290,7 @@ table {
 
 th {
   color: var(--color-muted-strong);
-  background: #f4f8f1;
+  background: var(--color-table-header);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;

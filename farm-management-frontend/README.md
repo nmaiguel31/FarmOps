@@ -1,4 +1,8 @@
-# FarmManagementFrontend
+# FarmOps Frontend
+
+<img src="public/brand/farmops-logo.png" alt="FarmOps Agricultural Decision Support Platform" width="280">
+
+FarmOps is a smart farming management platform for farm operations, field monitoring, weather insights, NDVI analysis, financial records, and executive reporting.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.13.
 

@@ -29,6 +29,19 @@ import { Zone } from '../../services/zone';
 
 Chart.register(...registerables);
 
+const REPORT_THEME = {
+  primary: '#14915f',
+  primaryStrong: '#0e6f49',
+  secondary: '#79ad32',
+  cloudBlue: '#4f83a8',
+  warning: '#c8891f',
+  danger: '#b44435',
+  text: '#142018',
+  muted: '#53645a',
+  border: '#dfe8dc',
+  surfaceSoft: '#f6f8f3'
+};
+
 @Component({
   selector: 'app-executive-reports',
   imports: [
@@ -64,6 +77,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   private financialService = inject(FinancialRecord);
   private operationSignalService = inject(OperationSignal);
   private cdr = inject(ChangeDetectorRef);
+  private pdfLogoDataUrl = '';
 
   ngOnInit(): void {
     this.loadReportData();
@@ -394,17 +408,18 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     window.URL.revokeObjectURL(url);
   }
 
-  exportPDF() {
+  async exportPDF() {
+    this.pdfLogoDataUrl = await this.loadPdfLogoDataUrl();
     const doc = new jsPDF();
-    let y = 20;
+    let y = this.drawPdfHeader(doc);
 
-    doc.setFontSize(18);
-    doc.text('FarmOps Executive Report', 20, y);
-    y += 10;
+    doc.setTextColor(REPORT_THEME.text);
     doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 20, y);
+    doc.text(`Reporting period: ${this.getReportingPeriodLabel()}`, 20, y);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 130, y);
     y += 12;
 
+    doc.setTextColor(REPORT_THEME.text);
     doc.setFontSize(13);
     doc.text('Executive Summary', 20, y);
     y += 8;
@@ -457,6 +472,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       y = this.writePdfLine(doc, `- ${item}`, y);
     });
 
+    this.addPdfFooters(doc);
     doc.save('FarmOps-Executive-Report.pdf');
   }
 
@@ -662,7 +678,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
           {
             label: 'Revenue',
             data: series.revenue,
-            borderColor: '#14915f',
+            borderColor: REPORT_THEME.primary,
             backgroundColor: 'rgba(20,145,95,.12)',
             tension: .35,
             fill: true
@@ -670,7 +686,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
           {
             label: 'Expenses',
             data: series.expenses,
-            borderColor: '#f97316',
+            borderColor: REPORT_THEME.warning,
             backgroundColor: 'rgba(249,115,22,.1)',
             tension: .35,
             fill: true
@@ -678,7 +694,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
           {
             label: 'Profit',
             data: series.profit,
-            borderColor: '#0f7dc2',
+            borderColor: REPORT_THEME.cloudBlue,
             backgroundColor: 'rgba(15,125,194,.08)',
             tension: .35,
             fill: false
@@ -709,7 +725,11 @@ export class ExecutiveReports implements OnInit, OnDestroy {
         datasets: [
           {
             data: [this.totalRevenue, this.totalExpenses, this.totalRevenue - this.totalExpenses],
-            backgroundColor: ['#14915f', '#f97316', '#0f7dc2'],
+            backgroundColor: [
+              REPORT_THEME.primary,
+              REPORT_THEME.warning,
+              REPORT_THEME.cloudBlue
+            ],
             borderRadius: 10
           }
         ]
@@ -773,11 +793,11 @@ export class ExecutiveReports implements OnInit, OnDestroy {
             boxWidth: 8,
             usePointStyle: true,
             padding: 22,
-            color: '#53645a'
+            color: REPORT_THEME.muted
           }
         },
         tooltip: {
-          backgroundColor: '#142018',
+          backgroundColor: REPORT_THEME.text,
           padding: 12,
           cornerRadius: 10
         }
@@ -785,11 +805,11 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: '#53645a' }
+          ticks: { color: REPORT_THEME.muted }
         },
         y: {
           grid: { color: 'rgba(16,24,40,.08)' },
-          ticks: { color: '#7a897f' }
+          ticks: { color: REPORT_THEME.muted }
         }
       }
     };
@@ -802,7 +822,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#142018',
+          backgroundColor: REPORT_THEME.text,
           padding: 12,
           cornerRadius: 10
         }
@@ -810,11 +830,11 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: '#53645a' }
+          ticks: { color: REPORT_THEME.muted }
         },
         y: {
           grid: { color: 'rgba(16,24,40,.08)' },
-          ticks: { color: '#7a897f' }
+          ticks: { color: REPORT_THEME.muted }
         }
       }
     };
@@ -823,11 +843,89 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   private writePdfLine(doc: jsPDF, text: string, y: number) {
     if (y > 278) {
       doc.addPage();
-      y = 20;
+      y = this.drawPdfHeader(doc);
     }
 
     doc.text(text.slice(0, 118), 20, y);
     return y + 7;
+  }
+
+  private drawPdfHeader(doc: jsPDF) {
+    doc.setFillColor(REPORT_THEME.surfaceSoft);
+    doc.rect(0, 0, 210, 34, 'F');
+
+    if (this.pdfLogoDataUrl) {
+      doc.addImage(this.pdfLogoDataUrl, 'PNG', 18, 5, 24, 24);
+    } else {
+      doc.setFillColor(REPORT_THEME.primary);
+      doc.roundedRect(20, 8, 12, 12, 3, 3, 'F');
+      doc.setFillColor(REPORT_THEME.secondary);
+      doc.circle(29, 13, 4, 'F');
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(1);
+      doc.line(25, 18, 31, 10);
+    }
+
+    doc.setTextColor(REPORT_THEME.text);
+    doc.setFontSize(18);
+    doc.text('FarmOps', 48, 15);
+    doc.setTextColor(REPORT_THEME.muted);
+    doc.setFontSize(8);
+    doc.text('Agricultural Decision Support Platform', 48, 21);
+    doc.setTextColor(REPORT_THEME.primaryStrong);
+    doc.setFontSize(10);
+    doc.text('Executive Reports', 148, 16);
+
+    return 46;
+  }
+
+  private addPdfFooters(doc: jsPDF) {
+    const totalPages = doc.getNumberOfPages();
+
+    for (let page = 1; page <= totalPages; page++) {
+      doc.setPage(page);
+      doc.setDrawColor(REPORT_THEME.border);
+      doc.line(20, 286, 190, 286);
+      doc.setTextColor(REPORT_THEME.muted);
+      doc.setFontSize(8);
+      doc.text('FarmOps Executive Reporting Center', 20, 292);
+      doc.text(`Page ${page} of ${totalPages}`, 170, 292);
+    }
+  }
+
+  private getReportingPeriodLabel() {
+    const timestamps = this.records
+      .map(record => new Date(record.date || record.createdAt).getTime())
+      .filter(timestamp => Number.isFinite(timestamp));
+
+    if (!timestamps.length) {
+      return 'Current operational snapshot';
+    }
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return `${formatter.format(new Date(Math.min(...timestamps)))} - ${formatter.format(new Date(Math.max(...timestamps)))}`;
+  }
+
+  private async loadPdfLogoDataUrl() {
+    try {
+      const response = await fetch('/brand/farmops-logo.png');
+      const blob = await response.blob();
+
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Unable to load FarmOps logo for PDF export.', error);
+      return '';
+    }
   }
 
 }

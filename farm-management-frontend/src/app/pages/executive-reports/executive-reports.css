@@ -3,7 +3,7 @@
   min-height: 100vh;
   padding: 32px 32px 48px calc(var(--sidebar-width) + 32px);
   background:
-    radial-gradient(circle at top right, rgba(20, 145, 95, .09), transparent 32rem),
+    radial-gradient(circle at top right, var(--color-focus-ring), transparent 32rem),
     var(--color-page);
 }
 
@@ -77,7 +77,7 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 0 16px;
-  color: #ffffff;
+  color: var(--color-surface);
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: 9px;
@@ -88,7 +88,7 @@ h2 {
 
 .report-button.secondary {
   color: var(--color-primary-strong);
-  background: #ffffff;
+  background: var(--color-surface);
   border-color: var(--color-border);
   box-shadow: none;
 }
@@ -112,7 +112,7 @@ h2 {
   gap: 14px;
   min-width: 0;
   padding: 20px;
-  background: #ffffff;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 14px;
   box-shadow: var(--shadow-card);
@@ -153,7 +153,7 @@ h2 {
 .summary-card.warning .summary-icon,
 .operation-tile.warning {
   color: #a16207;
-  background: #fff7df;
+  background: var(--color-warning-soft);
 }
 
 .summary-card.danger .summary-icon,
@@ -165,7 +165,7 @@ h2 {
 .summary-card.neutral .summary-icon,
 .operation-tile.sky {
   color: var(--color-sky);
-  background: #e8f3fb;
+  background: var(--color-sky-soft);
 }
 
 .report-section,
@@ -221,7 +221,7 @@ td small {
 .status-pill.at-risk,
 .status-pill.monitoring {
   color: #a16207;
-  background: #fff7df;
+  background: var(--color-warning-soft);
 }
 
 .status-pill.critical {
@@ -278,7 +278,7 @@ td small {
 .recommendation-list li {
   padding: 14px 16px;
   color: var(--color-muted-strong);
-  background: #f8fbf5;
+  background: var(--color-sidebar);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   line-height: 1.45;
@@ -296,7 +296,7 @@ td small {
 .mini-empty {
   min-height: 320px;
   color: var(--color-muted-strong);
-  background: #f8fbf5;
+  background: var(--color-sidebar);
   border: 1px dashed var(--color-border);
   border-radius: 12px;
 }
@@ -308,7 +308,7 @@ td small {
 .skeleton-card {
   min-height: 132px;
   background:
-    linear-gradient(90deg, #eef4eb 25%, #f7faf4 37%, #eef4eb 63%);
+    linear-gradient(90deg, #eef4eb 25%, var(--color-sidebar) 37%, #eef4eb 63%);
   background-size: 400% 100%;
   border-radius: 14px;
   animation: shimmer 1.35s ease infinite;

@@ -28,16 +28,12 @@
   gap: 12px;
 }
 
-.brand-mark {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-leaf));
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 900;
+.brand-lockup .farmops-logo {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(255, 255, 255, .68);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .brand-lockup strong,
@@ -110,7 +106,7 @@
 
 .login-button {
   min-height: 44px;
-  color: #fff;
+  color: #ffffff;
   background: var(--color-primary);
   border: 0;
   border-radius: var(--radius-sm);

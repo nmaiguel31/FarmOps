@@ -27,19 +27,6 @@
   text-decoration: none;
 }
 
-.brand-mark {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-leaf));
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-  font-size: 13px;
-  font-weight: 800;
-}
-
 .brand strong,
 .farm-status strong {
   display: block;
@@ -87,182 +74,16 @@
 .menu a.active {
   color: var(--color-primary-strong);
   background: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px rgba(20, 135, 83, 0.08);
+  box-shadow: inset 0 0 0 1px var(--color-focus-ring);
 }
 
 .nav-icon {
-  position: relative;
-  display: inline-block;
+  display: inline-flex;
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
   color: currentColor;
-}
-
-.dashboard-icon {
-  background:
-    linear-gradient(currentColor, currentColor) 0 0 / 7px 7px no-repeat,
-    linear-gradient(currentColor, currentColor) 11px 0 / 7px 7px no-repeat,
-    linear-gradient(currentColor, currentColor) 0 11px / 7px 7px no-repeat,
-    linear-gradient(currentColor, currentColor) 11px 11px / 7px 7px no-repeat;
-  border-radius: 3px;
-}
-
-.farms-icon,
-.crops-icon,
-.finance-icon,
-.operations-icon,
-.weather-icon,
-.ndvi-icon,
-.reports-icon,
-.security-icon,
-.logout-icon {
-  border: 2px solid currentColor;
-  border-radius: 5px;
-}
-
-.farms-icon::after {
-  position: absolute;
-  inset: 4px 3px auto;
-  height: 2px;
-  content: "";
-  background: currentColor;
-  box-shadow: 0 5px 0 currentColor;
-}
-
-.crops-icon {
-  border-radius: 999px 999px 6px 999px;
-  transform: rotate(-35deg);
-}
-
-.finance-icon::after {
-  position: absolute;
-  right: -3px;
-  bottom: 2px;
-  width: 8px;
-  height: 8px;
-  content: "";
-  border-right: 2px solid currentColor;
-  border-top: 2px solid currentColor;
-  transform: rotate(45deg);
-}
-
-.operations-icon::before {
-  position: absolute;
-  top: 3px;
-  left: 6px;
-  width: 2px;
-  height: 10px;
-  content: "";
-  background: currentColor;
-  box-shadow:
-    5px 4px 0 currentColor,
-    -5px 7px 0 currentColor;
-}
-
-.operations-icon::after {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 5px;
-  height: 5px;
-  content: "";
-  background: currentColor;
-  border-radius: 999px;
-}
-
-.weather-icon {
-  border-radius: 999px;
-}
-
-.weather-icon::before {
-  position: absolute;
-  top: -3px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
-  content: "";
-  background: currentColor;
-  border-radius: 999px;
-}
-
-.weather-icon::after {
-  position: absolute;
-  right: -5px;
-  bottom: 1px;
-  width: 13px;
-  height: 6px;
-  content: "";
-  background: var(--color-sidebar);
-  border: 2px solid currentColor;
-  border-top: 0;
-  border-radius: 0 0 999px 999px;
-}
-
-.ndvi-icon {
-  border: 0;
-}
-
-.ndvi-icon::before {
-  position: absolute;
-  inset: 2px 7px 2px 7px;
-  content: "";
-  background: currentColor;
-  border-radius: 999px 999px 2px 2px;
-}
-
-.ndvi-icon::after {
-  position: absolute;
-  right: 1px;
-  bottom: 1px;
-  width: 12px;
-  height: 12px;
-  content: "";
-  border: 2px solid currentColor;
-  border-left: 0;
-  border-bottom: 0;
-  border-radius: 999px 999px 999px 0;
-  transform: rotate(-28deg);
-}
-
-.security-icon {
-  border-radius: 999px 999px 6px 6px;
-}
-
-.reports-icon::before {
-  position: absolute;
-  left: 4px;
-  bottom: 3px;
-  width: 2px;
-  height: 7px;
-  content: "";
-  background: currentColor;
-  box-shadow:
-    4px -3px 0 currentColor,
-    8px -7px 0 currentColor;
-}
-
-.reports-icon::after {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 5px;
-  height: 5px;
-  content: "";
-  border-top: 2px solid currentColor;
-  border-right: 2px solid currentColor;
-}
-
-.security-icon::before {
-  position: absolute;
-  top: -8px;
-  left: 3px;
-  width: 8px;
-  height: 8px;
-  content: "";
-  border: 2px solid currentColor;
-  border-bottom: 0;
-  border-radius: 999px 999px 0 0;
+  stroke-width: 2.2;
 }
 
 .farm-status {
@@ -271,7 +92,7 @@
   gap: var(--space-3);
   margin-top: auto;
   padding: var(--space-4);
-  background: #ffffff;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
@@ -293,16 +114,6 @@
 
 .logout-button:hover {
   background: var(--color-danger-soft);
-}
-
-.logout-icon::before {
-  position: absolute;
-  top: 7px;
-  right: -5px;
-  width: 9px;
-  height: 2px;
-  content: "";
-  background: currentColor;
 }
 
 @media (max-width: 760px) {
