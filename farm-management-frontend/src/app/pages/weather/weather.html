@@ -1,0 +1,190 @@
+<main class="weather-page">
+  <section class="weather-hero">
+    <div>
+      <p class="eyebrow">Farm Weather</p>
+      <h1>Weather</h1>
+      <p>Monitor farm-specific weather conditions and operational risks.</p>
+    </div>
+
+    <label class="farm-selector" *ngIf="farms.length">
+      <span>Select Farm</span>
+      <select [(ngModel)]="selectedFarmId" (change)="selectFarm()">
+        <option *ngFor="let farm of farms" [value]="farm._id">
+          {{ farm.name }}{{ farm.location ? ' · ' + farm.location : '' }}
+        </option>
+      </select>
+    </label>
+  </section>
+
+  <section class="empty-state" *ngIf="!loadingFarms && !farms.length">
+    <svg lucideCloudSun></svg>
+    <h2>Create a farm to view weather conditions.</h2>
+    <p>FarmOps uses saved farm coordinates to load local weather and operational risk context.</p>
+    <a routerLink="/farms">Open Farm Operations</a>
+  </section>
+
+  <section class="empty-state" *ngIf="!loadingFarms && farms.length && !selectedFarm">
+    <svg lucideCloudSun></svg>
+    <h2>Select a farm to view weather conditions.</h2>
+    <p>Weather monitoring is available for farms with saved latitude and longitude.</p>
+  </section>
+
+  <ng-container *ngIf="selectedFarm">
+    <section class="farm-context">
+      <div>
+        <span class="panel-kicker">Selected Farm</span>
+        <h2>{{ selectedFarm.name }}</h2>
+        <p>{{ selectedFarm.location || 'No location label saved' }}</p>
+      </div>
+      <div class="coordinate-card">
+        <span>Coordinates</span>
+        <strong *ngIf="hasCoordinates(selectedFarm); else missingCoords">
+          {{ selectedFarm.latitude | number:'1.4-4' }},
+          {{ selectedFarm.longitude | number:'1.4-4' }}
+        </strong>
+        <ng-template #missingCoords>
+          <strong>Not available</strong>
+        </ng-template>
+      </div>
+    </section>
+
+    <section class="weather-loading-grid" *ngIf="loadingWeather">
+      <article class="skeleton-card large"></article>
+      <article class="skeleton-card"></article>
+      <article class="skeleton-card"></article>
+    </section>
+
+    <p class="weather-message" *ngIf="!loadingWeather && weatherError">{{ weatherError }}</p>
+
+    <ng-container *ngIf="!loadingWeather && weather">
+      <section class="weather-overview">
+        <article class="current-weather-card" [ngClass]="riskLevel.toLowerCase()">
+          <div class="current-icon" [ngSwitch]="currentWeatherIcon">
+            <svg *ngSwitchCase="'rain'" lucideCloudRain></svg>
+            <svg *ngSwitchCase="'storm'" lucideAlertTriangle></svg>
+            <svg *ngSwitchCase="'cloud'" lucideCloudSun></svg>
+            <svg *ngSwitchDefault lucideSun></svg>
+          </div>
+          <div>
+            <span class="panel-kicker">Current Weather</span>
+            <strong>{{ formatNumber(weather.temperature, '°C') }}</strong>
+            <h2>{{ weather.condition }}</h2>
+            <p>Weather risk level: {{ riskLevel }}</p>
+          </div>
+        </article>
+
+        <article class="weather-metric">
+          <svg lucideDroplet></svg>
+          <span>Humidity</span>
+          <strong>{{ formatNumber(weather.humidity, '%') }}</strong>
+        </article>
+
+        <article class="weather-metric">
+          <svg lucideWind></svg>
+          <span>Wind Speed</span>
+          <strong>{{ formatNumber(weather.windSpeed, ' km/h') }}</strong>
+        </article>
+
+        <article class="weather-metric">
+          <svg lucideUmbrella></svg>
+          <span>Rain Probability</span>
+          <strong>{{ formatNumber(weather.rainProbability, '%') }}</strong>
+          <small>{{ formatNumber(weather.precipitation, ' mm') }} precipitation</small>
+        </article>
+      </section>
+
+      <section class="risk-grid">
+        <article class="risk-card" *ngFor="let risk of weatherRisks" [ngClass]="risk.status.toLowerCase()">
+          <div class="risk-icon" [ngSwitch]="risk.icon">
+            <svg *ngSwitchCase="'rain'" lucideCloudRain></svg>
+            <svg *ngSwitchCase="'heat'" lucideThermometer></svg>
+            <svg *ngSwitchCase="'wind'" lucideWind></svg>
+            <svg *ngSwitchDefault lucideDroplet></svg>
+          </div>
+          <div>
+            <span class="panel-kicker">{{ risk.label }}</span>
+            <h3>{{ risk.status }}</h3>
+            <p>{{ risk.explanation }}</p>
+            <strong>{{ risk.action }}</strong>
+          </div>
+        </article>
+      </section>
+
+      <section class="forecast-panel">
+        <div class="section-heading">
+          <div>
+            <span class="panel-kicker">Forecast</span>
+            <h2>7-Day Forecast</h2>
+          </div>
+        </div>
+
+        <div class="forecast-grid">
+          <article class="forecast-card" *ngFor="let day of weather.forecast">
+            <span>{{ formatForecastDate(day.date) }}</span>
+            <div class="forecast-icon" [ngSwitch]="getForecastIcon(day.condition)">
+              <svg *ngSwitchCase="'rain'" lucideCloudRain></svg>
+              <svg *ngSwitchCase="'storm'" lucideAlertTriangle></svg>
+              <svg *ngSwitchCase="'cloud'" lucideCloudSun></svg>
+              <svg *ngSwitchDefault lucideSun></svg>
+            </div>
+            <strong>{{ formatNumber(day.high, '°') }} / {{ formatNumber(day.low, '°') }}</strong>
+            <small>{{ formatNumber(day.rainProbability, '% rain') }}</small>
+            <small>{{ formatNumber(day.windSpeed, ' km/h wind') }}</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="lower-grid">
+        <article class="recommendations-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Farm Operations</span>
+              <h2>Recommendations</h2>
+            </div>
+          </div>
+
+          <div class="recommendation-list">
+            <div class="recommendation-card" *ngFor="let recommendation of recommendations">
+              <svg lucideCheckCircle2></svg>
+              <div>
+                <strong>{{ recommendation.title }}</strong>
+                <span>{{ recommendation.action }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="signals-panel">
+          <div class="section-heading">
+            <div>
+              <span class="panel-kicker">Related Operations Signals</span>
+              <h2>Weather Signals</h2>
+            </div>
+            <a routerLink="/operations-center">
+              View in Operations Center
+              <svg lucideExternalLink></svg>
+            </a>
+          </div>
+
+          <div class="signal-loading" *ngIf="signalLoading">Refreshing weather signals...</div>
+
+          <div class="related-signals" *ngIf="!signalLoading && weatherSignals.length; else noSignals">
+            <div class="weather-signal" *ngFor="let signal of weatherSignals">
+              <span class="signal-priority" [ngClass]="signal.priority.toLowerCase()">{{ signal.priority }}</span>
+              <div>
+                <strong>{{ signal.title }}</strong>
+                <small>{{ getSignalFarmName(signal) }}</small>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noSignals>
+            <p class="quiet-state" *ngIf="!signalLoading">
+              No active weather signals for this farm.
+            </p>
+          </ng-template>
+        </article>
+      </section>
+    </ng-container>
+  </ng-container>
+</main>

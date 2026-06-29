@@ -6,6 +6,7 @@ import { Farms } from './pages/farms/farms';
 import { Crops } from './pages/crops/crops';
 import { FinancialRecords } from './pages/financial-records/financial-records';
 import { OperationsCenter } from './pages/operations-center/operations-center';
+import { Weather } from './pages/weather/weather';
 import {
   authGuard,
   mfaAccessGuard,
@@ -54,6 +55,12 @@ export const routes: Routes = [
   {
     path: 'operations-center',
     component: OperationsCenter,
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'weather',
+    component: Weather,
     canActivate: [authGuard]
   },
 

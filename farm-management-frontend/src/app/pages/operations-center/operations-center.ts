@@ -1,11 +1,18 @@
 import {
+  ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit,
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import {
+  NavigationEnd,
+  Router,
+  RouterModule
+} from '@angular/router';
+import { Subscription, filter } from 'rxjs';
 import { OperationSignal } from '../../services/operation-signal';
 import {
   LucideActivity,
@@ -38,7 +45,7 @@ import {
   templateUrl: './operations-center.html',
   styleUrl: './operations-center.css'
 })
-export class OperationsCenter implements OnInit {
+export class OperationsCenter implements OnInit, OnDestroy {
 
   allSignals: any[] = [];
   signals: any[] = [];
@@ -78,27 +85,66 @@ export class OperationsCenter implements OnInit {
 
   private operationSignalService = inject(OperationSignal);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+  private routeSubscription?: Subscription;
+  private hasLoadedSignals = false;
+  private loadingRequestInFlight = false;
 
   ngOnInit(): void {
-    this.loadSignals();
+    this.initializeSignals();
+    this.routeSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        if (event.urlAfterRedirects.startsWith('/operations-center')) {
+          this.initializeSignals();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.routeSubscription?.unsubscribe();
+  }
+
+  initializeSignals() {
+    if (this.loadingRequestInFlight) {
+      return;
+    }
+
+    if (this.hasLoadedSignals) {
+      this.applyFilters();
+      return;
+    }
+
+    queueMicrotask(() => this.loadSignals());
   }
 
   loadSignals(clearMessage = true, showLoading = true) {
+    if (this.loadingRequestInFlight) {
+      return;
+    }
+
+    this.loadingRequestInFlight = true;
     this.loading = showLoading;
     if (clearMessage) {
       this.message = '';
     }
+    this.cdr.detectChanges();
 
     this.operationSignalService.getSignals().subscribe({
       next: (data: any) => {
         this.allSignals = Array.isArray(data) ? [...data] : [];
         this.applyFilters();
         this.loading = false;
+        this.loadingRequestInFlight = false;
+        this.hasLoadedSignals = true;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.message = 'Unable to load operation signals.';
         this.loading = false;
+        this.loadingRequestInFlight = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -123,6 +169,7 @@ export class OperationsCenter implements OnInit {
     }
 
     this.applyFilters();
+    this.cdr.detectChanges();
   }
 
   applyFilters() {
@@ -159,6 +206,7 @@ export class OperationsCenter implements OnInit {
 
     this.resolvingSignalIds.add(signalId);
     this.message = '';
+    this.cdr.detectChanges();
 
     this.operationSignalService.resolveSignal(signalId).subscribe({
       next: (resolvedSignal: any) => {
@@ -176,11 +224,13 @@ export class OperationsCenter implements OnInit {
 
         this.resolvingSignalIds.delete(signalId);
         this.message = 'Operation signal resolved.';
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.resolvingSignalIds.delete(signalId);
         this.message = 'Unable to resolve this operation signal.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -197,6 +247,7 @@ export class OperationsCenter implements OnInit {
     this.filterField = 'All';
     this.message = '';
     this.applyFilters();
+    this.cdr.detectChanges();
   }
 
   viewFarm(signal: any) {

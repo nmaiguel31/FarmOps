@@ -9,6 +9,7 @@ export interface WeatherForecastDay {
   low: number;
   rainProbability: number;
   precipitation: number;
+  windSpeed: number;
 }
 
 export interface WeatherInsights {
@@ -35,8 +36,8 @@ export class WeatherService {
       `latitude=${lat}`,
       `longitude=${lng}`,
       'current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m',
-      'daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum',
-      'forecast_days=4',
+      'daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
+      'forecast_days=7',
       'timezone=auto'
     ].join('&');
 
@@ -65,7 +66,8 @@ export class WeatherService {
         high: Number(daily.temperature_2m_max?.[index] || 0),
         low: Number(daily.temperature_2m_min?.[index] || 0),
         rainProbability: Number(daily.precipitation_probability_max?.[index] || 0),
-        precipitation: Number(daily.precipitation_sum?.[index] || 0)
+        precipitation: Number(daily.precipitation_sum?.[index] || 0),
+        windSpeed: Number(daily.wind_speed_10m_max?.[index] || 0)
       }))
     };
 
