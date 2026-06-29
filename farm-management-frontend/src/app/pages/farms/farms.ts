@@ -19,6 +19,7 @@ import { Zone } from '../../services/zone';
 import { Crop as CropService } from '../../services/crop';
 import { GoogleMapsLoader } from '../../services/google-maps-loader';
 import { WeatherInsights, WeatherService } from '../../services/weather';
+import { OperationSignal } from '../../services/operation-signal';
 import {
   LucideActivity,
   LucideCalendar,
@@ -163,6 +164,8 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private lifecycleClock: any = null;
   private pendingFarmId = '';
   private pendingFieldId = '';
+  private weatherSignalGenerationInFlight = false;
+  private lastWeatherSignalGenerationAt = 0;
 
   private mapsLoader = inject(GoogleMapsLoader);
   private route = inject(ActivatedRoute);
@@ -171,6 +174,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private zoneService = inject(Zone);
   private cropService = inject(CropService);
   private weatherService = inject(WeatherService);
+  private operationSignalService = inject(OperationSignal);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
@@ -741,6 +745,7 @@ updateFarm() {
           this.weatherInsights = weather;
           this.weatherLoading = false;
           this.weatherError = '';
+          this.generateWeatherOperationSignals();
           this.cdr.detectChanges();
         },
         error: () => {
@@ -752,6 +757,31 @@ updateFarm() {
         }
       });
 
+  }
+
+  private generateWeatherOperationSignals() {
+    const now =
+      Date.now();
+
+    if (
+      this.weatherSignalGenerationInFlight ||
+      now - this.lastWeatherSignalGenerationAt < 60000
+    ) {
+      return;
+    }
+
+    this.weatherSignalGenerationInFlight = true;
+    this.lastWeatherSignalGenerationAt = now;
+
+    this.operationSignalService.generateSignals().subscribe({
+      next: () => {
+        this.weatherSignalGenerationInFlight = false;
+      },
+      error: (error) => {
+        console.error(error);
+        this.weatherSignalGenerationInFlight = false;
+      }
+    });
   }
 
   private getWeatherCoordinates() {

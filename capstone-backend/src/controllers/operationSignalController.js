@@ -5,6 +5,8 @@ const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
 
+const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
+
 const populateSignal = [
   {
     path: 'farm',
@@ -325,6 +327,153 @@ const getFieldHealthIndex = (field) => {
   return Math.max(0, Math.min(100, Math.round(score)));
 };
 
+const isValidCoordinate = (value) => {
+  const coordinate =
+    Number(value);
+
+  return Number.isFinite(coordinate);
+};
+
+const fetchFarmWeather = async (farm) => {
+  if (
+    !isValidCoordinate(farm.latitude) ||
+    !isValidCoordinate(farm.longitude) ||
+    typeof fetch !== 'function'
+  ) {
+    return null;
+  }
+
+  const params =
+    new URLSearchParams({
+      latitude: String(farm.latitude),
+      longitude: String(farm.longitude),
+      current: 'temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m',
+      daily: 'temperature_2m_max,precipitation_probability_max',
+      forecast_days: '4',
+      timezone: 'auto'
+    });
+  const controller =
+    new AbortController();
+  const timeout =
+    setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response =
+      await fetch(`${OPEN_METEO_API_URL}?${params.toString()}`, {
+        signal: controller.signal
+      });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload =
+      await response.json();
+    const current =
+      payload?.current || {};
+    const daily =
+      payload?.daily || {};
+    const rainProbabilities =
+      (daily.precipitation_probability_max || [])
+        .slice(0, 2)
+        .map(value => Number(value || 0));
+    const temperatures =
+      [
+        current.temperature_2m,
+        ...(daily.temperature_2m_max || []).slice(0, 2)
+      ].map(value => Number(value || 0));
+
+    return {
+      temperature:
+        Math.max(...temperatures.filter(Number.isFinite), 0),
+      humidity:
+        Number(current.relative_humidity_2m || 0),
+      windSpeed:
+        Number(current.wind_speed_10m || 0),
+      rainProbability:
+        Math.max(...rainProbabilities.filter(Number.isFinite), 0)
+    };
+  } catch (error) {
+    logEvent('warn', 'WEATHER_SIGNAL_FETCH_FAILED', {
+      farmId: farm._id,
+      message: error.message
+    });
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const addWeatherSignalCandidates = async (farms, candidates) => {
+  for (const farm of farms) {
+    const weather =
+      await fetchFarmWeather(farm);
+
+    if (!weather) {
+      continue;
+    }
+
+    if (weather.rainProbability >= 70) {
+      candidates.push({
+        title: 'Heavy rain expected',
+        description: `${farm.name} has ${weather.rainProbability}% rain probability within the next 48 hours.`,
+        category: 'Weather',
+        priority: 'High',
+        status: 'Active',
+        farm: farm._id,
+        field: null,
+        ruleKey: `weather-heavy-rain:${farm._id}`,
+        recommendedAction: 'Delay irrigation and review field drainage.'
+      });
+    }
+
+    if (weather.temperature >= 35) {
+      candidates.push({
+        title: 'High temperature risk',
+        description: `${farm.name} is forecast near ${Math.round(weather.temperature)}°C.`,
+        category: 'Weather',
+        priority: 'High',
+        status: 'Active',
+        farm: farm._id,
+        field: null,
+        ruleKey: `weather-heat-risk:${farm._id}`,
+        recommendedAction: 'Monitor crop stress and irrigation needs.'
+      });
+    }
+
+    if (weather.windSpeed >= 40) {
+      candidates.push({
+        title: 'Strong wind conditions',
+        description: `${farm.name} has wind speed near ${Math.round(weather.windSpeed)} km/h.`,
+        category: 'Weather',
+        priority: 'Medium',
+        status: 'Active',
+        farm: farm._id,
+        field: null,
+        ruleKey: `weather-strong-wind:${farm._id}`,
+        recommendedAction: 'Avoid spraying and inspect vulnerable crops.'
+      });
+    }
+
+    if (
+      weather.humidity <= 35 &&
+      weather.rainProbability <= 20
+    ) {
+      candidates.push({
+        title: 'Dry weather conditions',
+        description: `${farm.name} has ${Math.round(weather.humidity)}% humidity and low rain probability.`,
+        category: 'Weather',
+        priority: 'Medium',
+        status: 'Active',
+        farm: farm._id,
+        field: null,
+        ruleKey: `weather-dry-conditions:${farm._id}`,
+        recommendedAction: 'Review irrigation schedule.'
+      });
+    }
+  }
+};
+
 const upsertGeneratedSignal = async (signal) => {
   const existing =
     await OperationSignal.findOne({
@@ -402,6 +551,8 @@ const generateOperationSignals = async (req, res) => {
   try {
     const farmIds =
       await getAccessibleFarmIds(req.user);
+    const farms =
+      await Farm.find({ _id: { $in: farmIds } });
     const fields =
       await Field.find({ farm: { $in: farmIds } })
         .populate('crop')
@@ -544,6 +695,8 @@ const generateOperationSignals = async (req, res) => {
         recommendedAction: 'Review cost drivers, crop sales, and pending payments for this farm.'
       });
     });
+
+    await addWeatherSignalCandidates(farms, candidates);
 
     const changed = [];
     let createdCount = 0;

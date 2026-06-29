@@ -476,6 +476,11 @@ export class Dashboard implements OnInit {
       error: (error) => console.error(error)
     });
 
+    this.refreshOperationSignals();
+
+  }
+
+  private refreshOperationSignals() {
     this.operationSignalService.getActiveSignals().subscribe({
       next: (data: any) => {
         this.operationSignals = [...data].filter(signal => signal.status === 'Active');
@@ -483,7 +488,13 @@ export class Dashboard implements OnInit {
       },
       error: (error) => console.error(error)
     });
+  }
 
+  private generateWeatherOperationSignals() {
+    this.operationSignalService.generateSignals().subscribe({
+      next: () => this.refreshOperationSignals(),
+      error: (error) => console.error(error)
+    });
   }
 
   get hasDashboardData() {
@@ -944,6 +955,7 @@ export class Dashboard implements OnInit {
         next: (weather: WeatherInsights) => {
           this.weatherSummary = weather;
           this.weatherLoading = false;
+          this.generateWeatherOperationSignals();
           this.cdr.detectChanges();
         },
         error: () => {
