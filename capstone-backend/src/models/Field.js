@@ -52,6 +52,26 @@ const fieldSchema = new mongoose.Schema(
       default: 'Good'
     },
 
+    healthIndex: {
+      type: Number,
+      default: null
+    },
+
+    ndviScore: {
+      type: Number,
+      default: null
+    },
+
+    vegetationStatus: {
+      type: String,
+      default: ''
+    },
+
+    soilMoisture: {
+      type: Number,
+      default: null
+    },
+
     irrigationStatus: {
       type: String,
       required: true,
@@ -71,6 +91,22 @@ const fieldSchema = new mongoose.Schema(
 
     polygonCoordinates: {
       type: [polygonPointSchema],
+      default: []
+    },
+
+    ndviHistory: {
+      type: [
+        {
+          value: {
+            type: Number,
+            required: true
+          },
+          recordedAt: {
+            type: Date,
+            default: Date.now
+          }
+        }
+      ],
       default: []
     }
   },

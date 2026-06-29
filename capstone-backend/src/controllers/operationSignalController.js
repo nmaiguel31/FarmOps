@@ -271,7 +271,10 @@ const getFieldNdviScore = (field) => {
     Number(field.ndviScore ?? field.ndvi ?? field.vegetationScore);
 
   if (Number.isFinite(explicitNdvi) && explicitNdvi > 0) {
-    return Math.max(0, Math.min(100, Math.round(explicitNdvi)));
+    const normalizedNdvi =
+      explicitNdvi <= 1 ? explicitNdvi * 100 : explicitNdvi;
+
+    return Math.max(0, Math.min(100, Math.round(normalizedNdvi)));
   }
 
   const healthStatus =
@@ -307,6 +310,16 @@ const getFieldHealthIndex = (field) => {
     return null;
   }
 
+  const explicitHealthIndex =
+    Number(field.healthIndex ?? field.healthScore);
+
+  if (Number.isFinite(explicitHealthIndex) && explicitHealthIndex > 0) {
+    const normalizedHealth =
+      explicitHealthIndex <= 1 ? explicitHealthIndex * 100 : explicitHealthIndex;
+
+    return Math.max(0, Math.min(100, Math.round(normalizedHealth)));
+  }
+
   let score =
     getFieldNdviScore(field);
   const moisture =
@@ -325,6 +338,145 @@ const getFieldHealthIndex = (field) => {
   }
 
   return Math.max(0, Math.min(100, Math.round(score)));
+};
+
+const getFieldNdviHistoryDecline = (field) => {
+  const history =
+    field.ndviHistory || field.vegetationHistory || [];
+
+  if (!Array.isArray(history) || history.length < 2) {
+    return null;
+  }
+
+  const readings =
+    history
+      .map(item => {
+        if (typeof item === 'number') {
+          return item <= 1 ? item * 100 : item;
+        }
+
+        const value =
+          Number(item?.ndviScore ?? item?.ndvi ?? item?.value);
+
+        if (!Number.isFinite(value)) {
+          return null;
+        }
+
+        return value <= 1 ? value * 100 : value;
+      })
+      .filter(value => Number.isFinite(value));
+
+  if (readings.length < 2) {
+    return null;
+  }
+
+  const previous =
+    readings[readings.length - 2];
+  const current =
+    readings[readings.length - 1];
+
+  if (previous <= 0) {
+    return null;
+  }
+
+  return ((previous - current) / previous) * 100;
+};
+
+const addNdviSignalCandidate = ({
+  field,
+  candidates,
+  resolvedVegetationRiskKeys
+}) => {
+  const health =
+    getFieldHealthIndex(field);
+  const ndvi =
+    getFieldNdviScore(field);
+  const decline =
+    getFieldNdviHistoryDecline(field);
+  const fieldId =
+    field._id.toString();
+  const hasCriticalVegetation =
+    ndvi <= 35 ||
+    (health !== null && health <= 40);
+  const hasLowVegetation =
+    !hasCriticalVegetation &&
+    (
+      (ndvi > 35 && ndvi <= 50) ||
+      (health !== null && health > 40 && health <= 60)
+    );
+
+  if (hasCriticalVegetation) {
+    candidates.push({
+      title: 'Critical vegetation health',
+      description: `${field.name} has critical vegetation indicators: NDVI ${ndvi}%${health === null ? '' : ` and health index ${health}%`}.`,
+      category: 'NDVI',
+      priority: 'Critical',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `ndvi-critical:${field._id}`,
+      ruleKeyAliases: [
+        `health-critical:${field._id}`,
+        `ndvi-low-vegetation:${field._id}`
+      ],
+      recommendedAction: 'Inspect field conditions and review irrigation, pest, and nutrient factors.'
+    });
+    return;
+  }
+
+  if (hasLowVegetation) {
+    candidates.push({
+      title: 'Low vegetation performance',
+      description: `${field.name} has low vegetation indicators: NDVI ${ndvi}%${health === null ? '' : ` and health index ${health}%`}.`,
+      category: 'NDVI',
+      priority: 'High',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `ndvi-low:${field._id}`,
+      ruleKeyAliases: [
+        `health-critical:${field._id}`,
+        `ndvi-low-vegetation:${field._id}`
+      ],
+      recommendedAction: 'Review crop stress indicators and consider field inspection.'
+    });
+  }
+
+  if (decline !== null && decline >= 15) {
+    candidates.push({
+      title: 'Vegetation decline detected',
+      description: `${field.name} NDVI decreased by ${Math.round(decline)}% from the previous reading.`,
+      category: 'NDVI',
+      priority: 'High',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `ndvi-decline:${field._id}`,
+      recommendedAction: 'Compare recent weather, irrigation, and field activity records.'
+    });
+  }
+
+  if (
+    (ndvi > 65 || (health !== null && health > 80)) &&
+    (
+      resolvedVegetationRiskKeys.has(`ndvi-critical:${fieldId}`) ||
+      resolvedVegetationRiskKeys.has(`ndvi-low:${fieldId}`) ||
+      resolvedVegetationRiskKeys.has(`health-critical:${fieldId}`) ||
+      resolvedVegetationRiskKeys.has(`ndvi-low-vegetation:${fieldId}`)
+    )
+  ) {
+    candidates.push({
+      title: 'Vegetation recovery detected',
+      description: `${field.name} has improved to NDVI ${ndvi}%${health === null ? '' : ` and health index ${health}%`}.`,
+      category: 'NDVI',
+      priority: 'Low',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `ndvi-recovery:${field._id}`,
+      recommendedAction: 'Continue monitoring field conditions.'
+    });
+  }
 };
 
 const isValidCoordinate = (value) => {
@@ -475,11 +627,18 @@ const addWeatherSignalCandidates = async (farms, candidates) => {
 };
 
 const upsertGeneratedSignal = async (signal) => {
+  const ruleKeys =
+    [
+      signal.ruleKey,
+      ...(signal.ruleKeyAliases || [])
+    ].filter(Boolean);
   const existing =
     await OperationSignal.findOne({
       $or: [
         {
-          ruleKey: signal.ruleKey
+          ruleKey: {
+            $in: ruleKeys
+          }
         },
         {
           title: signal.title,
@@ -515,14 +674,23 @@ const upsertGeneratedSignal = async (signal) => {
 
   await OperationSignal.deleteMany({
     _id: { $ne: existing._id },
-    title: signal.title,
-    category: signal.category,
-    farm: signal.farm,
-    field: signal.field || null,
     $or: [
-      { ruleKey: '' },
-      { ruleKey: { $exists: false } },
-      { ruleKey: null }
+      {
+        ruleKey: {
+          $in: ruleKeys
+        }
+      },
+      {
+        title: signal.title,
+        category: signal.category,
+        farm: signal.farm,
+        field: signal.field || null,
+        $or: [
+          { ruleKey: '' },
+          { ruleKey: { $exists: false } },
+          { ruleKey: null }
+        ]
+      }
     ]
   });
 
@@ -561,6 +729,24 @@ const generateOperationSignals = async (req, res) => {
       await Crop.find({ farm: { $in: farmIds } });
     const records =
       await FinancialRecord.find({ farm: { $in: farmIds } });
+    const vegetationRiskRuleKeys =
+      fields.flatMap(field => [
+        `ndvi-critical:${field._id}`,
+        `ndvi-low:${field._id}`,
+        `health-critical:${field._id}`,
+        `ndvi-low-vegetation:${field._id}`
+      ]);
+    const resolvedVegetationRisks =
+      vegetationRiskRuleKeys.length
+        ? await OperationSignal.find({
+          status: 'Resolved',
+          ruleKey: {
+            $in: vegetationRiskRuleKeys
+          }
+        }).select('ruleKey')
+        : [];
+    const resolvedVegetationRiskKeys =
+      new Set(resolvedVegetationRisks.map(signal => signal.ruleKey));
     const candidates = [];
 
     fields.forEach(field => {
@@ -568,10 +754,6 @@ const generateOperationSignals = async (req, res) => {
         getFieldSoilMoisture(field);
       const irrigationStatus =
         String(field.irrigationStatus || '').toLowerCase();
-      const health =
-        getFieldHealthIndex(field);
-      const ndvi =
-        getFieldNdviScore(field);
 
       if (
         moisture < 40 ||
@@ -590,36 +772,11 @@ const generateOperationSignals = async (req, res) => {
         });
       }
 
-      if (
-        health !== null &&
-        health < 50
-      ) {
-        candidates.push({
-          title: 'Critical field health signal',
-          description: `${field.name} has a calculated health index below 50%.`,
-          category: 'NDVI',
-          priority: health < 35 ? 'Critical' : 'High',
-          status: 'Active',
-          farm: field.farm._id,
-          field: field._id,
-          ruleKey: `health-critical:${field._id}`,
-          recommendedAction: 'Inspect crop condition and compare NDVI, moisture, and irrigation signals.'
-        });
-      }
-
-      if (ndvi < 50) {
-        candidates.push({
-          title: 'Low vegetation score',
-          description: `${field.name} has an NDVI score below the target operating range.`,
-          category: 'NDVI',
-          priority: ndvi < 35 ? 'High' : 'Medium',
-          status: 'Active',
-          farm: field.farm._id,
-          field: field._id,
-          ruleKey: `ndvi-low-vegetation:${field._id}`,
-          recommendedAction: 'Prioritize a field walk and review crop stress indicators.'
-        });
-      }
+      addNdviSignalCandidate({
+        field,
+        candidates,
+        resolvedVegetationRiskKeys
+      });
     });
 
     crops.forEach(crop => {

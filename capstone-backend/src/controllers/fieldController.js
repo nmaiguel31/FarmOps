@@ -362,10 +362,17 @@ const createField = async (req, res) => {
       area: req.body.area,
       status: req.body.status || 'Active',
       healthStatus: req.body.healthStatus || 'Good',
+      healthIndex: req.body.healthIndex ?? null,
+      ndviScore: req.body.ndviScore ?? null,
+      vegetationStatus: req.body.vegetationStatus || '',
+      soilMoisture: req.body.soilMoisture ?? null,
       irrigationStatus: req.body.irrigationStatus || 'Scheduled',
       farm: req.body.farm,
       notes: req.body.notes || '',
-      polygonCoordinates: req.body.polygonCoordinates || []
+      polygonCoordinates: req.body.polygonCoordinates || [],
+      ndviHistory: Array.isArray(req.body.ndviHistory)
+        ? req.body.ndviHistory
+        : []
     });
 
     logEvent('info', 'FIELD_CREATED', {
@@ -514,9 +521,16 @@ const updateField = async (req, res) => {
     field.area = req.body.area;
     field.status = req.body.status || 'Active';
     field.healthStatus = req.body.healthStatus || 'Good';
+    field.healthIndex = req.body.healthIndex ?? field.healthIndex ?? null;
+    field.ndviScore = req.body.ndviScore ?? field.ndviScore ?? null;
+    field.vegetationStatus = req.body.vegetationStatus || field.vegetationStatus || '';
+    field.soilMoisture = req.body.soilMoisture ?? field.soilMoisture ?? null;
     field.irrigationStatus = req.body.irrigationStatus || 'Scheduled';
     field.notes = req.body.notes || '';
     field.polygonCoordinates = req.body.polygonCoordinates || [];
+    field.ndviHistory = Array.isArray(req.body.ndviHistory)
+      ? req.body.ndviHistory
+      : field.ndviHistory || [];
 
     await field.save();
 
