@@ -24,8 +24,21 @@ const populateSignal = [
 ];
 
 const userCanAccessFarm = (user, farm) => {
+  if (!farm) {
+    return false;
+  }
+
   return user.role === 'admin' ||
     farm.owner.toString() === user.id;
+};
+
+const userCanAccessSignal = (user, signal) => {
+  if (signal.farm) {
+    return userCanAccessFarm(user, signal.farm);
+  }
+
+  return user.role === 'admin' ||
+    signal.owner?.toString?.() === user.id;
 };
 
 const getAccessibleFarmIds = async (user) => {
@@ -83,9 +96,13 @@ const validateFieldForFarm = async (fieldId, farmId) => {
 
 const buildSignalPayload = async (body, user) => {
   const farm =
-    await validateFarmAccess(body.farm, user);
+    body.farm
+      ? await validateFarmAccess(body.farm, user)
+      : null;
   const field =
-    await validateFieldForFarm(body.field, farm._id);
+    farm
+      ? await validateFieldForFarm(body.field, farm._id)
+      : null;
 
   return {
     title: body.title,
@@ -93,7 +110,8 @@ const buildSignalPayload = async (body, user) => {
     category: body.category,
     priority: body.priority || 'Medium',
     status: body.status || 'Active',
-    farm: farm._id,
+    farm: farm?._id || null,
+    owner: user.id,
     field,
     recommendedAction: body.recommendedAction,
     ruleKey: body.ruleKey || '',
@@ -107,8 +125,25 @@ const getOperationSignals = async (req, res) => {
   try {
     const farmIds =
       await getAccessibleFarmIds(req.user);
+    const accessQuery =
+      req.user.role === 'admin'
+        ? {
+          $or: [
+            { farm: { $in: farmIds } },
+            { farm: null }
+          ]
+        }
+        : {
+          $or: [
+            { farm: { $in: farmIds } },
+            {
+              farm: null,
+              owner: req.user.id
+            }
+          ]
+        };
     const query = {
-      farm: { $in: farmIds }
+      ...accessQuery
     };
 
     if (req.query.status && req.query.status !== 'All') {
@@ -187,7 +222,7 @@ const resolveOperationSignal = async (req, res) => {
       });
     }
 
-    if (!userCanAccessFarm(req.user, signal.farm)) {
+    if (!userCanAccessSignal(req.user, signal)) {
       return res.status(403).json({
         message: 'Not authorized'
       });
@@ -226,7 +261,7 @@ const deleteOperationSignal = async (req, res) => {
       });
     }
 
-    if (!userCanAccessFarm(req.user, signal.farm)) {
+    if (!userCanAccessSignal(req.user, signal)) {
       return res.status(403).json({
         message: 'Not authorized'
       });
@@ -626,6 +661,261 @@ const addWeatherSignalCandidates = async (farms, candidates) => {
   }
 };
 
+const createFinancialBucket = ({
+  key,
+  label,
+  farm = null,
+  field = null,
+  crop = null,
+  scope
+}) => ({
+  key,
+  label,
+  farm,
+  field,
+  crop,
+  scope,
+  revenue: 0,
+  expenses: 0,
+  records: 0
+});
+
+const addFinancialRecordToBucket = (bucket, record) => {
+  const amount =
+    Number(record.amount || 0);
+
+  if (record.type === 'Income') {
+    bucket.revenue += amount;
+  } else {
+    bucket.expenses += amount;
+  }
+
+  bucket.records++;
+};
+
+const getFinancialMargin = (bucket) => {
+  if (bucket.revenue <= 0) {
+    return bucket.expenses > 0 ? -100 : null;
+  }
+
+  return ((bucket.revenue - bucket.expenses) / bucket.revenue) * 100;
+};
+
+const addFinancialBucketSignals = ({
+  bucket,
+  candidates,
+  owner
+}) => {
+  if (!bucket.records) {
+    return;
+  }
+
+  const profit =
+    bucket.revenue - bucket.expenses;
+  const margin =
+    getFinancialMargin(bucket);
+  const signalTarget =
+    bucket.field || bucket.crop || bucket.farm || null;
+  const signalFarm =
+    bucket.farm || null;
+  const signalField =
+    bucket.field || null;
+
+  if (profit < 0) {
+    candidates.push({
+      title: 'Negative profit detected',
+      description: `${bucket.label} has negative profit of ${Math.round(profit)}.`,
+      category: 'Financial',
+      priority: 'High',
+      status: 'Active',
+      farm: signalFarm,
+      field: signalField,
+      owner,
+      ruleKey: `financial-negative-profit:${signalTarget || bucket.key}`,
+      ruleKeyAliases: bucket.scope === 'farm'
+        ? [`financial-negative-profit:${bucket.farm}`]
+        : [],
+      recommendedAction: 'Review expenses, crop performance, and recent financial records.'
+    });
+  }
+
+  if (
+    bucket.scope === 'farm' &&
+    bucket.expenses > bucket.revenue
+  ) {
+    candidates.push({
+      title: 'Expenses exceed revenue',
+      description: `${bucket.label} expenses exceed revenue.`,
+      category: 'Financial',
+      priority: 'High',
+      status: 'Active',
+      farm: signalFarm,
+      field: null,
+      owner,
+      ruleKey: `financial-expenses-exceed-revenue:${bucket.farm}`,
+      recommendedAction: 'Review operating costs and identify major expense categories.'
+    });
+  }
+
+  if (
+    margin !== null &&
+    margin < 15
+  ) {
+    candidates.push({
+      title: 'Low profit margin',
+      description: `${bucket.label} profit margin is ${Math.round(margin)}%.`,
+      category: 'Financial',
+      priority: 'Medium',
+      status: 'Active',
+      farm: signalFarm,
+      field: signalField,
+      owner,
+      ruleKey: `financial-low-margin:${signalTarget || bucket.key}`,
+      recommendedAction: 'Review pricing, input costs, and crop profitability.'
+    });
+  }
+};
+
+const addFinancialSignalCandidates = ({
+  records,
+  fields,
+  crops,
+  candidates,
+  owner
+}) => {
+  const farmBuckets =
+    new Map();
+  const fieldBuckets =
+    new Map();
+  const cropBuckets =
+    new Map();
+  const fieldMap =
+    new Map(fields.map(field => [field._id.toString(), field]));
+  const cropMap =
+    new Map(crops.map(crop => [crop._id.toString(), crop]));
+  const globalBucket =
+    createFinancialBucket({
+      key: 'global',
+      label: 'All farm operations',
+      owner,
+      scope: 'global'
+    });
+  let unassignedCount = 0;
+
+  records.forEach(record => {
+    const farmId =
+      record.farm?.toString?.() || '';
+    const fieldId =
+      record.field?.toString?.() || '';
+    const cropId =
+      record.crop?.toString?.() || '';
+
+    addFinancialRecordToBucket(globalBucket, record);
+
+    if (!record.farm || !record.field || !record.crop) {
+      unassignedCount++;
+    }
+
+    if (farmId) {
+      if (!farmBuckets.has(farmId)) {
+        farmBuckets.set(
+          farmId,
+          createFinancialBucket({
+            key: farmId,
+            label: 'Farm operation',
+            farm: farmId,
+            scope: 'farm'
+          })
+        );
+      }
+
+      addFinancialRecordToBucket(farmBuckets.get(farmId), record);
+    }
+
+    if (fieldId) {
+      const field =
+        fieldMap.get(fieldId);
+
+      if (!fieldBuckets.has(fieldId)) {
+        fieldBuckets.set(
+          fieldId,
+          createFinancialBucket({
+            key: fieldId,
+            label: field?.name || 'Field operation',
+            farm: field?.farm?._id || field?.farm || farmId || null,
+            field: fieldId,
+            scope: 'field'
+          })
+        );
+      }
+
+      addFinancialRecordToBucket(fieldBuckets.get(fieldId), record);
+    }
+
+    if (cropId) {
+      const crop =
+        cropMap.get(cropId);
+
+      if (!cropBuckets.has(cropId)) {
+        cropBuckets.set(
+          cropId,
+          createFinancialBucket({
+            key: cropId,
+            label: crop?.name || 'Crop operation',
+            farm: crop?.farm || farmId || null,
+            crop: cropId,
+            scope: 'crop'
+          })
+        );
+      }
+
+      addFinancialRecordToBucket(cropBuckets.get(cropId), record);
+    }
+  });
+
+  [
+    ...farmBuckets.values(),
+    ...fieldBuckets.values(),
+    ...cropBuckets.values()
+  ].forEach(bucket => {
+    addFinancialBucketSignals({
+      bucket,
+      candidates,
+      owner
+    });
+  });
+
+  if (globalBucket.expenses > globalBucket.revenue) {
+    candidates.push({
+      title: 'Expenses exceed revenue',
+      description: 'Total operating expenses exceed total revenue across available financial records.',
+      category: 'Financial',
+      priority: 'High',
+      status: 'Active',
+      farm: null,
+      field: null,
+      owner,
+      ruleKey: 'financial-expenses-exceed-revenue:global',
+      recommendedAction: 'Review operating costs and identify major expense categories.'
+    });
+  }
+
+  if (unassignedCount > 0) {
+    candidates.push({
+      title: 'Unassigned financial records',
+      description: `${unassignedCount} financial record${unassignedCount === 1 ? '' : 's'} need better farm, field, or crop association.`,
+      category: 'Financial',
+      priority: 'Low',
+      status: 'Active',
+      farm: null,
+      field: null,
+      owner,
+      ruleKey: 'financial-unassigned-records:global',
+      recommendedAction: 'Link financial records to farms, fields, or crops for better reporting accuracy.'
+    });
+  }
+};
+
 const upsertGeneratedSignal = async (signal) => {
   const ruleKeys =
     [
@@ -645,6 +935,7 @@ const upsertGeneratedSignal = async (signal) => {
           category: signal.category,
           farm: signal.farm,
           field: signal.field || null,
+          owner: signal.owner || null,
           $or: [
             { ruleKey: '' },
             { ruleKey: { $exists: false } },
@@ -670,6 +961,7 @@ const upsertGeneratedSignal = async (signal) => {
   existing.priority = signal.priority;
   existing.farm = signal.farm;
   existing.field = signal.field || null;
+  existing.owner = signal.owner || existing.owner || null;
   existing.recommendedAction = signal.recommendedAction;
 
   await OperationSignal.deleteMany({
@@ -685,6 +977,7 @@ const upsertGeneratedSignal = async (signal) => {
         category: signal.category,
         farm: signal.farm,
         field: signal.field || null,
+        owner: signal.owner || null,
         $or: [
           { ruleKey: '' },
           { ruleKey: { $exists: false } },
@@ -814,43 +1107,12 @@ const generateOperationSignals = async (req, res) => {
       }
     });
 
-    const financialBuckets =
-      new Map();
-
-    records.forEach(record => {
-      const farmId =
-        record.farm.toString();
-
-      if (!financialBuckets.has(farmId)) {
-        financialBuckets.set(farmId, 0);
-      }
-
-      const signedAmount =
-        Number(record.amount || 0) *
-        (record.type === 'Income' ? 1 : -1);
-
-      financialBuckets.set(
-        farmId,
-        financialBuckets.get(farmId) + signedAmount
-      );
-    });
-
-    financialBuckets.forEach((profit, farmId) => {
-      if (profit >= 0) {
-        return;
-      }
-
-      candidates.push({
-        title: 'Negative operating profit',
-        description: 'Expenses currently exceed revenue for this farm.',
-        category: 'Financial',
-        priority: 'High',
-        status: 'Active',
-        farm: farmId,
-        field: null,
-        ruleKey: `financial-negative-profit:${farmId}`,
-        recommendedAction: 'Review cost drivers, crop sales, and pending payments for this farm.'
-      });
+    addFinancialSignalCandidates({
+      records,
+      fields,
+      crops,
+      candidates,
+      owner: req.user.id
     });
 
     await addWeatherSignalCandidates(farms, candidates);
@@ -860,6 +1122,8 @@ const generateOperationSignals = async (req, res) => {
     let reopenedCount = 0;
 
     for (const candidate of candidates) {
+      candidate.owner = candidate.owner || req.user.id;
+
       const result =
         await upsertGeneratedSignal(candidate);
 

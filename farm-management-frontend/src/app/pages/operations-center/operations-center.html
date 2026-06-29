@@ -111,7 +111,7 @@
         </div>
 
         <div class="signal-actions">
-          <button type="button" class="secondary-action" [disabled]="!hasLinkedFarm(signal)" (click)="viewFarm(signal)">View Farm</button>
+          <button type="button" class="secondary-action" *ngIf="hasLinkedFarm(signal)" (click)="viewFarm(signal)">View Farm</button>
           <button type="button" class="secondary-action" *ngIf="hasLinkedField(signal)" (click)="viewField(signal)">View Field</button>
           <button
             type="button"

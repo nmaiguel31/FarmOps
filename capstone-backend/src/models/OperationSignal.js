@@ -48,7 +48,13 @@ const operationSignalSchema = new mongoose.Schema(
     farm: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Farm',
-      required: true
+      default: null
+    },
+
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     },
 
     field: {
@@ -82,6 +88,7 @@ operationSignalSchema.index({
   status: 1,
   category: 1,
   farm: 1,
+  owner: 1,
   field: 1
 });
 

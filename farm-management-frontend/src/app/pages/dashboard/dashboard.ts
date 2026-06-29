@@ -770,7 +770,8 @@ export class Dashboard implements OnInit {
     }
 
     const farmName =
-      item.farm?.name || 'FarmOps';
+      item.farm?.name ||
+      (item.category === 'Financial' ? 'Global financial signal' : 'FarmOps');
     const fieldName =
       item.field?.name;
 

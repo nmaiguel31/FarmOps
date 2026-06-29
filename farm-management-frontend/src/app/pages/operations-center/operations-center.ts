@@ -322,6 +322,10 @@ export class OperationsCenter implements OnInit {
   }
 
   getFarmName(signal: any) {
+    if (!signal.farm && signal.category === 'Financial') {
+      return 'Global financial signal';
+    }
+
     return signal.farm?.name || 'Unavailable farm';
   }
 
