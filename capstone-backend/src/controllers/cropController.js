@@ -150,20 +150,59 @@ const defaultCropTemplates = [
   createDefaultCrop({ name: 'Flax', type: 'Specialty Crop', lifecycleDays: 100, ndviTarget: 0.60, moistureTarget: 40, optimalTemperatureMin: 10, optimalTemperatureMax: 25, expectedYield: '1 - 2.5 ton/ha', plantingSeason: 'Spring', icon: '🌿', description: 'Flax is a fiber and oilseed crop suited to cool seasons and moderate moisture.' })
 ];
 
+const seededDefaultCropFarmIds = new Set();
+
 const seedDefaultCropsForFarms = async (farms) => {
-  for (const farm of farms) {
-    const existingNames = await Crop.find({
-      farm: farm._id,
+  const unseededFarms =
+    farms.filter(farm => {
+      const farmId =
+        farm?._id?.toString();
+
+      return farmId && !seededDefaultCropFarmIds.has(farmId);
+    });
+
+  if (unseededFarms.length === 0) {
+    return;
+  }
+
+  const farmIds =
+    unseededFarms.map(farm => farm._id);
+  const templateNames =
+    defaultCropTemplates.map(crop => crop.name);
+  const existingDefaults =
+    await Crop.find({
+      farm: {
+        $in: farmIds
+      },
       name: {
-        $in: defaultCropTemplates.map(crop => crop.name)
+        $in: templateNames
       }
-    }).select('name');
+    }).select('farm name');
 
-    const existingNameSet =
-      new Set(existingNames.map(crop => crop.name.toLowerCase()));
+  const existingByFarm =
+    new Map();
 
-    const cropsToCreate =
-      defaultCropTemplates
+  existingDefaults.forEach(crop => {
+    const farmId =
+      crop.farm.toString();
+
+    if (!existingByFarm.has(farmId)) {
+      existingByFarm.set(farmId, new Set());
+    }
+
+    existingByFarm
+      .get(farmId)
+      .add(crop.name.toLowerCase());
+  });
+
+  const cropsToCreate =
+    unseededFarms.flatMap(farm => {
+      const farmId =
+        farm._id.toString();
+      const existingNameSet =
+        existingByFarm.get(farmId) || new Set();
+
+      return defaultCropTemplates
         .filter(crop => !existingNameSet.has(crop.name.toLowerCase()))
         .map(crop => ({
           ...crop,
@@ -171,37 +210,17 @@ const seedDefaultCropsForFarms = async (farms) => {
           currentStage: 'Planning',
           stageStartedAt: new Date()
         }));
+    });
 
-    if (cropsToCreate.length > 0) {
-      await Crop.insertMany(cropsToCreate);
-    }
-
-    for (const cropTemplate of defaultCropTemplates) {
-      await Crop.updateOne(
-        {
-          farm: farm._id,
-          name: cropTemplate.name,
-          isDefaultTemplate: true
-        },
-        {
-          $set: {
-            type: cropTemplate.type,
-            icon: cropTemplate.icon,
-            season: cropTemplate.season,
-            lifecycleDays: cropTemplate.lifecycleDays,
-            ndviTarget: cropTemplate.ndviTarget,
-            moistureTarget: cropTemplate.moistureTarget,
-            optimalTemperatureMin: cropTemplate.optimalTemperatureMin,
-            optimalTemperatureMax: cropTemplate.optimalTemperatureMax,
-            expectedYield: cropTemplate.expectedYield,
-            plantingSeason: cropTemplate.plantingSeason,
-            description: cropTemplate.description,
-            growthStages: cropTemplate.growthStages
-          }
-        }
-      );
-    }
+  if (cropsToCreate.length > 0) {
+    await Crop.insertMany(cropsToCreate, {
+      ordered: false
+    });
   }
+
+  unseededFarms.forEach(farm => {
+    seededDefaultCropFarmIds.add(farm._id.toString());
+  });
 };
 
 const applyCropTemplateInput = (crop, body) => {

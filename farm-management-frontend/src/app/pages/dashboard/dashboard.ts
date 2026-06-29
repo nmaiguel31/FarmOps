@@ -14,6 +14,7 @@ import { Field } from '../../services/field';
 import { Zone } from '../../services/zone';
 import { Crop } from '../../services/crop';
 import { FinancialRecord } from '../../services/financial-record';
+import { OperationSignal } from '../../services/operation-signal';
 import { WeatherInsights, WeatherService } from '../../services/weather';
 import {
   LucideActivity,
@@ -69,6 +70,7 @@ export class Dashboard implements OnInit {
     action: string;
     type: string;
   }> = [];
+  operationSignals: any[] = [];
   weatherLoading = false;
 
   totalFarms = 0;
@@ -97,6 +99,7 @@ export class Dashboard implements OnInit {
   private zoneService = inject(Zone);
   private cropService = inject(Crop);
   private financialService = inject(FinancialRecord);
+  private operationSignalService = inject(OperationSignal);
   private weatherService = inject(WeatherService);
   private mapsLoader = inject(GoogleMapsLoader);
   private cdr = inject(ChangeDetectorRef);
@@ -123,7 +126,21 @@ export class Dashboard implements OnInit {
   }
 
   get openAlerts() {
-    return this.highPriorityRecommendations + this.weatherAlerts.length;
+    return this.activeOperationSignals.length;
+  }
+
+  get activeOperationSignals() {
+    return this.operationSignals.filter(signal => signal.status === 'Active');
+  }
+
+  get criticalHighOperationSignals() {
+    return this.activeOperationSignals.filter(signal =>
+      ['Critical', 'High'].includes(signal.priority)
+    ).length;
+  }
+
+  get operationsAttentionList() {
+    return this.activeOperationSignals.slice(0, 3);
   }
 
   get activeFields() {
@@ -459,6 +476,14 @@ export class Dashboard implements OnInit {
       error: (error) => console.error(error)
     });
 
+    this.operationSignalService.getActiveSignals().subscribe({
+      next: (data: any) => {
+        this.operationSignals = [...data].filter(signal => signal.status === 'Active');
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error(error)
+    });
+
   }
 
   get hasDashboardData() {
@@ -516,6 +541,7 @@ export class Dashboard implements OnInit {
       this.weatherSummary = null;
       this.selectedWeatherFarm = null;
       this.weatherAlerts = [];
+      this.operationSignals = [];
       this.weatherLoading = false;
       return;
     }
@@ -704,6 +730,50 @@ export class Dashboard implements OnInit {
       default:
         return 'alert';
     }
+  }
+
+  getOperationItemType(item: any) {
+    if (item.type) {
+      return item.type;
+    }
+
+    switch (item.category) {
+      case 'Weather':
+        return 'weather';
+      case 'Irrigation':
+        return 'irrigation';
+      case 'NDVI':
+        return 'ndvi';
+      case 'Crop Lifecycle':
+        return 'crop';
+      case 'Financial':
+        return 'financial';
+      default:
+        return 'alert';
+    }
+  }
+
+  getOperationItemTarget(item: any) {
+    if (item.target) {
+      return item.target;
+    }
+
+    const farmName =
+      item.farm?.name || 'FarmOps';
+    const fieldName =
+      item.field?.name;
+
+    return fieldName
+      ? `${farmName} | ${fieldName}`
+      : farmName;
+  }
+
+  getOperationItemAction(item: any) {
+    return item.recommendedAction || item.action || item.description || '';
+  }
+
+  getOperationItemCategory(item: any) {
+    return item.category || 'Operational Signal';
   }
 
   getRecommendationPriority(field: any) {

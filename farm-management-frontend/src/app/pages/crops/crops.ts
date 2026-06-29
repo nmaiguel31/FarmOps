@@ -52,6 +52,7 @@ export class Crops implements OnInit {
   crops: any[] = [];
   farms: any[] = [];
   selectedCrop: any = null;
+  cropsLoading = true;
 
   cropFormOpen = false;
   editingCropId = '';
@@ -192,6 +193,10 @@ export class Crops implements OnInit {
   }
 
   loadCrops() {
+    const startedAt =
+      performance.now();
+    this.cropsLoading = true;
+
     this.cropService.getCrops().subscribe({
       next: (data: any) => {
         this.crops = [...data];
@@ -205,10 +210,19 @@ export class Crops implements OnInit {
           this.selectedCrop = this.crops[0];
         }
 
+        this.cropsLoading = false;
+        console.info(
+          `GET /api/crops completed in ${Math.round(performance.now() - startedAt)}ms`
+        );
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
+        this.cropsLoading = false;
+        console.info(
+          `GET /api/crops failed after ${Math.round(performance.now() - startedAt)}ms`
+        );
+        this.cdr.detectChanges();
       }
     });
   }

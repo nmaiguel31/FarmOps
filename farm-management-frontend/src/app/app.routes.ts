@@ -5,6 +5,7 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Farms } from './pages/farms/farms';
 import { Crops } from './pages/crops/crops';
 import { FinancialRecords } from './pages/financial-records/financial-records';
+import { OperationsCenter } from './pages/operations-center/operations-center';
 import {
   authGuard,
   mfaAccessGuard,
@@ -48,6 +49,18 @@ export const routes: Routes = [
     path: 'financial-records',
     component: FinancialRecords,
     canActivate: [authGuard]
+  },
+
+  {
+    path: 'operations-center',
+    component: OperationsCenter,
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'operations',
+    redirectTo: 'operations-center',
+    pathMatch: 'full'
   },
 
   {

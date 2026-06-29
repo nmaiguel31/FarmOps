@@ -97,34 +97,39 @@
     <article class="panel smart-alerts">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Smart Alerts</span>
+          <span class="panel-kicker">Operations requiring attention</span>
           <h2>Priority signals</h2>
         </div>
-        <span class="panel-pill" [class.alert-pill]="openAlerts">{{ openAlerts }} open</span>
+        <a routerLink="/operations-center" class="panel-pill" [class.alert-pill]="openAlerts">
+          {{ openAlerts }} active · {{ criticalHighOperationSignals }} critical/high
+        </a>
       </div>
 
-      <div class="alert-list" *ngIf="topRecommendations.length; else noAlerts">
-        <article class="alert-row" *ngFor="let recommendation of topRecommendations">
-          <div class="alert-icon" [ngSwitch]="getWeatherAlertIcon(recommendation.type)">
+      <div class="alert-list" *ngIf="operationsAttentionList.length; else noAlerts">
+        <article class="alert-row" *ngFor="let recommendation of operationsAttentionList">
+          <div class="alert-icon" [ngSwitch]="getWeatherAlertIcon(getOperationItemType(recommendation))">
             <svg *ngSwitchCase="'weather'" lucideCloudSun></svg>
             <svg *ngSwitchCase="'irrigation'" lucideDroplet></svg>
             <svg *ngSwitchCase="'health'" lucideActivity></svg>
             <svg *ngSwitchCase="'crop'" lucideSprout></svg>
             <svg *ngSwitchDefault lucideBell></svg>
           </div>
-          <span [class]="recommendation.priority === 'High' ? 'risk-high' : recommendation.priority === 'Medium' ? 'risk-medium' : 'risk-low'">
+          <span [class]="['Critical', 'High'].includes(recommendation.priority) ? 'risk-high' : recommendation.priority === 'Medium' ? 'risk-medium' : 'risk-low'">
             {{ recommendation.priority }}
           </span>
           <div>
-            <h3>{{ recommendation.category }}</h3>
-            <p>{{ recommendation.target }}</p>
-            <small><strong>{{ recommendation.title }}.</strong> {{ recommendation.action }}</small>
+            <h3>{{ getOperationItemCategory(recommendation) }}</h3>
+            <p>{{ getOperationItemTarget(recommendation) }}</p>
+            <small><strong>{{ recommendation.title }}.</strong> {{ getOperationItemAction(recommendation) }}</small>
           </div>
         </article>
       </div>
 
       <ng-template #noAlerts>
-        <div class="empty-state">No active alerts from field, zone or weather signals.</div>
+        <div class="empty-state">
+          No active operation signals.
+          <a routerLink="/operations-center">Open Operations Center</a>
+        </div>
       </ng-template>
     </article>
   </section>

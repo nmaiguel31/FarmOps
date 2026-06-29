@@ -12,6 +12,7 @@ import {
 declare const google: any;
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
 import { Zone } from '../../services/zone';
@@ -160,8 +161,11 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private activeMaps: any[] = [];
   private mapLayerButtonGroups: HTMLButtonElement[][] = [];
   private lifecycleClock: any = null;
+  private pendingFarmId = '';
+  private pendingFieldId = '';
 
   private mapsLoader = inject(GoogleMapsLoader);
+  private route = inject(ActivatedRoute);
   private farmService = inject(Farm);
   private fieldService = inject(Field);
   private zoneService = inject(Zone);
@@ -170,6 +174,18 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+
+    this.route.queryParamMap.subscribe(params => {
+      this.pendingFarmId =
+        params.get('farmId') ||
+        params.get('farm') ||
+        '';
+      this.pendingFieldId =
+        params.get('fieldId') ||
+        params.get('field') ||
+        '';
+      this.applyPendingSelection();
+    });
 
     this.loadFarms();
     this.loadFields();
@@ -322,7 +338,9 @@ updateFarm() {
 
         this.farms = [...data];
         this.filteredFarms = [...data];
-        if (!this.selectedFarm && this.farms.length > 0) {
+        if (this.pendingFarmId) {
+          this.applyPendingSelection();
+        } else if (!this.selectedFarm && this.farms.length > 0) {
           this.selectFarm(this.farms[0]);
         } else if (this.selectedFarm) {
           this.selectedFarm =
@@ -354,6 +372,7 @@ updateFarm() {
 
         this.fields = [...data];
         this.syncSelectedField();
+        this.applyPendingSelection();
         this.renderSelectedFarmMap();
         this.loadWeatherForSelection();
         this.cdr.detectChanges();
@@ -3934,6 +3953,51 @@ private syncSelectedField() {
   this.pendingLifecycleStage = this.getSelectedCropStage();
   this.lifecycleUpdateError = '';
   this.syncSelectedZone();
+
+}
+
+private applyPendingSelection() {
+
+  if (this.pendingFarmId && this.farms.length) {
+    const farm =
+      this.farms.find(item => item._id === this.pendingFarmId);
+
+    if (farm) {
+      if (this.selectedFarm?._id !== farm._id) {
+        this.selectFarm(farm);
+      }
+    } else {
+      this.pendingFarmId = '';
+      this.pendingFieldId = '';
+      return;
+    }
+  }
+
+  if (
+    this.pendingFieldId &&
+    this.selectedFarm &&
+    this.fields.length
+  ) {
+    const field =
+      this.selectedFarmFields.find(item => item._id === this.pendingFieldId);
+
+    if (field) {
+      this.selectField(field);
+      this.pendingFieldId = '';
+      this.pendingFarmId = '';
+      return;
+    }
+
+    this.pendingFieldId = '';
+  }
+
+  if (
+    this.pendingFarmId &&
+    !this.pendingFieldId &&
+    this.selectedFarm?._id === this.pendingFarmId
+  ) {
+    this.pendingFarmId = '';
+  }
 
 }
 

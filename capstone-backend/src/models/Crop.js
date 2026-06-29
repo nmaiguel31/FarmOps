@@ -120,4 +120,11 @@ const cropSchema = new mongoose.Schema(
   }
 );
 
+cropSchema.index({ name: 1 });
+cropSchema.index({ type: 1 });
+cropSchema.index({ status: 1 });
+cropSchema.index({ createdAt: -1 });
+cropSchema.index({ farm: 1, name: 1 });
+cropSchema.index({ farm: 1, isDefaultTemplate: 1 });
+
 module.exports = mongoose.model('Crop', cropSchema);

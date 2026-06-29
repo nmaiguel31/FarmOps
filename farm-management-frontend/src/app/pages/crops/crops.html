@@ -112,7 +112,20 @@
         <button type="button" class="reset-btn" (click)="resetFilters()">Reset Filters</button>
       </div>
 
-      <div class="table-wrap" *ngIf="filteredCrops.length > 0; else noCrops">
+      <div class="crop-loading-shell" *ngIf="cropsLoading" aria-live="polite">
+        <span>Loading crop catalog...</span>
+        <div class="skeleton-table">
+          <div class="skeleton-row" *ngFor="let row of [1,2,3,4,5,6,7,8]">
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap" *ngIf="!cropsLoading && filteredCrops.length > 0; else noCrops">
         <table>
           <thead>
             <tr>
@@ -162,7 +175,7 @@
         </table>
       </div>
 
-      <div class="table-pagination" *ngIf="filteredCrops.length > 0">
+      <div class="table-pagination" *ngIf="!cropsLoading && filteredCrops.length > 0">
         <p>Showing {{ paginationStart }} to {{ paginationEnd }} of {{ filteredCrops.length }} crops</p>
         <div class="pagination-actions">
           <button type="button" class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)" aria-label="Previous page">
@@ -183,7 +196,7 @@
       </div>
 
       <ng-template #noCrops>
-        <div class="empty-state">
+        <div class="empty-state" *ngIf="!cropsLoading">
           <strong>No crops found.</strong>
           <span>Create a farm first, then FarmOps can seed crop templates for that farm.</span>
         </div>
@@ -200,6 +213,19 @@
       </div>
     </article>
 
+    <aside class="details-card details-loading" *ngIf="cropsLoading; else cropDetailsContent" aria-live="polite">
+      <div class="details-skeleton-banner"></div>
+      <div class="details-skeleton-line wide"></div>
+      <div class="details-skeleton-line"></div>
+      <div class="details-skeleton-grid">
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+      </div>
+    </aside>
+
+    <ng-template #cropDetailsContent>
     <aside class="details-card" *ngIf="selectedCrop; else noSelectedCrop">
       <h2>Crop Details</h2>
       <div class="crop-banner">
@@ -262,6 +288,7 @@
         </ol>
       </div>
     </aside>
+    </ng-template>
 
     <ng-template #noSelectedCrop>
       <aside class="details-card empty-details">

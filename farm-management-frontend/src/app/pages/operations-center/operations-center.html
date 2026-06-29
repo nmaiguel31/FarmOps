@@ -1,0 +1,137 @@
+<main class="operations-page">
+  <section class="operations-hero">
+    <div>
+      <p class="eyebrow">Operational Monitoring</p>
+      <h1>Operations Center</h1>
+      <p>Monitor operational risks, alerts, and recommended actions across your farms.</p>
+    </div>
+
+    <button type="button" class="primary-action" (click)="generateSignals()" [disabled]="generating">
+      <svg lucideRefreshCw></svg>
+      {{ generating ? 'Generating...' : 'Generate Signals' }}
+    </button>
+  </section>
+
+  <section class="operations-kpis" aria-label="Operations summary">
+    <article class="operation-kpi" *ngFor="let card of summaryCards" [ngClass]="card.tone">
+      <div class="kpi-icon" [ngSwitch]="card.icon">
+        <svg *ngSwitchCase="'bell'" lucideBell></svg>
+        <svg *ngSwitchCase="'critical'" lucideShieldAlert></svg>
+        <svg *ngSwitchCase="'activity'" lucideActivity></svg>
+        <svg *ngSwitchDefault lucideCheckCircle2></svg>
+      </div>
+      <div>
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="operations-filters" aria-label="Operations filters">
+    <label>
+      <span>Status</span>
+      <select [(ngModel)]="filterStatus" (change)="loadSignals()">
+        <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Category</span>
+      <select [(ngModel)]="filterCategory" (change)="loadSignals()">
+        <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Priority</span>
+      <select [(ngModel)]="filterPriority" (change)="loadSignals()">
+        <option *ngFor="let priority of priorities" [value]="priority">{{ priority }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Farm</span>
+      <select [(ngModel)]="filterFarm" (change)="loadSignals()">
+        <option value="All">All Farms</option>
+        <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Field</span>
+      <select [(ngModel)]="filterField" (change)="loadSignals()">
+        <option value="All">All Fields</option>
+        <option *ngFor="let field of fields" [value]="field._id">{{ field.name }}</option>
+      </select>
+    </label>
+
+    <button type="button" class="ghost-action" (click)="resetFilters()">Reset</button>
+  </section>
+
+  <p class="operations-message" *ngIf="message">{{ message }}</p>
+
+  <section class="signals-list" *ngIf="signals.length; else stableState">
+    <article class="signal-card" *ngFor="let signal of signals" [ngClass]="signal.priority.toLowerCase()">
+      <div class="signal-icon" [ngSwitch]="getCategoryIcon(signal.category)">
+        <svg *ngSwitchCase="'irrigation'" lucideDroplet></svg>
+        <svg *ngSwitchCase="'weather'" lucideCloudSun></svg>
+        <svg *ngSwitchCase="'crop'" lucideSprout></svg>
+        <svg *ngSwitchCase="'financial'" lucideBadgeDollarSign></svg>
+        <svg *ngSwitchCase="'ndvi'" lucideLeaf></svg>
+        <svg *ngSwitchDefault lucideBell></svg>
+      </div>
+
+      <div class="signal-content">
+        <div class="signal-header">
+          <div>
+            <span class="signal-category">{{ signal.category }}</span>
+            <h2>{{ signal.title }}</h2>
+          </div>
+          <div class="signal-badges">
+            <span class="priority-badge" [ngClass]="signal.priority.toLowerCase()">
+              {{ signal.priority }}
+            </span>
+            <span class="status-badge" [class.resolved]="signal.status === 'Resolved'">
+              {{ signal.status }}
+            </span>
+          </div>
+        </div>
+
+        <p>{{ signal.description }}</p>
+
+        <div class="signal-meta">
+          <span>{{ getFarmName(signal) }}</span>
+          <span *ngIf="getFieldName(signal)">{{ getFieldName(signal) }}</span>
+          <span>{{ formatDate(signal.createdAt) }}</span>
+        </div>
+
+        <div class="recommended-action">
+          <strong>Recommended action</strong>
+          <span>{{ signal.recommendedAction }}</span>
+        </div>
+
+        <div class="signal-actions">
+          <button type="button" class="secondary-action" [disabled]="!hasLinkedFarm(signal)" (click)="viewFarm(signal)">View Farm</button>
+          <button type="button" class="secondary-action" *ngIf="hasLinkedField(signal)" (click)="viewField(signal)">View Field</button>
+          <button
+            type="button"
+            class="resolve-action"
+            *ngIf="signal.status === 'Active'"
+            [disabled]="isResolving(signal)"
+            (click)="resolveSignal(signal)"
+          >
+            {{ isResolving(signal) ? 'Resolving...' : 'Mark as Resolved' }}
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #stableState>
+    <section class="stable-state">
+      <svg lucideCheckCircle2></svg>
+      <h2>All operations are currently stable.</h2>
+      <p>New operational signals will appear here when FarmOps detects risks.</p>
+    </section>
+  </ng-template>
+</main>
