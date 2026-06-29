@@ -916,6 +916,174 @@ const addFinancialSignalCandidates = ({
   }
 };
 
+const formatLifecycleDate = (date) => {
+  const parsedDate =
+    new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'Not available';
+  }
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+const getLifecycleHarvestDate = (crop) => {
+  const expectedHarvestDate =
+    crop.expectedHarvestDate
+      ? new Date(crop.expectedHarvestDate)
+      : null;
+
+  if (
+    expectedHarvestDate &&
+    !Number.isNaN(expectedHarvestDate.getTime())
+  ) {
+    return expectedHarvestDate;
+  }
+
+  if (!crop.plantingDate || !crop.lifecycleDays) {
+    return null;
+  }
+
+  const plantingDate =
+    new Date(crop.plantingDate);
+
+  if (Number.isNaN(plantingDate.getTime())) {
+    return null;
+  }
+
+  plantingDate.setDate(
+    plantingDate.getDate() + Number(crop.lifecycleDays)
+  );
+
+  return plantingDate;
+};
+
+const getLifecycleProgress = (crop, harvestDate) => {
+  if (!crop.plantingDate || !harvestDate) {
+    return null;
+  }
+
+  const plantingDate =
+    new Date(crop.plantingDate);
+
+  if (Number.isNaN(plantingDate.getTime())) {
+    return null;
+  }
+
+  const totalMs =
+    harvestDate.getTime() - plantingDate.getTime();
+
+  if (totalMs <= 0) {
+    return null;
+  }
+
+  const elapsedMs =
+    Date.now() - plantingDate.getTime();
+
+  return Math.max(0, Math.min(100, Math.round((elapsedMs / totalMs) * 100)));
+};
+
+const isLifecycleHarvested = (field, crop) => {
+  const fieldStatus =
+    String(field.status || '').toLowerCase();
+  const cropStatus =
+    String(crop.status || '').toLowerCase();
+  const currentStage =
+    String(crop.currentStage || '').toLowerCase();
+
+  return fieldStatus.includes('harvested') ||
+    cropStatus.includes('harvested') ||
+    currentStage === 'harvest';
+};
+
+const addLifecycleSignalCandidate = ({ field, crop, candidates }) => {
+  const harvestDate =
+    getLifecycleHarvestDate(crop);
+  const harvested =
+    isLifecycleHarvested(field, crop);
+  const currentStage =
+    crop.currentStage || 'Not available';
+  const harvestDateLabel =
+    harvestDate ? formatLifecycleDate(harvestDate) : 'Not available';
+
+  if (harvested) {
+    candidates.push({
+      title: 'Crop successfully completed',
+      description: `${field.name} crop cycle is marked as completed. Current stage: ${currentStage}. Estimated harvest: ${harvestDateLabel}.`,
+      category: 'Crop Lifecycle',
+      priority: 'Low',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `lifecycle-completed:${field._id}`,
+      recommendedAction: 'Review profitability and prepare next planting cycle.'
+    });
+    return;
+  }
+
+  if (!harvestDate) {
+    return;
+  }
+
+  const daysUntilHarvest =
+    Math.ceil((harvestDate.getTime() - Date.now()) / 86400000);
+  const progress =
+    getLifecycleProgress(crop, harvestDate);
+
+  if (daysUntilHarvest < 0) {
+    candidates.push({
+      title: 'Harvest overdue',
+      description: `${field.name} expected harvest date has passed. Current stage: ${currentStage}. Estimated harvest: ${harvestDateLabel}.`,
+      category: 'Crop Lifecycle',
+      priority: 'High',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `lifecycle-harvest-overdue:${field._id}`,
+      recommendedAction: 'Inspect field immediately and schedule harvesting.'
+    });
+    return;
+  }
+
+  if (daysUntilHarvest <= 7) {
+    candidates.push({
+      title: 'Harvest approaching',
+      description: `${field.name} is expected to reach harvest within ${daysUntilHarvest} days. Current stage: ${currentStage}. Estimated harvest: ${harvestDateLabel}.`,
+      category: 'Crop Lifecycle',
+      priority: 'Medium',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `lifecycle-harvest-approaching:${field._id}`,
+      ruleKeyAliases: [
+        `harvest-approaching:${field._id}`
+      ],
+      recommendedAction: 'Prepare harvesting equipment, labor, and logistics.'
+    });
+  }
+
+  if (
+    progress !== null &&
+    progress >= 90
+  ) {
+    candidates.push({
+      title: 'Crop nearing end of lifecycle',
+      description: `${field.name} crop progress is ${progress}%. Current stage: ${currentStage}. Estimated harvest: ${harvestDateLabel}.`,
+      category: 'Crop Lifecycle',
+      priority: 'Medium',
+      status: 'Active',
+      farm: field.farm._id,
+      field: field._id,
+      ruleKey: `lifecycle-nearing-end:${field._id}`,
+      recommendedAction: 'Review field status and prepare final operations.'
+    });
+  }
+};
+
 const upsertGeneratedSignal = async (signal) => {
   const ruleKeys =
     [
@@ -1072,39 +1240,16 @@ const generateOperationSignals = async (req, res) => {
       });
     });
 
-    crops.forEach(crop => {
-      if (!crop.expectedHarvestDate) {
+    fields.forEach(field => {
+      if (!field.crop) {
         return;
       }
 
-      const daysUntilHarvest =
-        Math.ceil(
-          (new Date(crop.expectedHarvestDate).getTime() - Date.now()) /
-          86400000
-        );
-      const field =
-        fields.find(item =>
-          item.crop &&
-          item.crop._id.toString() === crop._id.toString()
-        );
-
-      if (
-        field &&
-        daysUntilHarvest >= 0 &&
-        daysUntilHarvest <= 7
-      ) {
-        candidates.push({
-          title: 'Harvest approaching',
-          description: `${field.name} is expected to reach harvest within ${daysUntilHarvest} days.`,
-          category: 'Crop Lifecycle',
-          priority: daysUntilHarvest <= 2 ? 'High' : 'Medium',
-          status: 'Active',
-          farm: field.farm._id,
-          field: field._id,
-          ruleKey: `harvest-approaching:${field._id}`,
-          recommendedAction: 'Confirm labor, equipment, storage, and sales readiness for harvest.'
-        });
-      }
+      addLifecycleSignalCandidate({
+        field,
+        crop: field.crop,
+        candidates
+      });
     });
 
     addFinancialSignalCandidates({

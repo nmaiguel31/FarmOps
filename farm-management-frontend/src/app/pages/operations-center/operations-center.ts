@@ -333,6 +333,22 @@ export class OperationsCenter implements OnInit {
     return signal.field?.name || '';
   }
 
+  getLifecycleStage(signal: any) {
+    if (signal.category !== 'Crop Lifecycle') {
+      return '';
+    }
+
+    return signal.field?.crop?.currentStage || '';
+  }
+
+  getLifecycleHarvestDate(signal: any) {
+    if (signal.category !== 'Crop Lifecycle') {
+      return '';
+    }
+
+    return signal.field?.crop?.expectedHarvestDate || '';
+  }
+
   formatDate(date: any) {
     if (!date) {
       return 'Not dated';
