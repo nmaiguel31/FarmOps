@@ -6,6 +6,7 @@ import {
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
 import jsPDF from 'jspdf';
 import {
@@ -46,6 +47,7 @@ const REPORT_THEME = {
   selector: 'app-executive-reports',
   imports: [
     CommonModule,
+    FormsModule,
     LucideActivity,
     LucideBadgeDollarSign,
     LucideBarChart3,
@@ -69,6 +71,9 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   signals: any[] = [];
   loading = true;
   loadError = '';
+  periodPreset = 'this-month';
+  customStartDate = '';
+  customEndDate = '';
 
   private farmService = inject(Farm);
   private fieldService = inject(Field);
@@ -86,6 +91,8 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     Chart.getChart('executiveFinancialTrendChart')?.destroy();
     Chart.getChart('executiveFinancialSummaryChart')?.destroy();
+    Chart.getChart('executiveOperationsChart')?.destroy();
+    Chart.getChart('executiveCropProfitChart')?.destroy();
   }
 
   loadReportData() {
@@ -124,12 +131,105 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     return this.farms.length > 0;
   }
 
+  get periodOptions() {
+    return [
+      { value: 'today', label: 'Today' },
+      { value: 'last-7-days', label: 'Last 7 Days' },
+      { value: 'this-month', label: 'This Month' },
+      { value: 'last-month', label: 'Last Month' },
+      { value: 'last-3-months', label: 'Last 3 Months' },
+      { value: 'this-year', label: 'This Year' },
+      { value: 'custom', label: 'Custom Range' }
+    ];
+  }
+
+  get periodRange() {
+    const now = new Date();
+    let start = new Date(now.getFullYear(), now.getMonth(), 1);
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (this.periodPreset === 'today') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    }
+
+    if (this.periodPreset === 'last-7-days') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    }
+
+    if (this.periodPreset === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+
+    if (this.periodPreset === 'last-3-months') {
+      start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+
+    if (this.periodPreset === 'this-year') {
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+    }
+
+    if (this.periodPreset === 'custom') {
+      const customStart = this.customStartDate ? new Date(`${this.customStartDate}T00:00:00`) : start;
+      const customEnd = this.customEndDate ? new Date(`${this.customEndDate}T23:59:59.999`) : end;
+
+      if (Number.isFinite(customStart.getTime())) {
+        start = customStart;
+      }
+
+      if (Number.isFinite(customEnd.getTime())) {
+        end = customEnd;
+      }
+    }
+
+    return { start, end };
+  }
+
+  get periodLabel() {
+    const label =
+      this.periodOptions.find(option => option.value === this.periodPreset)?.label || 'This Month';
+
+    return this.periodPreset === 'custom'
+      ? 'Custom Range'
+      : label;
+  }
+
+  get startDateLabel() {
+    return this.formatDate(this.periodRange.start);
+  }
+
+  get endDateLabel() {
+    return this.formatDate(this.periodRange.end);
+  }
+
+  get generatedOnLabel() {
+    return this.formatDate(new Date());
+  }
+
+  get periodRecords() {
+    return this.records.filter(record =>
+      this.isWithinPeriod(record.date || record.createdAt)
+    );
+  }
+
+  get periodSignals() {
+    return this.signals.filter(signal =>
+      this.isWithinPeriod(signal.createdAt || signal.resolvedAt)
+    );
+  }
+
   get activeSignals() {
-    return this.signals.filter(signal => signal.status === 'Active');
+    return this.periodSignals.filter(signal => signal.status === 'Active');
   }
 
   get resolvedSignals() {
-    return this.signals.filter(signal => signal.status === 'Resolved');
+    return this.periodSignals.filter(signal => signal.status === 'Resolved');
   }
 
   get totalRevenue() {
@@ -141,14 +241,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   get monthlyProfit() {
-    const now = new Date();
-    return this.records
-      .filter(record => {
-        const date = new Date(record.date || record.createdAt);
-        return Number.isFinite(date.getTime()) &&
-          date.getFullYear() === now.getFullYear() &&
-          date.getMonth() === now.getMonth();
-      })
+    return this.periodRecords
       .reduce((sum, record) => {
         const amount = Number(record.amount || 0);
         return sum + (record.type === 'Income' ? amount : -amount);
@@ -168,10 +261,12 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   get activeCrops() {
-    return this.crops.filter(crop =>
-      String(crop.status || 'Active').toLowerCase() === 'active' &&
-      String(crop.currentStage || '').toLowerCase() !== 'harvest'
-    ).length;
+    return new Set(
+      this.fields
+        .filter(field => this.isActiveFieldCropCycle(field))
+        .map(field => `${this.getEntityId(field.farm)}:${this.getEntityId(field.crop)}`)
+        .filter(key => !key.endsWith(':'))
+    ).size;
   }
 
   get weatherRisk() {
@@ -188,6 +283,13 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   get summaryCards() {
     return [
       {
+        label: 'Operational Score',
+        value: this.operationalScore,
+        helper: this.operationalScoreStatus,
+        icon: 'operations',
+        tone: this.operationalScore >= 75 ? 'good' : this.operationalScore >= 50 ? 'warning' : 'danger'
+      },
+      {
         label: 'Overall Farm Health',
         value: this.averageHealth ? `${this.averageHealth}%` : 'No data',
         helper: 'Average active field health',
@@ -195,9 +297,9 @@ export class ExecutiveReports implements OnInit, OnDestroy {
         tone: this.averageHealth >= 75 ? 'good' : this.averageHealth >= 50 ? 'warning' : 'danger'
       },
       {
-        label: 'Monthly Profit',
+        label: 'Period Profit',
         value: this.formatCurrency(this.monthlyProfit),
-        helper: 'Current calendar month',
+        helper: this.periodLabel,
         icon: 'profit',
         tone: this.monthlyProfit >= 0 ? 'good' : 'danger'
       },
@@ -232,11 +334,44 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       {
         label: 'Active Crops',
         value: this.activeCrops,
-        helper: `${this.crops.length} crop records`,
+        helper: 'Linked to active fields',
         icon: 'crops',
         tone: 'neutral'
       }
     ];
+  }
+
+  get operationalScore() {
+    const healthScore = this.averageHealth || 50;
+    const ndviScore = this.averageNdvi || 50;
+    const profitScore =
+      this.totalRevenue
+        ? Math.max(0, Math.min(100, Math.round(((this.totalRevenue - this.totalExpenses) / this.totalRevenue) * 100)))
+        : this.hasFinancialData ? 35 : 65;
+    const criticalHighPenalty =
+      Math.min(this.countPriority('Critical') * 18 + this.countPriority('High') * 10, 35);
+    const weatherPenalty =
+      this.weatherRisk === 'Elevated' ? 12 : this.weatherRisk === 'Monitoring' ? 6 : 0;
+
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round((healthScore * .3) + (ndviScore * .25) + (profitScore * .25) + 20 - criticalHighPenalty - weatherPenalty)
+      )
+    );
+  }
+
+  get operationalScoreStatus() {
+    if (this.operationalScore >= 75) {
+      return 'Healthy Operation';
+    }
+
+    if (this.operationalScore >= 50) {
+      return 'Watchlist';
+    }
+
+    return 'Critical Attention Required';
   }
 
   get farmPerformanceRows() {
@@ -244,7 +379,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       const farmId = this.getEntityId(farm);
       const farmFields = this.fields.filter(field => this.getEntityId(field.farm) === farmId);
       const farmSignals = this.activeSignals.filter(signal => this.getEntityId(signal.farm) === farmId);
-      const farmRecords = this.records.filter(record => this.getEntityId(record.farm) === farmId);
+      const farmRecords = this.periodRecords.filter(record => this.getEntityId(record.farm) === farmId);
       const revenue = this.sumRecordSet(farmRecords, 'Income');
       const expenses = this.sumRecordSet(farmRecords, 'Expense');
       const avgNdvi = this.average(farmFields.map(field => this.getFieldNdviPercent(field)));
@@ -264,35 +399,80 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   get cropPerformanceRows() {
-    const rows = this.crops.map(crop => {
-      const cropId = this.getEntityId(crop);
-      const cropFields = this.fields.filter(field => this.getEntityId(field.crop) === cropId);
-      const cropRecords = this.records.filter(record => this.getEntityId(record.crop) === cropId);
-      const revenue = this.sumRecordSet(cropRecords, 'Income');
-      const expenses = this.sumRecordSet(cropRecords, 'Expense');
-      const avgHealth = this.average(
-        cropFields
-          .map(field => this.getFieldHealthIndex(field))
-          .filter((value): value is number => value !== null)
-      );
-      const avgNdvi = this.average(cropFields.map(field => this.getFieldNdviPercent(field)));
-      const farm = this.farms.find(item => this.getEntityId(item) === this.getEntityId(crop.farm));
+    const rowKeys = new Map<string, { cropId: string; farmId: string; crop: any; farm: any }>();
 
-      return {
-        crop,
-        farm: farm?.name || crop.farm?.name || 'Unassigned farm',
-        revenue,
-        expenses,
-        profit: revenue - expenses,
-        averageHealth: avgHealth ? `${avgHealth}%` : 'No field data',
-        ndvi: avgNdvi ? this.toNdviDecimal(avgNdvi) : 'No field data',
-        stage: crop.currentStage || 'Not started'
-      };
-    });
+    this.fields
+      .filter(field => this.getEntityId(field.crop))
+      .forEach(field => {
+        const cropId = this.getEntityId(field.crop);
+        const farmId = this.getEntityId(field.farm);
+        const key = `${farmId}:${cropId}`;
+        rowKeys.set(key, {
+          cropId,
+          farmId,
+          crop: this.getCropById(cropId) || field.crop,
+          farm: this.getFarmById(farmId) || field.farm
+        });
+      });
 
-    return rows.filter(row =>
-      row.revenue || row.expenses || row.crop?.name
-    );
+    this.periodRecords
+      .filter(record => this.getEntityId(record.crop))
+      .forEach(record => {
+        const cropId = this.getEntityId(record.crop);
+        const farmId = this.getEntityId(record.farm);
+        const key = `${farmId}:${cropId}`;
+        rowKeys.set(key, {
+          cropId,
+          farmId,
+          crop: this.getCropById(cropId) || record.crop,
+          farm: this.getFarmById(farmId) || record.farm
+        });
+      });
+
+    return Array.from(rowKeys.values())
+      .filter(row => this.isRelevantCropRow(row.cropId, row.farmId))
+      .map(row => {
+        const cropFields = this.fields.filter(field =>
+          this.getEntityId(field.crop) === row.cropId &&
+          this.getEntityId(field.farm) === row.farmId
+        );
+        const cropRecords = this.periodRecords.filter(record =>
+          this.getEntityId(record.crop) === row.cropId &&
+          this.getEntityId(record.farm) === row.farmId
+        );
+        const cropObject =
+          row.crop && typeof row.crop === 'object'
+            ? row.crop
+            : { name: 'Unavailable crop', type: 'Crop' };
+        const farmObject =
+          row.farm && typeof row.farm === 'object'
+            ? row.farm
+            : this.getFarmById(row.farmId);
+        const revenue = this.sumRecordSet(cropRecords, 'Income');
+        const expenses = this.sumRecordSet(cropRecords, 'Expense');
+        const avgHealth = this.average(
+          cropFields
+            .map(field => this.getFieldHealthIndex(field))
+            .filter((value): value is number => value !== null)
+        );
+        const avgNdvi = this.average(cropFields.map(field => this.getFieldNdviPercent(field)));
+        const representativeField = cropFields[0];
+        const stage =
+          cropObject.currentStage ||
+          representativeField?.crop?.currentStage ||
+          'Not started';
+
+        return {
+          crop: cropObject,
+          farm: farmObject?.name || 'Unassigned farm',
+          revenue,
+          expenses,
+          profit: revenue - expenses,
+          averageHealth: avgHealth ? `${avgHealth}%` : 'No field data',
+          ndvi: avgNdvi ? this.toNdviDecimal(avgNdvi) : 'No field data',
+          stage
+        };
+      });
   }
 
   get operationsSummary() {
@@ -309,7 +489,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   get executiveRecommendations() {
-    const recommendations: string[] = [];
+    const recommendations: Array<{ category: string; items: string[] }> = [];
     const riskyFarms = this.farmPerformanceRows.filter(row =>
       row.activeAlerts > 0 || row.status !== 'Stable'
     );
@@ -318,40 +498,89 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     const financialSignals = this.activeSignals.filter(signal => signal.category === 'Financial');
 
     if (!this.hasOperationalData) {
-      return ['No operational data is available yet. Create farms and fields to generate executive reports.'];
+      return [
+        {
+          category: 'Operational',
+          items: ['No operational data is available yet. Create farms and fields to generate executive reports.']
+        }
+      ];
     }
 
-    if (this.averageHealth >= 75 && this.averageNdvi >= 70 && !this.activeSignals.length) {
-      recommendations.push('Overall farm performance is healthy and no urgent operational signals are active.');
-    }
+    const addRecommendation = (category: string, item: string) => {
+      let group = recommendations.find(section => section.category === category);
+
+      if (!group) {
+        group = { category, items: [] };
+        recommendations.push(group);
+      }
+
+      group.items.push(item);
+    };
 
     if (riskyFarms.length) {
-      recommendations.push(`Monitor ${riskyFarms[0].farm.name}; it has ${riskyFarms[0].activeAlerts} active operational signal(s).`);
-    }
-
-    if (drySignals.length) {
-      recommendations.push('Review irrigation schedules for fields with dry conditions or low soil moisture.');
-    }
-
-    if (lifecycleSignals.length) {
-      recommendations.push('Prepare labor, logistics, and equipment for upcoming lifecycle or harvest operations.');
+      addRecommendation('Operational', `Monitor ${riskyFarms[0].farm.name}; it has ${riskyFarms[0].activeAlerts} active operational signal(s).`);
     }
 
     if (financialSignals.length || this.totalRevenue < this.totalExpenses) {
-      recommendations.push('Financial performance needs review; compare operating costs against revenue by farm and crop.');
-    } else if (this.records.length) {
-      recommendations.push('Financial performance remains stable based on current revenue and expense records.');
+      addRecommendation('Financial', 'Review operating costs against revenue by farm and crop for the selected reporting period.');
+    } else if (this.periodRecords.length) {
+      addRecommendation('Financial', 'Financial performance remains stable based on current revenue and expense records.');
+    }
+
+    if (this.activeSignals.some(signal => signal.category === 'Weather')) {
+      addRecommendation('Weather', 'Review active weather signals before scheduling irrigation, spraying, or harvest operations.');
     }
 
     if (this.averageNdvi && this.averageNdvi < 60) {
-      recommendations.push('Review fields with weak vegetation performance and inspect for irrigation, pest, or nutrient stress.');
+      addRecommendation('Vegetation', 'Review fields with weak vegetation performance and inspect for irrigation, pest, or nutrient stress.');
+    }
+
+    if (drySignals.length) {
+      addRecommendation('Operational', 'Review irrigation schedules for fields with dry conditions or low soil moisture.');
+    }
+
+    if (lifecycleSignals.length) {
+      addRecommendation('Crop Lifecycle', 'Prepare labor, logistics, and equipment for upcoming lifecycle or harvest operations.');
     }
 
     return recommendations.slice(0, 5);
   }
 
   get hasFinancialData() {
-    return this.records.length > 0;
+    return this.periodRecords.length > 0;
+  }
+
+  get hasCropPerformanceData() {
+    return this.cropPerformanceRows.length > 0;
+  }
+
+  get hasOperationsData() {
+    return this.periodSignals.length > 0;
+  }
+
+  get profitByCropEntries() {
+    return this.cropPerformanceRows
+      .filter(row => row.revenue || row.expenses)
+      .map(row => ({
+        crop: row.crop.name,
+        profit: row.profit
+      }))
+      .sort((a, b) => Math.abs(b.profit) - Math.abs(a.profit))
+      .slice(0, 8);
+  }
+
+  get operationsDistribution() {
+    const buckets = new Map<string, number>();
+
+    this.periodSignals.forEach(signal => {
+      const category = signal.category || 'System';
+      buckets.set(category, (buckets.get(category) || 0) + 1);
+    });
+
+    return Array.from(buckets.entries()).map(([category, count]) => ({
+      category,
+      count
+    }));
   }
 
   exportCSV() {
@@ -392,7 +621,10 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       ...this.operationsSummary.map(item => [item.label, item.value]),
       [],
       ['Executive Recommendations'],
-      ...this.executiveRecommendations.map(item => [item])
+      ...this.executiveRecommendations.flatMap(group => [
+        [group.category],
+        ...group.items.map(item => [item])
+      ])
     ];
 
     const csvContent = sections
@@ -419,16 +651,38 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 130, y);
     y += 12;
 
+    y = this.ensurePdfSpace(doc, y, 58);
     doc.setTextColor(REPORT_THEME.text);
     doc.setFontSize(13);
     doc.text('Executive Summary', 20, y);
     y += 8;
-    doc.setFontSize(9);
-    this.summaryCards.forEach(card => {
-      y = this.writePdfLine(doc, `${card.label}: ${card.value} - ${card.helper}`, y);
-    });
+    y = this.drawPdfSummaryCards(doc, y);
 
     y += 6;
+    y = this.ensurePdfSpace(doc, y, 44);
+    doc.setFontSize(13);
+    doc.text('Financial Visual Summary', 20, y);
+    y += 8;
+    y = this.drawPdfFinancialBars(doc, y);
+
+    y += 6;
+    y = this.ensurePdfSpace(doc, y, 44);
+    doc.setFontSize(13);
+    doc.text('Operations Distribution', 20, y);
+    y += 8;
+    y = this.drawPdfOperationsBars(doc, y);
+
+    if (this.profitByCropEntries.length) {
+      y += 6;
+      y = this.ensurePdfSpace(doc, y, 44);
+      doc.setFontSize(13);
+      doc.text('Crop Profitability', 20, y);
+      y += 8;
+      y = this.drawPdfCropProfitBars(doc, y);
+    }
+
+    y += 6;
+    y = this.ensurePdfSpace(doc, y, 42);
     doc.setFontSize(13);
     doc.text('Farm Performance', 20, y);
     y += 8;
@@ -442,10 +696,14 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     });
 
     y += 6;
+    y = this.ensurePdfSpace(doc, y, 42);
     doc.setFontSize(13);
     doc.text('Crop Performance', 20, y);
     y += 8;
     doc.setFontSize(8);
+    if (!this.cropPerformanceRows.length) {
+      y = this.writePdfLine(doc, 'No crop performance data for the selected period.', y);
+    }
     this.cropPerformanceRows.slice(0, 20).forEach(row => {
       y = this.writePdfLine(
         doc,
@@ -455,6 +713,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     });
 
     y += 6;
+    y = this.ensurePdfSpace(doc, y, 42);
     doc.setFontSize(13);
     doc.text('Operations Summary', 20, y);
     y += 8;
@@ -464,12 +723,16 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     });
 
     y += 6;
+    y = this.ensurePdfSpace(doc, y, 42);
     doc.setFontSize(13);
     doc.text('Executive Recommendations', 20, y);
     y += 8;
     doc.setFontSize(8);
-    this.executiveRecommendations.forEach(item => {
-      y = this.writePdfLine(doc, `- ${item}`, y);
+    this.executiveRecommendations.forEach(group => {
+      y = this.writePdfLine(doc, group.category, y);
+      group.items.forEach(item => {
+        y = this.writePdfLine(doc, `- ${item}`, y);
+      });
     });
 
     this.addPdfFooters(doc);
@@ -491,6 +754,11 @@ export class ExecutiveReports implements OnInit, OnDestroy {
 
   getStatusClass(status: string) {
     return String(status || '').toLowerCase().replace(/\s+/g, '-');
+  }
+
+  onPeriodChange() {
+    this.cdr.detectChanges();
+    this.renderChartsSoon();
   }
 
   private filterFieldsByCurrentFarms(fields: any[]) {
@@ -531,8 +799,78 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     return String(entity?._id || entity || '');
   }
 
+  private isWithinPeriod(dateValue: any) {
+    if (!dateValue) {
+      return false;
+    }
+
+    const timestamp = new Date(dateValue).getTime();
+
+    if (!Number.isFinite(timestamp)) {
+      return false;
+    }
+
+    return timestamp >= this.periodRange.start.getTime() &&
+      timestamp <= this.periodRange.end.getTime();
+  }
+
+  private formatDate(dateValue: any) {
+    const date = new Date(dateValue);
+
+    if (!Number.isFinite(date.getTime())) {
+      return 'Not available';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  }
+
+  private isRelevantCropRow(cropId: string, farmId: string) {
+    const linkedExistingField =
+      this.fields.some(field =>
+        this.getEntityId(field.crop) === cropId &&
+        this.getEntityId(field.farm) === farmId
+      );
+    const periodFinancialActivity =
+      this.periodRecords.some(record =>
+        this.getEntityId(record.crop) === cropId &&
+        this.getEntityId(record.farm) === farmId
+      );
+    const activeCropCycle =
+      this.fields.some(field =>
+        this.getEntityId(field.crop) === cropId &&
+        this.getEntityId(field.farm) === farmId &&
+        this.isActiveFieldCropCycle(field)
+      );
+
+    return linkedExistingField ||
+      periodFinancialActivity ||
+      activeCropCycle;
+  }
+
+  private isActiveFieldCropCycle(field: any) {
+    const cropId = this.getEntityId(field?.crop);
+    const fieldStatus = String(field?.status || '').toLowerCase();
+    const cropStage = String(field?.crop?.currentStage || '').toLowerCase();
+
+    return Boolean(cropId) &&
+      fieldStatus === 'active' &&
+      !['harvest', 'harvested'].includes(cropStage);
+  }
+
+  private getCropById(cropId: string) {
+    return this.crops.find(crop => this.getEntityId(crop) === cropId);
+  }
+
+  private getFarmById(farmId: string) {
+    return this.farms.find(farm => this.getEntityId(farm) === farmId);
+  }
+
   private sumRecords(type: string) {
-    return this.sumRecordSet(this.records, type);
+    return this.sumRecordSet(this.periodRecords, type);
   }
 
   private sumRecordSet(records: any[], type: string) {
@@ -652,6 +990,8 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     setTimeout(() => {
       this.renderFinancialTrendChart();
       this.renderFinancialSummaryChart();
+      this.renderOperationsChart();
+      this.renderCropProfitChart();
     }, 100);
   }
 
@@ -738,10 +1078,79 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     });
   }
 
+  private renderOperationsChart() {
+    const canvas = document.getElementById('executiveOperationsChart') as HTMLCanvasElement;
+
+    if (!canvas) {
+      return;
+    }
+
+    Chart.getChart(canvas)?.destroy();
+
+    if (!this.hasOperationsData) {
+      return;
+    }
+
+    new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: this.operationsDistribution.map(item => item.category),
+        datasets: [
+          {
+            data: this.operationsDistribution.map(item => item.count),
+            backgroundColor: [
+              REPORT_THEME.primary,
+              REPORT_THEME.cloudBlue,
+              REPORT_THEME.warning,
+              REPORT_THEME.danger,
+              REPORT_THEME.secondary,
+              '#64748b'
+            ],
+            borderColor: '#ffffff',
+            borderWidth: 4
+          }
+        ]
+      },
+      options: this.doughnutChartOptions()
+    });
+  }
+
+  private renderCropProfitChart() {
+    const canvas = document.getElementById('executiveCropProfitChart') as HTMLCanvasElement;
+
+    if (!canvas) {
+      return;
+    }
+
+    Chart.getChart(canvas)?.destroy();
+
+    if (!this.profitByCropEntries.length) {
+      return;
+    }
+
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: this.profitByCropEntries.map(item => item.crop),
+        datasets: [
+          {
+            label: 'Profit',
+            data: this.profitByCropEntries.map(item => item.profit),
+            backgroundColor: this.profitByCropEntries.map(item =>
+              item.profit >= 0 ? REPORT_THEME.primary : REPORT_THEME.danger
+            ),
+            borderRadius: 10
+          }
+        ]
+      },
+      options: this.barChartOptions()
+    });
+  }
+
   private getMonthlyFinancialSeries() {
     const buckets = new Map<string, { revenue: number; expenses: number; timestamp: number }>();
 
-    this.records.forEach(record => {
+    this.periodRecords.forEach(record => {
       const date = new Date(record.date || record.createdAt);
 
       if (!Number.isFinite(date.getTime())) {
@@ -840,6 +1249,30 @@ export class ExecutiveReports implements OnInit, OnDestroy {
     };
   }
 
+  private doughnutChartOptions(): any {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '66%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            boxWidth: 8,
+            usePointStyle: true,
+            padding: 16,
+            color: REPORT_THEME.muted
+          }
+        },
+        tooltip: {
+          backgroundColor: REPORT_THEME.text,
+          padding: 12,
+          cornerRadius: 10
+        }
+      }
+    };
+  }
+
   private writePdfLine(doc: jsPDF, text: string, y: number) {
     if (y > 278) {
       doc.addPage();
@@ -848,6 +1281,126 @@ export class ExecutiveReports implements OnInit, OnDestroy {
 
     doc.text(text.slice(0, 118), 20, y);
     return y + 7;
+  }
+
+  private ensurePdfSpace(doc: jsPDF, y: number, neededHeight: number) {
+    if (y + neededHeight > 278) {
+      doc.addPage();
+      return this.drawPdfHeader(doc);
+    }
+
+    return y;
+  }
+
+  private drawPdfSummaryCards(doc: jsPDF, y: number) {
+    const cards = this.summaryCards.slice(0, 8);
+
+    cards.forEach((card, index) => {
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      const x = column === 0 ? 20 : 108;
+      const cardY = y + row * 20;
+
+      if (cardY > 270) {
+        doc.addPage();
+        y = this.drawPdfHeader(doc);
+      }
+
+      doc.setDrawColor(REPORT_THEME.border);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, cardY, 78, 15, 3, 3, 'FD');
+      doc.setTextColor(REPORT_THEME.muted);
+      doc.setFontSize(7);
+      doc.text(card.label, x + 4, cardY + 5);
+      doc.setTextColor(this.getPdfToneColor(card.tone));
+      doc.setFontSize(11);
+      doc.text(String(card.value), x + 4, cardY + 11);
+    });
+
+    return y + Math.ceil(cards.length / 2) * 20 + 2;
+  }
+
+  private drawPdfFinancialBars(doc: jsPDF, y: number) {
+    return this.drawPdfBarGroup(
+      doc,
+      y,
+      [
+        { label: 'Revenue', value: this.totalRevenue, color: REPORT_THEME.primary },
+        { label: 'Expenses', value: this.totalExpenses, color: REPORT_THEME.warning },
+        { label: 'Profit', value: this.totalRevenue - this.totalExpenses, color: (this.totalRevenue - this.totalExpenses) >= 0 ? REPORT_THEME.cloudBlue : REPORT_THEME.danger }
+      ],
+      true
+    );
+  }
+
+  private drawPdfOperationsBars(doc: jsPDF, y: number) {
+    if (!this.operationsDistribution.length) {
+      return this.writePdfLine(doc, 'No operations data for the selected period.', y);
+    }
+
+    return this.drawPdfBarGroup(
+      doc,
+      y,
+      this.operationsDistribution.map((item, index) => ({
+        label: item.category,
+        value: item.count,
+        color: [REPORT_THEME.primary, REPORT_THEME.cloudBlue, REPORT_THEME.warning, REPORT_THEME.danger, REPORT_THEME.secondary][index % 5]
+      })),
+      false
+    );
+  }
+
+  private drawPdfCropProfitBars(doc: jsPDF, y: number) {
+    return this.drawPdfBarGroup(
+      doc,
+      y,
+      this.profitByCropEntries.map(item => ({
+        label: item.crop,
+        value: item.profit,
+        color: item.profit >= 0 ? REPORT_THEME.primary : REPORT_THEME.danger
+      })),
+      true
+    );
+  }
+
+  private drawPdfBarGroup(
+    doc: jsPDF,
+    y: number,
+    items: Array<{ label: string; value: number; color: string }>,
+    currency: boolean
+  ) {
+    const maxValue = Math.max(...items.map(item => Math.abs(item.value)), 1);
+
+    items.forEach(item => {
+      if (y > 272) {
+        doc.addPage();
+        y = this.drawPdfHeader(doc);
+      }
+
+      const width = Math.max(4, (Math.abs(item.value) / maxValue) * 95);
+      doc.setTextColor(REPORT_THEME.text);
+      doc.setFontSize(8);
+      doc.text(item.label.slice(0, 28), 20, y + 4);
+      doc.setFillColor(item.color);
+      doc.roundedRect(72, y, width, 5, 2, 2, 'F');
+      doc.setTextColor(REPORT_THEME.muted);
+      doc.text(currency ? this.formatCurrency(item.value) : String(item.value), 172, y + 4);
+      y += 9;
+    });
+
+    return y;
+  }
+
+  private getPdfToneColor(tone: string) {
+    if (tone === 'danger') {
+      return REPORT_THEME.danger;
+    }
+
+    if (tone === 'warning') {
+      return REPORT_THEME.warning;
+    }
+
+    return REPORT_THEME.primaryStrong;
   }
 
   private drawPdfHeader(doc: jsPDF) {
@@ -894,21 +1447,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   private getReportingPeriodLabel() {
-    const timestamps = this.records
-      .map(record => new Date(record.date || record.createdAt).getTime())
-      .filter(timestamp => Number.isFinite(timestamp));
-
-    if (!timestamps.length) {
-      return 'Current operational snapshot';
-    }
-
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-
-    return `${formatter.format(new Date(Math.min(...timestamps)))} - ${formatter.format(new Date(Math.max(...timestamps)))}`;
+    return `${this.periodLabel}: ${this.startDateLabel} - ${this.endDateLabel}`;
   }
 
   private async loadPdfLogoDataUrl() {
