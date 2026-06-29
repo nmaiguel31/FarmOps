@@ -3,6 +3,7 @@ const Farm = require('../models/Farm');
 const Field = require('../models/Field');
 const Crop = require('../models/Crop');
 const logEvent = require('../utils/logger');
+const OperationsRulesEngine = require('../services/operationsRulesEngine');
 
 const populateRecord = [
   {
@@ -15,6 +16,14 @@ const populateRecord = [
   { path: 'field' },
   { path: 'crop' }
 ];
+
+const evaluateFinancialOperationSignals = async (user) => {
+  await OperationsRulesEngine.runSafely(
+    'financial-signals',
+    OperationsRulesEngine.evaluateFinancialSignals,
+    user
+  );
+};
 
 const userCanAccessFarm = (user, farm) => {
   return user.role === 'admin' ||
@@ -179,6 +188,8 @@ const createFinancialRecord = async (req, res) => {
     const populatedRecord = await FinancialRecord.findById(record._id)
       .populate(populateRecord);
 
+    await evaluateFinancialOperationSignals(req.user);
+
     res.status(201).json(populatedRecord);
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -248,6 +259,8 @@ const deleteFinancialRecord = async (req, res) => {
       role: req.user.role
     });
 
+    await evaluateFinancialOperationSignals(req.user);
+
     res.json({
       message: 'Financial record deleted successfully'
     });
@@ -301,6 +314,8 @@ const updateFinancialRecord = async (req, res) => {
 
     const populatedRecord = await FinancialRecord.findById(record._id)
       .populate(populateRecord);
+
+    await evaluateFinancialOperationSignals(req.user);
 
     res.json(populatedRecord);
   } catch (error) {

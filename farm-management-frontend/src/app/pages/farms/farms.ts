@@ -773,7 +773,7 @@ updateFarm() {
     this.weatherSignalGenerationInFlight = true;
     this.lastWeatherSignalGenerationAt = now;
 
-    this.operationSignalService.generateSignals().subscribe({
+    this.operationSignalService.evaluateWeatherSignals().subscribe({
       next: () => {
         this.weatherSignalGenerationInFlight = false;
       },

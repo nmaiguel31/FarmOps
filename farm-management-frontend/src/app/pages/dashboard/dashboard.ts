@@ -491,7 +491,7 @@ export class Dashboard implements OnInit {
   }
 
   private generateWeatherOperationSignals() {
-    this.operationSignalService.generateSignals().subscribe({
+    this.operationSignalService.evaluateWeatherSignals().subscribe({
       next: () => this.refreshOperationSignals(),
       error: (error) => console.error(error)
     });

@@ -2,8 +2,17 @@ const Crop = require('../models/Crop');
 const Farm = require('../models/Farm');
 const Field = require('../models/Field');
 const logEvent = require('../utils/logger');
+const OperationsRulesEngine = require('../services/operationsRulesEngine');
 
 const lifecycleDurationDays = 120;
+
+const evaluateLifecycleOperationSignals = async (user) => {
+  await OperationsRulesEngine.runSafely(
+    'lifecycle-signals',
+    OperationsRulesEngine.evaluateLifecycleSignals,
+    user
+  );
+};
 
 const normalizeLifecycleDate = (date) => {
   if (!date) {
@@ -351,6 +360,9 @@ const createCrop = async (req, res) => {
       farmId: farm._id,
       createdBy: req.user.id
     });
+
+    await evaluateLifecycleOperationSignals(req.user);
+
     res.status(201).json(crop);
     
   } catch (error) {
@@ -478,6 +490,8 @@ const deleteCrop = async (req, res) => {
       detachedFields: fieldResult.modifiedCount || 0
     });
 
+    await evaluateLifecycleOperationSignals(req.user);
+
     res.json({
       message: 'Crop deleted successfully',
       detachedFields: fieldResult.modifiedCount || 0
@@ -578,6 +592,8 @@ const updateCrop = async (req, res) => {
       updatedBy: req.user.id,
       role: req.user.role
     });
+
+    await evaluateLifecycleOperationSignals(req.user);
 
     res.json(crop);
 

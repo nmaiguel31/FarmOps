@@ -3,6 +3,7 @@ const Farm = require('../models/Farm');
 const Crop = require('../models/Crop');
 const Zone = require('../models/Zone');
 const logEvent = require('../utils/logger');
+const OperationsRulesEngine = require('../services/operationsRulesEngine');
 const {
   isPolygonInsidePolygon,
   normalizePolygon,
@@ -21,6 +22,24 @@ const populateField = [
     path: 'crop'
   }
 ];
+
+const evaluateFieldOperationSignals = async (user) => {
+  await OperationsRulesEngine.runSafely(
+    'field-signals',
+    OperationsRulesEngine.evaluateFieldSignals,
+    user
+  );
+  await OperationsRulesEngine.runSafely(
+    'ndvi-signals',
+    OperationsRulesEngine.evaluateNDVISignals,
+    user
+  );
+  await OperationsRulesEngine.runSafely(
+    'lifecycle-signals',
+    OperationsRulesEngine.evaluateLifecycleSignals,
+    user
+  );
+};
 
 const userCanAccessFarm = (user, farm) => {
   return user.role === 'admin' ||
@@ -385,6 +404,8 @@ const createField = async (req, res) => {
     const populatedField = await Field.findById(field._id)
       .populate(populateField);
 
+    await evaluateFieldOperationSignals(req.user);
+
     res.status(201).json(populatedField);
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -544,6 +565,8 @@ const updateField = async (req, res) => {
     const populatedField = await Field.findById(field._id)
       .populate(populateField);
 
+    await evaluateFieldOperationSignals(req.user);
+
     res.json(populatedField);
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -592,6 +615,8 @@ const deleteField = async (req, res) => {
         zones: zoneResult.deletedCount || 0
       }
     });
+
+    await evaluateFieldOperationSignals(req.user);
 
     res.json({
       message: 'Field deleted successfully',

@@ -15,7 +15,6 @@ import {
   LucideCloudSun,
   LucideDroplet,
   LucideLeaf,
-  LucideRefreshCw,
   LucideShieldAlert,
   LucideSprout
 } from '@lucide/angular';
@@ -33,7 +32,6 @@ import {
     LucideCloudSun,
     LucideDroplet,
     LucideLeaf,
-    LucideRefreshCw,
     LucideShieldAlert,
     LucideSprout
   ],
@@ -44,7 +42,6 @@ export class OperationsCenter implements OnInit {
 
   signals: any[] = [];
   loading = false;
-  generating = false;
   message = '';
   resolvingSignalIds = new Set<string>();
 
@@ -106,31 +103,6 @@ export class OperationsCenter implements OnInit {
         console.error(error);
         this.message = 'Unable to load operation signals.';
         this.loading = false;
-      }
-    });
-  }
-
-  generateSignals() {
-    this.generating = true;
-    this.message = '';
-
-    this.operationSignalService.generateSignals().subscribe({
-      next: (data: any) => {
-        const createdCount =
-          Number(data?.createdCount || 0);
-        const reopenedCount =
-          Number(data?.reopenedCount || 0);
-        this.message =
-          createdCount || reopenedCount
-            ? `${createdCount} new and ${reopenedCount} reopened operation signal${createdCount + reopenedCount === 1 ? '' : 's'}.`
-            : 'No new operation signals were detected.';
-        this.generating = false;
-        this.loadSignals(false);
-      },
-      error: (error) => {
-        console.error(error);
-        this.message = 'Unable to generate operation signals.';
-        this.generating = false;
       }
     });
   }

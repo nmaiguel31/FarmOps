@@ -4,6 +4,7 @@ const Field = require('../models/Field');
 const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
+const OperationsRulesEngine = require('../services/operationsRulesEngine');
 
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
@@ -1176,123 +1177,21 @@ const upsertGeneratedSignal = async (signal) => {
   };
 };
 
-const generateOperationSignals = async (req, res) => {
+const sendEvaluationResult = async (req, res, evaluator) => {
   try {
-    const farmIds =
-      await getAccessibleFarmIds(req.user);
-    const farms =
-      await Farm.find({ _id: { $in: farmIds } });
-    const fields =
-      await Field.find({ farm: { $in: farmIds } })
-        .populate('crop')
-        .populate('farm');
-    const crops =
-      await Crop.find({ farm: { $in: farmIds } });
-    const records =
-      await FinancialRecord.find({ farm: { $in: farmIds } });
-    const vegetationRiskRuleKeys =
-      fields.flatMap(field => [
-        `ndvi-critical:${field._id}`,
-        `ndvi-low:${field._id}`,
-        `health-critical:${field._id}`,
-        `ndvi-low-vegetation:${field._id}`
-      ]);
-    const resolvedVegetationRisks =
-      vegetationRiskRuleKeys.length
-        ? await OperationSignal.find({
-          status: 'Resolved',
-          ruleKey: {
-            $in: vegetationRiskRuleKeys
-          }
-        }).select('ruleKey')
-        : [];
-    const resolvedVegetationRiskKeys =
-      new Set(resolvedVegetationRisks.map(signal => signal.ruleKey));
-    const candidates = [];
-
-    fields.forEach(field => {
-      const moisture =
-        getFieldSoilMoisture(field);
-      const irrigationStatus =
-        String(field.irrigationStatus || '').toLowerCase();
-
-      if (
-        moisture < 40 ||
-        irrigationStatus.includes('dry')
-      ) {
-        candidates.push({
-          title: 'Irrigation attention needed',
-          description: `${field.name} is showing low moisture or dry irrigation status.`,
-          category: 'Irrigation',
-          priority: moisture < 30 ? 'High' : 'Medium',
-          status: 'Active',
-          farm: field.farm._id,
-          field: field._id,
-          ruleKey: `irrigation-low-moisture:${field._id}`,
-          recommendedAction: 'Review irrigation scheduling and inspect the field before the next irrigation window.'
-        });
-      }
-
-      addNdviSignalCandidate({
-        field,
-        candidates,
-        resolvedVegetationRiskKeys
-      });
-    });
-
-    fields.forEach(field => {
-      if (!field.crop) {
-        return;
-      }
-
-      addLifecycleSignalCandidate({
-        field,
-        crop: field.crop,
-        candidates
-      });
-    });
-
-    addFinancialSignalCandidates({
-      records,
-      fields,
-      crops,
-      candidates,
-      owner: req.user.id
-    });
-
-    await addWeatherSignalCandidates(farms, candidates);
-
-    const changed = [];
-    let createdCount = 0;
-    let reopenedCount = 0;
-
-    for (const candidate of candidates) {
-      candidate.owner = candidate.owner || req.user.id;
-
-      const result =
-        await upsertGeneratedSignal(candidate);
-
-      if (result.action === 'created') {
-        createdCount++;
-        changed.push(result.signal);
-      }
-
-      if (result.action === 'reopened') {
-        reopenedCount++;
-        changed.push(result.signal);
-      }
-    }
-
-    const populatedCreated =
-      await OperationSignal.find({
-        _id: { $in: changed.map(signal => signal._id) }
-      }).populate(populateSignal);
+    const result = await evaluator(req.user);
+    const changedIds = (result.created || result.changed || [])
+      .map(signal => signal._id)
+      .filter(Boolean);
+    const populatedCreated = changedIds.length
+      ? await OperationSignal.find({
+        _id: { $in: changedIds }
+      }).populate(populateSignal)
+      : [];
 
     res.status(201).json({
-      created: populatedCreated,
-      createdCount,
-      reopenedCount,
-      evaluatedCount: candidates.length
+      ...result,
+      created: populatedCreated
     });
   } catch (error) {
     res.status(500).json({
@@ -1301,11 +1200,38 @@ const generateOperationSignals = async (req, res) => {
   }
 };
 
+const generateOperationSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateAllSignals);
+
+const evaluateAllOperationSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateAllSignals);
+
+const evaluateWeatherSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateWeatherSignals);
+
+const evaluateNDVISignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateNDVISignals);
+
+const evaluateFinancialSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateFinancialSignals);
+
+const evaluateLifecycleSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateLifecycleSignals);
+
+const evaluateFieldSignals = (req, res) =>
+  sendEvaluationResult(req, res, OperationsRulesEngine.evaluateFieldSignals);
+
 module.exports = {
   getOperationSignals,
   getActiveOperationSignals,
   createOperationSignal,
   resolveOperationSignal,
   deleteOperationSignal,
-  generateOperationSignals
+  generateOperationSignals,
+  evaluateAllOperationSignals,
+  evaluateWeatherSignals,
+  evaluateNDVISignals,
+  evaluateFinancialSignals,
+  evaluateLifecycleSignals,
+  evaluateFieldSignals
 };

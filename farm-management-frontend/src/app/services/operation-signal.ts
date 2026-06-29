@@ -60,6 +60,54 @@ export class OperationSignal {
     );
   }
 
+  evaluateAllSignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/all`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  evaluateWeatherSignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/weather`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  evaluateNDVISignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/ndvi`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  evaluateFinancialSignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/financial`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  evaluateLifecycleSignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/lifecycle`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  evaluateFieldSignals() {
+    return this.http.post(
+      `${this.apiUrl}/evaluate/fields`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
   resolveSignal(id: string) {
     return this.http.patch(
       `${this.apiUrl}/${id}/resolve`,
