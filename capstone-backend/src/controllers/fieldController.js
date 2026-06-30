@@ -109,7 +109,7 @@ const getValidStage = (stage) => {
 };
 
 const requiresPlantingDateForStage = (stage) => {
-  return lifecycleStages.indexOf(stage) >=
+  return lifecycleStages.indexOf(stage) >
     lifecycleStages.indexOf('Planting');
 };
 
@@ -196,14 +196,39 @@ const applyLifecycleInput = async (cropId, { plantingDate, currentStage }) => {
 };
 
 const buildFieldLifecycleInput = ({ body, crop, existingField }) => {
+  const previousStatus =
+    String(existingField?.status || '').toLowerCase();
+  const nextStatus =
+    String(body.status || existingField?.status || 'Active').toLowerCase();
+  const isStartingNewCycle =
+    existingField &&
+    ['resting', 'harvested'].includes(previousStatus) &&
+    nextStatus === 'active' &&
+    !normalizeLifecycleDate(body.plantingDate);
+
+  if (isStartingNewCycle) {
+    return {
+      currentStage: 'Planning',
+      stageStartedAt: new Date(),
+      plantingDate: null,
+      expectedHarvestDate: null
+    };
+  }
+
   const nextStage =
     body.currentStage && lifecycleStages.includes(body.currentStage)
       ? body.currentStage
       : existingField?.currentStage || 'Planning';
+  const explicitPlantingDate =
+    normalizeLifecycleDate(body.plantingDate);
+  const stageNeedsAutoPlantingDate =
+    nextStage === 'Planting' &&
+    !explicitPlantingDate &&
+    !existingField?.plantingDate;
   const plantingDate =
-    normalizeLifecycleDate(body.plantingDate) ||
+    explicitPlantingDate ||
     existingField?.plantingDate ||
-    null;
+    (stageNeedsAutoPlantingDate ? new Date() : null);
 
   if (
     requiresPlantingDateForStage(nextStage) &&
@@ -277,7 +302,7 @@ const resolveFieldCrop = async ({
     getValidStage(currentStage);
   const cropPlantingDate =
     parsedPlantingDate ||
-    (stage === 'Planning' ? new Date() : undefined);
+    (stage === 'Planting' ? new Date() : undefined);
 
   if (
     requiresPlantingDateForStage(stage) &&

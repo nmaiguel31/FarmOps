@@ -9,6 +9,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
 import {
+  addFarmOpsPdfFooters,
+  drawFarmOpsPdfHeader,
+  loadFarmOpsPdfLogo
+} from '../../shared/pdf-branding';
+import {
   LucideCalendarDays,
   LucideDownload,
   LucideDroplet,
@@ -508,9 +513,10 @@ export class Crops implements OnInit {
     URL.revokeObjectURL(link.href);
   }
 
-  exportPdf() {
+  async exportPdf() {
     const doc = new jsPDF();
-    let y = this.drawPdfHeader(doc, 'Crop Catalog Export');
+    const logoDataUrl = await loadFarmOpsPdfLogo();
+    let y = this.drawPdfHeader(doc, logoDataUrl, 'Crop Catalog Report');
     const tableLeft = 14;
     const widths = [42, 32, 24, 24, 28, 18, 22];
 
@@ -524,7 +530,7 @@ export class Crops implements OnInit {
     exportCrops.forEach((crop) => {
       if (y > 268) {
         doc.addPage();
-        y = this.drawPdfHeader(doc, 'Crop Catalog Export');
+        y = this.drawPdfHeader(doc, logoDataUrl, 'Crop Catalog Report');
         y = this.drawCropPdfTableHeader(doc, y, tableLeft, widths);
       }
 
@@ -552,7 +558,7 @@ export class Crops implements OnInit {
       y += 11;
     });
 
-    this.drawPdfFooter(doc);
+    addFarmOpsPdfFooters(doc);
     doc.save('farmops-crops.pdf');
   }
 
@@ -561,6 +567,12 @@ export class Crops implements OnInit {
   }
 
   getFieldsCount(crop: any) {
+    const validFarmIds =
+      new Set(
+        this.farms
+          .map(farm => this.getEntityId(farm))
+          .filter(Boolean)
+      );
     const cropKey =
       this.getCropCatalogKey(crop);
     const cropIds =
@@ -579,7 +591,15 @@ export class Crops implements OnInit {
       return 0;
     }
 
+    if (!validFarmIds.size) {
+      return 0;
+    }
+
     return this.fields.filter(field => {
+      if (!validFarmIds.has(this.getEntityId(field.farm))) {
+        return false;
+      }
+
       const fieldCropId =
         this.getEntityId(field.crop);
 
@@ -640,19 +660,16 @@ export class Crops implements OnInit {
     return `${stage.startDay ?? 0} - ${stage.endDay ?? 0} days`;
   }
 
-  private drawPdfHeader(doc: jsPDF, title: string) {
-    doc.setFillColor(244, 249, 245);
-    doc.rect(0, 0, 210, 34, 'F');
-    doc.setTextColor(20, 122, 68);
-    doc.setFontSize(18);
-    doc.text('FarmOps', 14, 15);
-    doc.setTextColor(18, 31, 25);
-    doc.setFontSize(13);
-    doc.text(title, 14, 25);
-    doc.setTextColor(96, 112, 104);
-    doc.setFontSize(8);
-    doc.text(`Exported on ${new Date().toLocaleDateString('en-US')}`, 154, 15);
-    return 44;
+  private drawPdfHeader(doc: jsPDF, logoDataUrl: string, title: string) {
+    return drawFarmOpsPdfHeader(
+      doc,
+      logoDataUrl,
+      {
+        title,
+        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        periodLabel: 'All Crops'
+      }
+    );
   }
 
   private drawPdfSummary(doc: jsPDF, y: number) {
@@ -703,20 +720,6 @@ export class Crops implements OnInit {
       x += widths[index];
     });
     return y + 10;
-  }
-
-  private drawPdfFooter(doc: jsPDF) {
-    const pageCount = doc.getNumberOfPages();
-
-    for (let page = 1; page <= pageCount; page += 1) {
-      doc.setPage(page);
-      doc.setDrawColor(229, 234, 227);
-      doc.line(14, 286, 196, 286);
-      doc.setTextColor(96, 112, 104);
-      doc.setFontSize(8);
-      doc.text('FarmOps Agricultural Decision Support Platform', 14, 292);
-      doc.text(`Page ${page} of ${pageCount}`, 178, 292);
-    }
   }
 
   private getDedupedCrops(crops: any[]) {

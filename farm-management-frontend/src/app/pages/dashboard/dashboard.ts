@@ -917,7 +917,8 @@ export class Dashboard implements OnInit {
         ...this.getFieldCrop(field),
         field,
         fieldName: field.name,
-        name: this.getFieldCropLabel(field)
+        name: this.getFieldCropLabel(field),
+        expectedHarvestDate: field.expectedHarvestDate
       }))
       .filter(crop => {
         const harvestDate =
@@ -956,13 +957,8 @@ export class Dashboard implements OnInit {
 
   private getFieldLifecycleStage(field: any) {
 
-    const crop =
-      this.getFieldCrop(field);
-
     return String(
       field?.currentStage ||
-      field?.cropStage ||
-      crop?.currentStage ||
       'Planning'
     ).toLowerCase();
 

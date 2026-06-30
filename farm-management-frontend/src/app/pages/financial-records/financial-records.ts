@@ -11,6 +11,11 @@ import { Chart, registerables } from 'chart.js';
 import { FinancialRecord } from '../../services/financial-record';
 import jsPDF from 'jspdf';
 import {
+  addFarmOpsPdfFooters,
+  drawFarmOpsPdfHeader,
+  loadFarmOpsPdfLogo
+} from '../../shared/pdf-branding';
+import {
   LucideBadgeDollarSign,
   LucideChartPie,
   LucideClock3,
@@ -655,11 +660,12 @@ export class FinancialRecords implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
-  exportPDF() {
+  async exportPDF() {
     const doc = new jsPDF();
     const records = this.filteredRecords;
+    const logoDataUrl = await loadFarmOpsPdfLogo();
 
-    let yPosition = this.drawPdfHeader(doc, 'Financial Records Export');
+    let yPosition = this.drawPdfHeader(doc, logoDataUrl, 'Financial Report');
     yPosition = this.drawFinancePdfSummary(doc, yPosition);
     yPosition += 8;
     yPosition = this.drawFinancePdfTableHeader(doc, yPosition);
@@ -667,7 +673,7 @@ export class FinancialRecords implements OnInit {
     records.forEach(record => {
       if (yPosition > 268) {
         doc.addPage();
-        yPosition = this.drawPdfHeader(doc, 'Financial Records Export');
+        yPosition = this.drawPdfHeader(doc, logoDataUrl, 'Financial Report');
         yPosition = this.drawFinancePdfTableHeader(doc, yPosition);
       }
 
@@ -696,7 +702,7 @@ export class FinancialRecords implements OnInit {
       yPosition += 11;
     });
 
-    this.drawPdfFooter(doc);
+    addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Financial-Report.pdf');
   }
 
@@ -855,19 +861,16 @@ export class FinancialRecords implements OnInit {
     ).format(value || 0);
   }
 
-  private drawPdfHeader(doc: jsPDF, title: string) {
-    doc.setFillColor(244, 249, 245);
-    doc.rect(0, 0, 210, 34, 'F');
-    doc.setTextColor(20, 122, 68);
-    doc.setFontSize(18);
-    doc.text('FarmOps', 14, 15);
-    doc.setTextColor(18, 31, 25);
-    doc.setFontSize(13);
-    doc.text(title, 14, 25);
-    doc.setTextColor(96, 112, 104);
-    doc.setFontSize(8);
-    doc.text(`${this.selectedFarmContext} | Exported ${new Date().toLocaleDateString('en-US')}`, 124, 15);
-    return 44;
+  private drawPdfHeader(doc: jsPDF, logoDataUrl: string, title: string) {
+    return drawFarmOpsPdfHeader(
+      doc,
+      logoDataUrl,
+      {
+        title,
+        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        periodLabel: this.selectedFarmContext
+      }
+    );
   }
 
   private drawFinancePdfSummary(doc: jsPDF, y: number) {
@@ -910,20 +913,6 @@ export class FinancialRecords implements OnInit {
       x += widths[index];
     });
     return y + 10;
-  }
-
-  private drawPdfFooter(doc: jsPDF) {
-    const pageCount = doc.getNumberOfPages();
-
-    for (let page = 1; page <= pageCount; page += 1) {
-      doc.setPage(page);
-      doc.setDrawColor(229, 234, 227);
-      doc.line(14, 286, 196, 286);
-      doc.setTextColor(96, 112, 104);
-      doc.setFontSize(8);
-      doc.text('FarmOps Agricultural Decision Support Platform', 14, 292);
-      doc.text(`Page ${page} of ${pageCount}`, 178, 292);
-    }
   }
 
   private renderChartsSoon() {

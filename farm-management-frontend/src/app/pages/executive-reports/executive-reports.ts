@@ -12,6 +12,11 @@ import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
 import jsPDF from 'jspdf';
 import {
+  addFarmOpsPdfFooters,
+  drawFarmOpsPdfHeader,
+  loadFarmOpsPdfLogo
+} from '../../shared/pdf-branding';
+import {
   LucideActivity,
   LucideBadgeDollarSign,
   LucideBarChart3,
@@ -477,8 +482,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         const avgNdvi = this.average(cropFields.map(field => this.getFieldNdviPercent(field)));
         const representativeField = cropFields[0];
         const stage =
-          cropObject.currentStage ||
-          representativeField?.crop?.currentStage ||
+          representativeField?.currentStage ||
           'Not started';
 
         return {
@@ -660,7 +664,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async exportPDF() {
-    this.pdfLogoDataUrl = await this.loadPdfLogoDataUrl();
+    this.pdfLogoDataUrl = await loadFarmOpsPdfLogo();
     const doc = new jsPDF();
     let y = this.drawPdfHeader(doc);
 
@@ -754,7 +758,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
-    this.addPdfFooters(doc);
+    addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Executive-Report.pdf');
   }
 
@@ -873,7 +877,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   private isActiveFieldCropCycle(field: any) {
     const cropId = this.getEntityId(field?.crop);
     const fieldStatus = String(field?.status || '').toLowerCase();
-    const cropStage = String(field?.crop?.currentStage || '').toLowerCase();
+    const cropStage = String(field?.currentStage || '').toLowerCase();
 
     return Boolean(cropId) &&
       fieldStatus === 'active' &&
@@ -1434,67 +1438,19 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawPdfHeader(doc: jsPDF) {
-    doc.setFillColor(REPORT_THEME.surfaceSoft);
-    doc.rect(0, 0, 210, 34, 'F');
-
-    if (this.pdfLogoDataUrl) {
-      doc.addImage(this.pdfLogoDataUrl, 'PNG', 18, 5, 24, 24);
-    } else {
-      doc.setFillColor(REPORT_THEME.primary);
-      doc.roundedRect(20, 8, 12, 12, 3, 3, 'F');
-      doc.setFillColor(REPORT_THEME.secondary);
-      doc.circle(29, 13, 4, 'F');
-      doc.setDrawColor(255, 255, 255);
-      doc.setLineWidth(1);
-      doc.line(25, 18, 31, 10);
-    }
-
-    doc.setTextColor(REPORT_THEME.text);
-    doc.setFontSize(18);
-    doc.text('FarmOps', 48, 15);
-    doc.setTextColor(REPORT_THEME.muted);
-    doc.setFontSize(8);
-    doc.text('Agricultural Decision Support Platform', 48, 21);
-    doc.setTextColor(REPORT_THEME.primaryStrong);
-    doc.setFontSize(10);
-    doc.text('Executive Reports', 148, 16);
-
-    return 46;
-  }
-
-  private addPdfFooters(doc: jsPDF) {
-    const totalPages = doc.getNumberOfPages();
-
-    for (let page = 1; page <= totalPages; page++) {
-      doc.setPage(page);
-      doc.setDrawColor(REPORT_THEME.border);
-      doc.line(20, 286, 190, 286);
-      doc.setTextColor(REPORT_THEME.muted);
-      doc.setFontSize(8);
-      doc.text('FarmOps Executive Reporting Center', 20, 292);
-      doc.text(`Page ${page} of ${totalPages}`, 170, 292);
-    }
+    return drawFarmOpsPdfHeader(
+      doc,
+      this.pdfLogoDataUrl,
+      {
+        title: 'Executive Reports',
+        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        periodLabel: this.getReportingPeriodLabel()
+      }
+    );
   }
 
   private getReportingPeriodLabel() {
     return `${this.periodLabel}: ${this.startDateLabel} - ${this.endDateLabel}`;
-  }
-
-  private async loadPdfLogoDataUrl() {
-    try {
-      const response = await fetch('/brand/farmops-logo.png');
-      const blob = await response.blob();
-
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      console.error('Unable to load FarmOps logo for PDF export.', error);
-      return '';
-    }
   }
 
 }

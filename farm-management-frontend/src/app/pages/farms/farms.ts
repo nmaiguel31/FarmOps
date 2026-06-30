@@ -108,6 +108,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   fieldNotes = '';
   fieldBoundaryCoordinates: any[] = [];
   fieldBoundaryError = '';
+  editingFieldPreviousStatus = '';
   zoneFormOpen = false;
   editingZoneId = '';
   zoneName = '';
@@ -1199,21 +1200,16 @@ updateFarm() {
     this.editingFieldId = field._id;
     this.fieldName = field.name;
     this.selectedCrop = field.crop?._id || field.crop || '';
-    const crop =
-      field.crop?._id
-        ? field.crop
-        : this.crops.find(item => item._id === field.crop);
     this.fieldPlantingDate =
       field.plantingDate
         ? this.toDateInputValue(field.plantingDate)
-        : crop?.plantingDate
-          ? this.toDateInputValue(crop.plantingDate)
-          : '';
+        : '';
     this.fieldCurrentStage =
-      field.currentStage || crop?.currentStage || 'Planning';
+      field.currentStage || 'Planning';
     this.fieldArea = field.area || 0;
     this.fieldStatus =
       allowedFieldStatuses.includes(field.status) ? field.status : 'Active';
+    this.editingFieldPreviousStatus = this.fieldStatus;
     this.fieldHealthStatus = field.healthStatus || 'Good';
     this.fieldIrrigationStatus = field.irrigationStatus || 'Scheduled';
     this.fieldNotes = field.notes || '';
@@ -1548,8 +1544,7 @@ updateFarm() {
     const templateStage =
       crop?.growthStages?.[index];
     const plantingDate =
-      this.selectedField?.plantingDate ||
-      crop?.plantingDate;
+      this.selectedField?.plantingDate;
 
     if (!plantingDate) {
       return 'Not available';
@@ -1562,10 +1557,14 @@ updateFarm() {
     }
 
     if (templateStage) {
+      const plantingStage =
+        crop?.growthStages?.[this.lifecycleStages.indexOf('Planting')];
+      const plantingStartDay =
+        Number(plantingStage?.startDay) || 0;
       const stageStart =
-        new Date(start.getTime() + ((Number(templateStage.startDay) || 0) * 86400000));
+        new Date(start.getTime() + (((Number(templateStage.startDay) || 0) - plantingStartDay) * 86400000));
       const stageEnd =
-        new Date(start.getTime() + ((Number(templateStage.endDay) || 0) * 86400000));
+        new Date(start.getTime() + (((Number(templateStage.endDay) || 0) - plantingStartDay) * 86400000));
       const dateFormat =
         { month: 'short', day: 'numeric' } as Intl.DateTimeFormatOptions;
 
@@ -1576,8 +1575,10 @@ updateFarm() {
       Number(crop?.lifecycleDays) || this.lifecycleDurationDays;
     const daysPerStage =
       Math.max(Math.round(lifecycleDays / this.lifecycleStages.length), 1);
+    const plantingIndex =
+      this.lifecycleStages.indexOf('Planting');
     const stageStart =
-      new Date(start.getTime() + (index * daysPerStage * 86400000));
+      new Date(start.getTime() + ((index - plantingIndex) * daysPerStage * 86400000));
     const stageEnd =
       new Date(stageStart.getTime() + ((daysPerStage - 1) * 86400000));
     const dateFormat =
@@ -1995,9 +1996,7 @@ updateFarm() {
 
   getSelectedCropStage() {
 
-    return this.selectedField?.currentStage ||
-      this.getSelectedCrop()?.currentStage ||
-      'Planning';
+    return this.selectedField?.currentStage || 'Planning';
 
   }
 
@@ -2026,7 +2025,7 @@ updateFarm() {
 
   isPlantingDateRequiredForStage(stage: string) {
 
-    return this.lifecycleStages.indexOf(stage) >=
+    return this.lifecycleStages.indexOf(stage) >
       this.lifecycleStages.indexOf('Planting');
 
   }
@@ -2100,8 +2099,7 @@ updateFarm() {
   getSelectedCropDaysInStage() {
 
     const startedAt =
-      this.selectedField?.stageStartedAt ||
-      this.getSelectedCrop()?.stageStartedAt;
+      this.selectedField?.stageStartedAt;
 
     if (!startedAt) {
       return 0;
@@ -2155,16 +2153,14 @@ updateFarm() {
 
     const crop = this.getSelectedCrop();
     const existingDate =
-      this.selectedField?.expectedHarvestDate ||
-      crop?.expectedHarvestDate;
+      this.selectedField?.expectedHarvestDate;
 
     if (existingDate) {
       return existingDate;
     }
 
     const plantingDate =
-      this.selectedField?.plantingDate ||
-      crop?.plantingDate;
+      this.selectedField?.plantingDate;
 
     if (!plantingDate) {
       return null;
@@ -2189,10 +2185,7 @@ updateFarm() {
     return [
       {
         label: 'Planting Date',
-        value: this.formatLifecycleDate(
-          this.selectedField?.plantingDate ||
-          this.getSelectedCrop()?.plantingDate
-        ),
+        value: this.formatLifecycleDate(this.selectedField?.plantingDate),
         note: 'Field crop-cycle date',
         icon: 'planting'
       },
@@ -2211,7 +2204,7 @@ updateFarm() {
       {
         label: 'Expected Harvest',
         value: this.formatLifecycleDate(this.getCalculatedExpectedHarvestDate()),
-        note: this.getSelectedCrop()?.expectedHarvestDate ? 'Crop schedule' : 'Auto-calculated when possible',
+        note: this.selectedField?.expectedHarvestDate ? 'Field schedule' : 'Auto-calculated when possible',
         icon: 'harvest'
       }
     ];
@@ -2239,7 +2232,7 @@ updateFarm() {
 
     const plantingDate =
       field.plantingDate ||
-      crop.plantingDate ||
+      (stage === 'Planting' ? this.toDateInputValue(new Date()) : undefined) ||
       undefined;
 
     if (
@@ -2253,7 +2246,6 @@ updateFarm() {
 
     let expectedHarvestDate =
       field.expectedHarvestDate ||
-      crop.expectedHarvestDate ||
       undefined;
 
     if (!expectedHarvestDate && plantingDate) {
@@ -4129,8 +4121,15 @@ private getFieldData() {
 
   const hasCropAssignment =
     this.hasFieldCropAssignment();
+  const restartingCropCycle =
+    Boolean(this.editingFieldId) &&
+    ['Resting', 'Harvested'].includes(this.editingFieldPreviousStatus) &&
+    this.fieldStatus === 'Active' &&
+    !this.fieldPlantingDate;
   const plantingDate =
-    this.fieldPlantingDate;
+    restartingCropCycle ? '' : this.fieldPlantingDate;
+  const currentStage =
+    restartingCropCycle ? 'Planning' : this.fieldCurrentStage;
 
   return {
     name: this.fieldName,
@@ -4140,7 +4139,7 @@ private getFieldData() {
       ? plantingDate
       : null,
     currentStage: hasCropAssignment
-      ? this.fieldCurrentStage
+      ? currentStage
       : undefined,
     area: this.fieldArea,
     status: this.fieldStatus,
@@ -4181,6 +4180,7 @@ private resetFieldForm() {
   this.fieldLifecycleError = '';
   this.fieldArea = 0;
   this.fieldStatus = 'Active';
+  this.editingFieldPreviousStatus = '';
   this.fieldHealthStatus = 'Good';
   this.fieldIrrigationStatus = 'Scheduled';
   this.fieldNotes = '';
