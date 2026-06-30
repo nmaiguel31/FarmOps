@@ -10,7 +10,7 @@ export const FARMOPS_PDF_COLORS = {
   headerSurface: '#F7FBF8'
 };
 
-const FARMOPS_PDF_LOGO_PATH = '/brand/farmops-login-logo-cropped.png';
+const FARMOPS_PDF_LOGO_PATH = '/brand/farmops-report-logo.png';
 let cachedLogoDataUrl = '';
 
 export type FarmOpsPdfHeaderOptions = {
