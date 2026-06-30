@@ -12,6 +12,7 @@ export class Crop {
   private apiUrl = `${APP_CONFIG.apiBaseUrl}/crops`;
 
   private farmsUrl = `${APP_CONFIG.apiBaseUrl}/farms`;
+  private fieldsUrl = `${APP_CONFIG.apiBaseUrl}/fields`;
 
   getFarms() {
 
@@ -37,6 +38,20 @@ export class Crop {
 
     return this.http.get(
       this.apiUrl,
+      { headers }
+    );
+  }
+
+  getFields() {
+
+    const token = localStorage.getItem('token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get(
+      this.fieldsUrl,
       { headers }
     );
   }

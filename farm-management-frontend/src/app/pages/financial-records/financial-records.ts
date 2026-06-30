@@ -246,10 +246,16 @@ export class FinancialRecords implements OnInit {
   onFilterFarmChange() {
     this.filterField = 'All';
     this.filterCrop = 'All';
+    this.renderChartsSoon();
   }
 
   onFilterFieldChange() {
     this.filterCrop = 'All';
+    this.renderChartsSoon();
+  }
+
+  onFiltersChanged() {
+    this.renderChartsSoon();
   }
 
   get filteredRecords() {
@@ -359,9 +365,17 @@ export class FinancialRecords implements OnInit {
   }
 
   get pendingPayments() {
-    return this.records
+    return this.filteredRecords
       .filter(record => ['Pending', 'Overdue'].includes(record.paymentStatus || 'Paid'))
       .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+  }
+
+  get selectedFarmContext() {
+    if (this.filterFarm === 'All') {
+      return 'All farms';
+    }
+
+    return this.farms.find(farm => farm._id === this.filterFarm)?.name || 'Selected farm';
   }
 
   get profitMargin() {
@@ -377,18 +391,18 @@ export class FinancialRecords implements OnInit {
       {
         label: 'Total Revenue',
         value: this.totalIncome,
-        detail: 'Across all records',
+        detail: this.selectedFarmContext,
         tone: 'income',
         icon: 'revenue',
-        helper: `${this.records.filter(record => record.type === 'Income').length} income records`
+        helper: `${this.filteredRecords.filter(record => record.type === 'Income').length} income records`
       },
       {
         label: 'Total Expenses',
         value: this.totalExpenses,
-        detail: 'Across all records',
+        detail: this.selectedFarmContext,
         tone: 'expense',
         icon: 'expenses',
-        helper: `${this.records.filter(record => record.type === 'Expense').length} expense records`
+        helper: `${this.filteredRecords.filter(record => record.type === 'Expense').length} expense records`
       },
       {
         label: 'Net Profit',
@@ -413,9 +427,23 @@ export class FinancialRecords implements OnInit {
         detail: 'Pending and overdue records',
         tone: 'pending',
         icon: 'pending',
-        helper: `${this.records.filter(record => ['Pending', 'Overdue'].includes(record.paymentStatus || 'Paid')).length} pending items`
+        helper: `${this.filteredRecords.filter(record => ['Pending', 'Overdue'].includes(record.paymentStatus || 'Paid')).length} pending items`
       }
     ];
+  }
+
+  get topExpenseCategories() {
+    return this.getExpensesByCategory().labels.map((label, index) => ({
+      label,
+      amount: this.getExpensesByCategory().values[index] || 0
+    }));
+  }
+
+  get largestExpenseRecords() {
+    return this.filteredRecords
+      .filter(record => record.type === 'Expense')
+      .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
+      .slice(0, 5);
   }
 
   get hasFinancialHistory() {
@@ -568,6 +596,7 @@ export class FinancialRecords implements OnInit {
     this.filterPaymentStatus = 'All';
     this.filterStartDate = '';
     this.filterEndDate = '';
+    this.renderChartsSoon();
   }
 
   setChartView(view: 'month' | 'day') {
@@ -630,32 +659,44 @@ export class FinancialRecords implements OnInit {
     const doc = new jsPDF();
     const records = this.filteredRecords;
 
-    doc.setFontSize(18);
-    doc.text('FarmOps Financial Report', 20, 20);
-    doc.setFontSize(11);
-    doc.text(`Total Records: ${records.length}`, 20, 38);
-    doc.text(`Total Revenue: $${this.totalIncome}`, 20, 48);
-    doc.text(`Total Expenses: $${this.totalExpenses}`, 20, 58);
-    doc.text(`Net Profit: $${this.netProfit}`, 20, 68);
-    doc.text(`Pending Payments: $${this.pendingPayments}`, 20, 78);
-
-    let yPosition = 96;
+    let yPosition = this.drawPdfHeader(doc, 'Financial Records Export');
+    yPosition = this.drawFinancePdfSummary(doc, yPosition);
+    yPosition += 8;
+    yPosition = this.drawFinancePdfTableHeader(doc, yPosition);
 
     records.forEach(record => {
-      const line =
-        `${this.getRecordDate(record)} | ${record.type} | ${record.category} | ` +
-        `${this.getFarmName(record)} | ${this.getFieldName(record)} | ` +
-        `${this.getCropName(record)} | $${record.amount} | ${record.paymentStatus || 'Paid'}`;
-
-      doc.text(line.slice(0, 120), 20, yPosition);
-      yPosition += 8;
-
-      if (yPosition > 278) {
+      if (yPosition > 268) {
         doc.addPage();
-        yPosition = 20;
+        yPosition = this.drawPdfHeader(doc, 'Financial Records Export');
+        yPosition = this.drawFinancePdfTableHeader(doc, yPosition);
       }
+
+      const values = [
+        this.getRecordDate(record),
+        record.type || '-',
+        record.category || '-',
+        this.getFarmName(record),
+        this.getFieldName(record),
+        this.getCropName(record),
+        this.formatCurrency(Number(record.amount || 0)),
+        record.paymentStatus || 'Paid'
+      ];
+      const widths = [24, 20, 26, 30, 28, 26, 24, 24];
+      let x = 8;
+      doc.setFontSize(7);
+      doc.setTextColor(25, 38, 31);
+      values.forEach((value, index) => {
+        doc.text(String(value), x + 1.5, yPosition + 6, {
+          maxWidth: widths[index] - 3
+        });
+        x += widths[index];
+      });
+      doc.setDrawColor(229, 234, 227);
+      doc.line(8, yPosition + 10, 202, yPosition + 10);
+      yPosition += 11;
     });
 
+    this.drawPdfFooter(doc);
     doc.save('FarmOps-Financial-Report.pdf');
   }
 
@@ -718,7 +759,7 @@ export class FinancialRecords implements OnInit {
   }
 
   private sumByType(type: string) {
-    return this.records
+    return this.filteredRecords
       .filter(record => record.type === type)
       .reduce((sum, record) => sum + Number(record.amount || 0), 0);
   }
@@ -801,6 +842,88 @@ export class FinancialRecords implements OnInit {
         year: 'numeric'
       }
     );
+  }
+
+  private formatCurrency(value: number) {
+    return new Intl.NumberFormat(
+      'en-US',
+      {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+      }
+    ).format(value || 0);
+  }
+
+  private drawPdfHeader(doc: jsPDF, title: string) {
+    doc.setFillColor(244, 249, 245);
+    doc.rect(0, 0, 210, 34, 'F');
+    doc.setTextColor(20, 122, 68);
+    doc.setFontSize(18);
+    doc.text('FarmOps', 14, 15);
+    doc.setTextColor(18, 31, 25);
+    doc.setFontSize(13);
+    doc.text(title, 14, 25);
+    doc.setTextColor(96, 112, 104);
+    doc.setFontSize(8);
+    doc.text(`${this.selectedFarmContext} | Exported ${new Date().toLocaleDateString('en-US')}`, 124, 15);
+    return 44;
+  }
+
+  private drawFinancePdfSummary(doc: jsPDF, y: number) {
+    const cards = [
+      ['Revenue', this.formatCurrency(this.totalIncome), '#14915f'],
+      ['Expenses', this.formatCurrency(this.totalExpenses), '#ef5b3d'],
+      ['Net Profit', this.formatCurrency(this.netProfit), this.netProfit >= 0 ? '#14915f' : '#ef5b3d'],
+      ['Profit Margin', `${this.profitMargin}%`, '#0f7dc2'],
+      ['Pending', this.formatCurrency(this.pendingPayments), '#d89112']
+    ];
+
+    cards.forEach((card, index) => {
+      const x = 14 + (index * 37);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(221, 229, 222);
+      doc.roundedRect(x, y, 34, 22, 3, 3, 'FD');
+      doc.setTextColor(96, 112, 104);
+      doc.setFontSize(7);
+      doc.text(String(card[0]), x + 3, y + 7);
+      doc.setTextColor(card[2] as string);
+      doc.setFontSize(10);
+      doc.text(String(card[1]), x + 3, y + 16, {
+        maxWidth: 28
+      });
+    });
+
+    return y + 28;
+  }
+
+  private drawFinancePdfTableHeader(doc: jsPDF, y: number) {
+    const headers = ['Date', 'Type', 'Category', 'Farm', 'Field', 'Crop', 'Amount', 'Status'];
+    const widths = [24, 20, 26, 30, 28, 26, 24, 24];
+    let x = 8;
+    doc.setFillColor(20, 151, 91);
+    doc.rect(8, y, 194, 9, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    headers.forEach((header, index) => {
+      doc.text(header, x + 1.5, y + 6);
+      x += widths[index];
+    });
+    return y + 10;
+  }
+
+  private drawPdfFooter(doc: jsPDF) {
+    const pageCount = doc.getNumberOfPages();
+
+    for (let page = 1; page <= pageCount; page += 1) {
+      doc.setPage(page);
+      doc.setDrawColor(229, 234, 227);
+      doc.line(14, 286, 196, 286);
+      doc.setTextColor(96, 112, 104);
+      doc.setFontSize(8);
+      doc.text('FarmOps Agricultural Decision Support Platform', 14, 292);
+      doc.text(`Page ${page} of ${pageCount}`, 178, 292);
+    }
   }
 
   private renderChartsSoon() {
@@ -891,7 +1014,7 @@ export class FinancialRecords implements OnInit {
   private getFinancialPerformanceSeries() {
     const buckets = new Map<string, { income: number; expenses: number; timestamp: number }>();
 
-    this.records.forEach(record => {
+    this.filteredRecords.forEach(record => {
       const date = record.date || record.createdAt;
 
       if (!date) {
@@ -970,7 +1093,7 @@ export class FinancialRecords implements OnInit {
   private getExpensesByCategory() {
     const buckets = new Map<string, number>();
 
-    this.records
+    this.filteredRecords
       .filter(record => record.type === 'Expense')
       .forEach(record => {
         const label = record.category || 'Uncategorized';
@@ -985,7 +1108,7 @@ export class FinancialRecords implements OnInit {
     const validCropIds =
       new Set(this.validCrops.map(crop => this.getEntityId(crop)).filter(Boolean));
 
-    this.records
+    this.filteredRecords
       .filter(record => validCropIds.has(this.getEntityId(record.crop)))
       .forEach(record => {
         const label = record.crop?.name || 'Unassigned crop';
@@ -1001,7 +1124,7 @@ export class FinancialRecords implements OnInit {
     const validFieldIds =
       new Set(this.validFields.map(field => this.getEntityId(field)).filter(Boolean));
 
-    this.records
+    this.filteredRecords
       .filter(record => validFieldIds.has(this.getEntityId(record.field)))
       .forEach(record => {
         const label = record.field?.name || 'Unassigned field';

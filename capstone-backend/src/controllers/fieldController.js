@@ -151,7 +151,7 @@ const applyLifecycleInput = async (cropId, { plantingDate, currentStage }) => {
   const nextPlantingDate =
     parsedPlantingDate ||
     crop.plantingDate ||
-    (nextStage === 'Planning' ? new Date() : undefined);
+    undefined;
 
   if (
     requiresPlantingDateForStage(nextStage) &&
@@ -195,6 +195,45 @@ const applyLifecycleInput = async (cropId, { plantingDate, currentStage }) => {
   return crop._id;
 };
 
+const buildFieldLifecycleInput = ({ body, crop, existingField }) => {
+  const nextStage =
+    body.currentStage && lifecycleStages.includes(body.currentStage)
+      ? body.currentStage
+      : existingField?.currentStage || 'Planning';
+  const plantingDate =
+    normalizeLifecycleDate(body.plantingDate) ||
+    existingField?.plantingDate ||
+    null;
+
+  if (
+    requiresPlantingDateForStage(nextStage) &&
+    !plantingDate
+  ) {
+    const error = new Error('Planting date is required for this crop stage.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const expectedHarvestDate =
+    plantingDate
+      ? calculateExpectedHarvestDate(
+          plantingDate,
+          crop?.lifecycleDays || lifecycleDurationDays
+        )
+      : null;
+  const stageChanged =
+    existingField && existingField.currentStage !== nextStage;
+
+  return {
+    currentStage: nextStage,
+    stageStartedAt: stageChanged || !existingField?.stageStartedAt
+      ? new Date()
+      : existingField.stageStartedAt,
+    plantingDate,
+    expectedHarvestDate
+  };
+};
+
 const resolveFieldCrop = async ({
   cropId,
   cropType,
@@ -207,10 +246,7 @@ const resolveFieldCrop = async ({
     await validateCropForFarm(cropId, farmId, user);
 
   if (selectedCrop) {
-    return applyLifecycleInput(selectedCrop, {
-      plantingDate,
-      currentStage
-    });
+    return selectedCrop._id || selectedCrop;
   }
 
   const manualCropType =
@@ -232,10 +268,7 @@ const resolveFieldCrop = async ({
   });
 
   if (existingCrop) {
-    return applyLifecycleInput(existingCrop._id, {
-      plantingDate,
-      currentStage
-    });
+    return existingCrop._id;
   }
 
   const parsedPlantingDate =
@@ -368,6 +401,20 @@ const createField = async (req, res) => {
       plantingDate: req.body.plantingDate,
       currentStage: req.body.currentStage
     });
+    const linkedCrop =
+      crop ? await Crop.findById(crop) : null;
+    const lifecycleInput =
+      crop
+        ? buildFieldLifecycleInput({
+            body: req.body,
+            crop: linkedCrop
+          })
+        : {
+            currentStage: 'Planning',
+            stageStartedAt: new Date(),
+            plantingDate: null,
+            expectedHarvestDate: null
+          };
 
     await validateFieldBoundary({
       polygonCoordinates: req.body.polygonCoordinates,
@@ -378,6 +425,7 @@ const createField = async (req, res) => {
       name: req.body.name,
       cropType: req.body.cropType || '',
       crop,
+      ...lifecycleInput,
       area: req.body.area,
       status: req.body.status || 'Active',
       healthStatus: req.body.healthStatus || 'Good',
@@ -520,6 +568,21 @@ const updateField = async (req, res) => {
       plantingDate: req.body.plantingDate,
       currentStage: req.body.currentStage
     });
+    const linkedCrop =
+      crop ? await Crop.findById(crop) : null;
+    const lifecycleInput =
+      crop
+        ? buildFieldLifecycleInput({
+            body: req.body,
+            crop: linkedCrop,
+            existingField: field
+          })
+        : {
+            currentStage: 'Planning',
+            stageStartedAt: new Date(),
+            plantingDate: null,
+            expectedHarvestDate: null
+          };
 
     const nextFarm =
       await Farm.findById(nextFarmId);
@@ -539,6 +602,10 @@ const updateField = async (req, res) => {
     field.name = req.body.name;
     field.cropType = req.body.cropType || '';
     field.crop = crop;
+    field.currentStage = lifecycleInput.currentStage;
+    field.stageStartedAt = lifecycleInput.stageStartedAt;
+    field.plantingDate = lifecycleInput.plantingDate;
+    field.expectedHarvestDate = lifecycleInput.expectedHarvestDate;
     field.area = req.body.area;
     field.status = req.body.status || 'Active';
     field.healthStatus = req.body.healthStatus || 'Good';

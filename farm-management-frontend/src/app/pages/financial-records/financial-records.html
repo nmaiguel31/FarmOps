@@ -21,6 +21,22 @@
     </div>
   </section>
 
+  <section class="finance-context-panel">
+    <div>
+      <span class="panel-kicker">Financial Scope</span>
+      <h2>{{ selectedFarmContext }}</h2>
+      <p>Summary cards, charts, expense analysis and exports use this filtered view.</p>
+    </div>
+
+    <label>
+      Farm
+      <select class="farmops-field" [(ngModel)]="filterFarm" (ngModelChange)="onFilterFarmChange()" name="contextFarm">
+        <option value="All">All Farms</option>
+        <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+      </select>
+    </label>
+  </section>
+
   <section class="summary-grid" aria-label="Financial summary">
     <article class="summary-card" *ngFor="let item of financialSummaryCards" [ngClass]="item.tone">
       <div class="summary-icon" [ngSwitch]="item.icon">
@@ -111,7 +127,7 @@
     <div class="finance-filters">
       <label>
         Type
-        <select class="farmops-field" [(ngModel)]="filterType" name="filterType">
+        <select class="farmops-field" [(ngModel)]="filterType" (ngModelChange)="onFiltersChanged()" name="filterType">
           <option>All</option>
           <option>Income</option>
           <option>Expense</option>
@@ -120,7 +136,7 @@
 
       <label>
         Category
-        <select class="farmops-field" [(ngModel)]="filterCategory" name="filterCategory">
+        <select class="farmops-field" [(ngModel)]="filterCategory" (ngModelChange)="onFiltersChanged()" name="filterCategory">
           <option value="All">All Categories</option>
           <option *ngFor="let category of allCategories" [value]="category">{{ category }}</option>
         </select>
@@ -144,7 +160,7 @@
 
       <label>
         Crop
-        <select class="farmops-field" [(ngModel)]="filterCrop" name="filterCrop">
+        <select class="farmops-field" [(ngModel)]="filterCrop" (ngModelChange)="onFiltersChanged()" name="filterCrop">
           <option value="All">All Crops</option>
           <option *ngFor="let crop of filterCropOptions" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
         </select>
@@ -152,7 +168,7 @@
 
       <label>
         Payment Status
-        <select class="farmops-field" [(ngModel)]="filterPaymentStatus" name="filterPaymentStatus">
+        <select class="farmops-field" [(ngModel)]="filterPaymentStatus" (ngModelChange)="onFiltersChanged()" name="filterPaymentStatus">
           <option value="All">All Statuses</option>
           <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
         </select>
@@ -161,8 +177,8 @@
       <label class="date-filter">
         Date Range
         <span>
-          <input class="farmops-field" type="date" [(ngModel)]="filterStartDate" name="filterStartDate">
-          <input class="farmops-field" type="date" [(ngModel)]="filterEndDate" name="filterEndDate">
+          <input class="farmops-field" type="date" [(ngModel)]="filterStartDate" (ngModelChange)="onFiltersChanged()" name="filterStartDate">
+          <input class="farmops-field" type="date" [(ngModel)]="filterEndDate" (ngModelChange)="onFiltersChanged()" name="filterEndDate">
         </span>
       </label>
 
@@ -214,6 +230,46 @@
     <ng-template #noRecords>
       <div class="empty-state">No financial records match the current filters.</div>
     </ng-template>
+  </section>
+
+  <section class="expense-insights-grid">
+    <article class="analytics-card">
+      <div class="panel-header">
+        <div>
+          <h2>Top Expense Categories</h2>
+          <p>Largest cost drivers in the selected financial scope</p>
+        </div>
+      </div>
+
+      <div class="expense-list" *ngIf="topExpenseCategories.length; else noExpenseCategories">
+        <div *ngFor="let item of topExpenseCategories">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+      <ng-template #noExpenseCategories>
+        <div class="empty-state compact">No expense categories in this view.</div>
+      </ng-template>
+    </article>
+
+    <article class="analytics-card">
+      <div class="panel-header">
+        <div>
+          <h2>Largest Expenses</h2>
+          <p>Highest expense records for quick cost review</p>
+        </div>
+      </div>
+
+      <div class="expense-list" *ngIf="largestExpenseRecords.length; else noLargestExpenses">
+        <div *ngFor="let record of largestExpenseRecords">
+          <span>{{ record.category }} · {{ getFarmName(record) }}</span>
+          <strong>{{ record.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+      <ng-template #noLargestExpenses>
+        <div class="empty-state compact">No expense records in this view.</div>
+      </ng-template>
+    </article>
   </section>
 
   <div class="drawer-backdrop" [class.visible]="recordFormOpen" (click)="closeRecordForm()"></div>

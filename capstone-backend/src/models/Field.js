@@ -35,6 +35,35 @@ const fieldSchema = new mongoose.Schema(
       default: null
     },
 
+    currentStage: {
+      type: String,
+      enum: [
+        'Planning',
+        'Land Preparation',
+        'Planting',
+        'Vegetative Growth',
+        'Flowering',
+        'Ripening',
+        'Harvest'
+      ],
+      default: 'Planning'
+    },
+
+    stageStartedAt: {
+      type: Date,
+      default: Date.now
+    },
+
+    plantingDate: {
+      type: Date,
+      default: null
+    },
+
+    expectedHarvestDate: {
+      type: Date,
+      default: null
+    },
+
     area: {
       type: Number,
       required: true

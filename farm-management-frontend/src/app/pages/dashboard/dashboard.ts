@@ -349,10 +349,11 @@ export class Dashboard implements OnInit {
       { label: 'Harvested', count: 0, tone: 'harvested' }
     ];
 
-    this.crops.forEach(crop => {
-      const stage = String(crop.currentStage || 'Planning').toLowerCase();
+    this.getFieldCropCycles().forEach(field => {
+      const stage = this.getFieldLifecycleStage(field);
+      const fieldStatus = String(field.status || '').toLowerCase();
 
-      if (stage === 'harvest') {
+      if (fieldStatus.includes('harvested') || stage === 'harvest') {
         overview[3].count++;
       } else if (stage === 'ripening') {
         overview[2].count++;
@@ -590,7 +591,7 @@ export class Dashboard implements OnInit {
 
     this.totalFields = this.fields.length;
     this.totalZones = this.zones.length;
-    this.totalCrops = this.crops.length;
+    this.totalCrops = this.getAssignedCropCount();
     this.totalRecords = this.records.length;
     this.recentRecords = this.records.slice().reverse().slice(0, 5);
     this.totalRevenue = this.sumRecordsByType('Income');
@@ -830,6 +831,10 @@ export class Dashboard implements OnInit {
 
   getCropFieldName(crop: any) {
 
+    if (crop?.fieldName) {
+      return crop.fieldName;
+    }
+
     const field =
       this.fields.find(item =>
         (item.crop?._id || item.crop) === crop._id
@@ -881,21 +886,39 @@ export class Dashboard implements OnInit {
       Winter: 0
     };
 
-    this.crops.forEach((crop: any) => {
+    this.getFieldCropCycles().forEach((field: any) => {
+      const crop =
+        this.getFieldCrop(field);
+
       if (this.seasonCounts.hasOwnProperty(crop.season)) {
         this.seasonCounts[crop.season as keyof typeof this.seasonCounts]++;
       }
     });
 
     this.activeCrops =
-      this.crops.filter(crop => crop.currentStage !== 'Harvest').length;
+      this.getFieldCropCycles()
+        .filter(field => {
+          const status =
+            String(field.status || '').toLowerCase();
+          const stage =
+            this.getFieldLifecycleStage(field);
+
+          return !status.includes('harvested') && stage !== 'harvest';
+        })
+        .length;
 
     const now =
       Date.now();
     const nextWindow =
       now + (45 * 86400000);
 
-    this.upcomingHarvests = this.crops
+    this.upcomingHarvests = this.getFieldCropCycles()
+      .map(field => ({
+        ...this.getFieldCrop(field),
+        field,
+        fieldName: field.name,
+        name: this.getFieldCropLabel(field)
+      }))
       .filter(crop => {
         const harvestDate =
           crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).getTime() : 0;
@@ -906,6 +929,68 @@ export class Dashboard implements OnInit {
         new Date(b.expectedHarvestDate).getTime()
       )
       .slice(0, 5);
+
+  }
+
+  private getFieldCropCycles() {
+
+    return this.fields.filter(field =>
+      this.fieldHasCrop(field) &&
+      !String(field.status || '').toLowerCase().includes('resting')
+    );
+
+  }
+
+  private getFieldCrop(field: any) {
+
+    if (field?.crop && typeof field.crop === 'object') {
+      return field.crop;
+    }
+
+    const cropId =
+      this.getEntityId(field?.crop);
+
+    return this.crops.find(crop => this.getEntityId(crop) === cropId) || {};
+
+  }
+
+  private getFieldLifecycleStage(field: any) {
+
+    const crop =
+      this.getFieldCrop(field);
+
+    return String(
+      field?.currentStage ||
+      field?.cropStage ||
+      crop?.currentStage ||
+      'Planning'
+    ).toLowerCase();
+
+  }
+
+  private getAssignedCropCount() {
+
+    const assigned =
+      new Set<string>();
+
+    this.getFieldCropCycles().forEach(field => {
+      const crop =
+        this.getFieldCrop(field);
+      const cropId =
+        this.getEntityId(field.crop) || this.getEntityId(crop);
+      const cropName =
+        this.getFieldCropLabel(field).trim().toLowerCase();
+      const cropType =
+        String(crop?.type || '').trim().toLowerCase();
+
+      if (cropName && cropName !== 'unassigned') {
+        assigned.add(`name:${cropName}|${cropType}`);
+      } else if (cropId) {
+        assigned.add(`id:${cropId}`);
+      }
+    });
+
+    return assigned.size;
 
   }
 

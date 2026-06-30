@@ -1,94 +1,196 @@
 :host {
   display: block;
-  min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-page);
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: #132033;
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+}
+
+:host *,
+:host *::before,
+:host *::after {
+  box-sizing: border-box;
 }
 
 .login-page {
   display: grid;
-  min-height: 100vh;
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  grid-template-columns: 60% 40%;
+  overflow: hidden;
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  animation: loginFadeIn .28s ease both;
 }
 
 .login-visual {
+  position: relative;
   display: flex;
+  height: 100vh;
+  width: 100%;
+  margin: 0;
+  min-width: 0;
   flex-direction: column;
   justify-content: space-between;
-  padding: 48px;
-  color: #fff;
+  overflow: hidden;
+  padding: 0;
+  color: #ffffff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #062419;
+}
+
+.login-visual::before,
+.login-visual::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+.login-visual::before {
+  z-index: 0;
+  background-image: url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1500&q=84");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.login-visual::after {
+  z-index: 1;
   background:
-    linear-gradient(180deg, rgba(20,32,24,.14), rgba(20,32,24,.78)),
-    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80") center / cover;
+    linear-gradient(90deg, rgba(248, 250, 252, 0) calc(100% - 240px), rgba(248, 250, 252, .08) calc(100% - 156px), rgba(248, 250, 252, .18) calc(100% - 96px), rgba(248, 250, 252, .35) calc(100% - 48px), rgba(248, 250, 252, .55) 100%),
+    linear-gradient(90deg, rgba(5, 55, 40, .75) 0%, rgba(5, 55, 40, .60) 25%, rgba(5, 55, 40, .35) 55%, rgba(5, 55, 40, .10) 80%, rgba(5, 55, 40, 0) 100%),
+    linear-gradient(180deg, rgba(0, 18, 14, .14) 0%, rgba(0, 22, 16, .12) 48%, rgba(0, 20, 14, .38) 100%);
+  pointer-events: none;
 }
 
 .brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-lockup .farmops-logo {
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, .92);
-  border: 1px solid rgba(255, 255, 255, .68);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-
-.brand-lockup strong,
-.brand-lockup small {
+  position: absolute;
+  top: 144px;
+  left: 56px;
+  z-index: 2;
   display: block;
+  width: 520px;
+  max-width: 520px;
+  height: auto;
+  overflow: visible;
+  text-shadow: 0 3px 16px rgba(0, 0, 0, .35);
 }
 
-.brand-lockup small,
-.visual-copy p,
-.eyebrow {
-  color: rgba(255,255,255,.78);
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  object-fit: contain;
 }
 
 .visual-copy {
-  max-width: 720px;
-}
-
-.eyebrow {
-  margin: 0 0 10px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  position: absolute;
+  left: 56px;
+  bottom: 220px;
+  z-index: 2;
+  display: grid;
+  gap: 30px;
+  width: min(100%, 560px);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, .44);
 }
 
 .visual-copy h1 {
-  margin: 0 0 16px;
-  font-size: clamp(40px, 5vw, 72px);
-  line-height: .95;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(38px, 3.35vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
 }
 
-.visual-copy p {
-  max-width: 560px;
+.visual-copy h1 span {
+  display: block;
+}
+
+.visual-copy h1 em {
+  color: #62c54f;
+  font-style: normal;
+}
+
+.secure-copy {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 14px;
+  max-width: 500px;
+  align-items: start;
+}
+
+.secure-copy svg,
+.security-card svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  fill: none;
+  stroke: #35c75b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.secure-copy p {
   margin: 0;
+  color: rgba(255, 255, 255, .96);
   font-size: 16px;
-  line-height: 1.7;
+  line-height: 1.55;
 }
 
 .login-card {
   display: grid;
-  width: min(100%, 480px);
-  align-content: center;
-  gap: 28px;
-  justify-self: center;
-  padding: 48px;
+  height: 100vh;
+  min-width: 0;
+  place-items: center;
+  overflow: visible;
+  padding: 32px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.login-card .eyebrow {
-  color: var(--color-muted-strong);
+.login-panel {
+  display: grid;
+  width: min(100%, 420px);
+  gap: 26px;
 }
 
-.login-card h2 {
+.login-heading h2 {
   margin: 0;
-  font-size: 34px;
-  line-height: 1.05;
+  color: #15243a;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.login-heading p {
+  margin: 12px 0 0;
+  color: #697589;
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .login-form {
@@ -98,34 +200,207 @@
 
 .login-form label {
   display: grid;
-  gap: 8px;
-  color: var(--color-muted-strong);
-  font-size: 13px;
+  gap: 9px;
+  color: #18263a;
+  font-size: 14px;
   font-weight: 800;
 }
 
-.login-button {
-  min-height: 44px;
-  color: #ffffff;
-  background: var(--color-primary);
-  border: 0;
-  border-radius: var(--radius-sm);
-  font-weight: 900;
-  cursor: pointer;
+.input-shell {
+  position: relative;
+  display: block;
 }
 
-@media (max-width: 860px) {
+.input-shell svg {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #667386;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.login-form .farmops-field {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px 0 44px;
+  color: #15243a;
+  background: #ffffff;
+  border: 1px solid #cfd5dc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(18, 31, 51, .03);
+  font-size: 15px;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.login-form .farmops-field::placeholder {
+  color: #7b8494;
+}
+
+.login-form .farmops-field:focus {
+  border-color: #15975b;
+  box-shadow: 0 0 0 4px rgba(21, 151, 91, .12);
+  outline: none;
+}
+
+.login-button {
+  min-height: 50px;
+  color: #ffffff;
+  background: linear-gradient(90deg, #14a15e, #078149);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(8, 129, 73, .18);
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(8, 129, 73, .24);
+}
+
+.login-button:focus-visible {
+  outline: 4px solid rgba(21, 151, 91, .22);
+  outline-offset: 3px;
+}
+
+.security-card {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 15px 16px;
+  background: linear-gradient(90deg, #eef8f2, #f4fbf6);
+  border: 1px solid rgba(21, 151, 91, .08);
+  border-radius: 10px;
+}
+
+.security-card svg {
+  max-width: 20px;
+  max-height: 20px;
+  margin-top: 2px;
+  stroke: #087d4a;
+}
+
+.security-card strong {
+  display: block;
+  color: #18382a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.security-card p {
+  margin: 5px 0 0;
+  color: #334b43;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  :host {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
   .login-page {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
     grid-template-columns: 1fr;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .login-visual {
-    min-height: 360px;
-    padding: 28px;
+    height: auto;
+    min-height: 430px;
+    padding: 34px 28px 40px;
+  }
+
+  .brand-lockup {
+    top: 34px;
+    left: 28px;
+    width: 260px;
+    max-width: 260px;
+  }
+
+  .brand-logo {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  .visual-copy {
+    left: 28px;
+    bottom: 84px;
+    width: min(calc(100% - 56px), 560px);
   }
 
   .login-card {
+    height: auto;
+    min-height: auto;
+    padding: 44px 24px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .login-visual {
+    min-height: 390px;
+    padding: 28px 22px 34px;
+  }
+
+  .brand-lockup {
+    top: 28px;
+    left: 22px;
+    width: 200px;
+    max-width: 200px;
+  }
+
+  .brand-logo {
     width: 100%;
-    padding: 28px;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  .visual-copy {
+    left: 22px;
+    bottom: 54px;
+    width: min(calc(100% - 44px), 560px);
+    gap: 22px;
+  }
+
+  .visual-copy h1 {
+    font-size: 34px;
+  }
+
+  .secure-copy p {
+    font-size: 14px;
+  }
+
+  .login-card {
+    padding: 34px 20px;
   }
 }

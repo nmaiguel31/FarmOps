@@ -51,6 +51,7 @@ export class Crops implements OnInit {
 
   crops: any[] = [];
   farms: any[] = [];
+  fields: any[] = [];
   selectedCrop: any = null;
   cropsLoading = true;
 
@@ -172,6 +173,7 @@ export class Crops implements OnInit {
   ngOnInit(): void {
     this.resetGrowthStages();
     this.loadFarms();
+    this.loadFields();
     this.loadCrops();
   }
 
@@ -192,6 +194,18 @@ export class Crops implements OnInit {
     });
   }
 
+  loadFields() {
+    this.cropService.getFields().subscribe({
+      next: (data: any) => {
+        this.fields = Array.isArray(data) ? [...data] : [];
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error(error);
+      }
+    });
+  }
+
   loadCrops() {
     const startedAt =
       performance.now();
@@ -203,11 +217,11 @@ export class Crops implements OnInit {
 
         if (this.selectedCrop) {
           this.selectedCrop =
-            this.crops.find(crop => crop._id === this.selectedCrop._id) ||
-            this.crops[0] ||
+            this.cropCatalog.find(crop => crop._id === this.selectedCrop._id) ||
+            this.cropCatalog[0] ||
             null;
-        } else if (this.crops.length > 0) {
-          this.selectedCrop = this.crops[0];
+        } else if (this.cropCatalog.length > 0) {
+          this.selectedCrop = this.cropCatalog[0];
         }
 
         this.cropsLoading = false;
@@ -231,7 +245,7 @@ export class Crops implements OnInit {
     const search =
       this.filterSearch.trim().toLowerCase();
 
-    return this.crops.filter(crop => {
+    return this.cropCatalog.filter(crop => {
       const matchesSearch =
         !search ||
         [crop.name, crop.type, crop.season, crop.plantingSeason]
@@ -249,7 +263,7 @@ export class Crops implements OnInit {
   get uniqueCropTypes() {
     return Array.from(
       new Set(
-        this.crops
+        this.cropCatalog
           .map(crop => crop.type)
           .filter(Boolean)
       )
@@ -287,22 +301,22 @@ export class Crops implements OnInit {
   }
 
   get totalCrops() {
-    return this.crops.length;
+    return this.cropCatalog.length;
   }
 
   get mostPlantedCrop() {
-    if (this.crops.length === 0) {
+    if (this.cropCatalog.length === 0) {
       return null;
     }
 
-    return [...this.crops].sort(
+    return [...this.cropCatalog].sort(
       (a, b) => this.getFieldsCount(b) - this.getFieldsCount(a)
     )[0];
   }
 
   get averageLifecycle() {
     return this.average(
-      this.crops
+      this.cropCatalog
         .map(crop => Number(crop.lifecycleDays))
         .filter(value => Number.isFinite(value) && value > 0)
     );
@@ -310,7 +324,7 @@ export class Crops implements OnInit {
 
   get averageNdviTarget() {
     return this.average(
-      this.crops
+      this.cropCatalog
         .map(crop => Number(crop.ndviTarget))
         .filter(value => Number.isFinite(value) && value > 0)
     );
@@ -318,10 +332,14 @@ export class Crops implements OnInit {
 
   get averageMoistureTarget() {
     return this.average(
-      this.crops
+      this.cropCatalog
         .map(crop => Number(crop.moistureTarget))
         .filter(value => Number.isFinite(value) && value > 0)
     );
+  }
+
+  get cropCatalog() {
+    return this.getDedupedCrops(this.crops);
   }
 
   selectCrop(crop: any) {
@@ -445,7 +463,6 @@ export class Crops implements OnInit {
   exportCsv() {
     const headers = [
       'Name',
-      'Icon',
       'Crop Type',
       'Status',
       'Lifecycle Days',
@@ -459,9 +476,11 @@ export class Crops implements OnInit {
       'Description'
     ];
 
-    const rows = this.filteredCrops.map(crop => [
-      crop.name,
-      this.getCropIcon(crop),
+    const exportCrops =
+      this.getDedupedCrops(this.filteredCrops);
+
+    const rows = exportCrops.map(crop => [
+      this.getPlainCropName(crop),
       crop.type,
       this.getCropStatus(crop),
       crop.lifecycleDays || '',
@@ -491,31 +510,49 @@ export class Crops implements OnInit {
 
   exportPdf() {
     const doc = new jsPDF();
-    let y = 18;
+    let y = this.drawPdfHeader(doc, 'Crop Catalog Export');
+    const tableLeft = 14;
+    const widths = [42, 32, 24, 24, 28, 18, 22];
 
-    doc.setFontSize(18);
-    doc.text('FarmOps Crop Templates', 14, y);
-    y += 10;
-    doc.setFontSize(10);
-    doc.text('Crop lifecycle templates and performance targets', 14, y);
-    y += 12;
+    y = this.drawPdfSummary(doc, y);
+    y += 8;
+    y = this.drawCropPdfTableHeader(doc, y, tableLeft, widths);
 
-    this.filteredCrops.forEach((crop, index) => {
-      if (y > 270) {
+    const exportCrops =
+      this.getDedupedCrops(this.filteredCrops);
+
+    exportCrops.forEach((crop) => {
+      if (y > 268) {
         doc.addPage();
-        y = 18;
+        y = this.drawPdfHeader(doc, 'Crop Catalog Export');
+        y = this.drawCropPdfTableHeader(doc, y, tableLeft, widths);
       }
 
-      doc.setFontSize(11);
-      doc.text(`${index + 1}. ${crop.name || 'Unnamed crop'}`, 14, y);
-      y += 6;
-      doc.setFontSize(9);
-      doc.text(`Icon: ${this.getCropIcon(crop)} | Type: ${crop.type || '-'} | Status: ${this.getCropStatus(crop)} | Lifecycle: ${crop.lifecycleDays || '-'} days`, 18, y);
-      y += 5;
-      doc.text(`NDVI: ${this.formatNdvi(crop.ndviTarget)} | Moisture: ${this.formatPercent(crop.moistureTarget)} | Fields: ${this.getFieldsCount(crop)}`, 18, y);
-      y += 8;
+      const values = [
+        this.getPlainCropName(crop),
+        crop.type || '-',
+        `${crop.lifecycleDays || '-'} days`,
+        this.formatNdvi(crop.ndviTarget),
+        this.formatPercent(crop.moistureTarget),
+        String(this.getFieldsCount(crop)),
+        this.getCropStatus(crop)
+      ];
+
+      doc.setFontSize(8);
+      doc.setTextColor(25, 38, 31);
+      let x = tableLeft;
+      values.forEach((value, valueIndex) => {
+        doc.text(String(value), x + 2, y + 6, {
+          maxWidth: widths[valueIndex] - 4
+        });
+        x += widths[valueIndex];
+      });
+      doc.setDrawColor(229, 234, 227);
+      doc.line(tableLeft, y + 10, 196, y + 10);
+      y += 11;
     });
 
+    this.drawPdfFooter(doc);
     doc.save('farmops-crops.pdf');
   }
 
@@ -524,7 +561,44 @@ export class Crops implements OnInit {
   }
 
   getFieldsCount(crop: any) {
-    return Number(crop.fieldsCount || 0);
+    const cropKey =
+      this.getCropCatalogKey(crop);
+    const cropIds =
+      new Set(
+        this.crops
+          .filter(candidate => this.getCropCatalogKey(candidate) === cropKey)
+          .map(candidate => this.getEntityId(candidate))
+          .filter(Boolean)
+      );
+    const cropName =
+      this.getPlainCropName(crop).toLowerCase();
+    const cropType =
+      String(crop?.type || '').trim().toLowerCase();
+
+    if (!cropKey || cropName === 'unnamed crop') {
+      return 0;
+    }
+
+    return this.fields.filter(field => {
+      const fieldCropId =
+        this.getEntityId(field.crop);
+
+      if (fieldCropId && cropIds.has(fieldCropId)) {
+        return true;
+      }
+
+      const fieldCrop =
+        field.crop && typeof field.crop === 'object' ? field.crop : null;
+      const fieldCropName =
+        this.getPlainCropName({
+          name: fieldCrop?.name || field.cropName || field.cropType
+        }).toLowerCase();
+      const fieldCropType =
+        String(fieldCrop?.type || '').trim().toLowerCase();
+
+      return fieldCropName === cropName &&
+        (!cropType || !fieldCropType || fieldCropType === cropType);
+    }).length;
   }
 
   formatNumber(value: number | null, digits = 0) {
@@ -564,6 +638,144 @@ export class Crops implements OnInit {
 
   getStageRange(stage: any) {
     return `${stage.startDay ?? 0} - ${stage.endDay ?? 0} days`;
+  }
+
+  private drawPdfHeader(doc: jsPDF, title: string) {
+    doc.setFillColor(244, 249, 245);
+    doc.rect(0, 0, 210, 34, 'F');
+    doc.setTextColor(20, 122, 68);
+    doc.setFontSize(18);
+    doc.text('FarmOps', 14, 15);
+    doc.setTextColor(18, 31, 25);
+    doc.setFontSize(13);
+    doc.text(title, 14, 25);
+    doc.setTextColor(96, 112, 104);
+    doc.setFontSize(8);
+    doc.text(`Exported on ${new Date().toLocaleDateString('en-US')}`, 154, 15);
+    return 44;
+  }
+
+  private drawPdfSummary(doc: jsPDF, y: number) {
+    const exportCrops =
+      this.getDedupedCrops(this.filteredCrops);
+    const exportLifecycle =
+      this.average(
+        exportCrops
+          .map(crop => Number(crop.lifecycleDays))
+          .filter(value => Number.isFinite(value) && value > 0)
+      );
+
+    const cards = [
+      ['Total Crops', exportCrops.length],
+      ['Most Planted', this.mostPlantedCrop?.name || 'No usage'],
+      ['Avg. Lifecycle', `${exportLifecycle === null ? 0 : Math.round(exportLifecycle)} days`],
+      ['Avg. NDVI Target', this.formatNdvi(this.averageNdviTarget)],
+      ['Avg. Moisture', this.formatPercent(this.averageMoistureTarget)]
+    ];
+
+    cards.forEach((card, index) => {
+      const x = 14 + (index * 37);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(221, 229, 222);
+      doc.roundedRect(x, y, 34, 22, 3, 3, 'FD');
+      doc.setTextColor(96, 112, 104);
+      doc.setFontSize(7);
+      doc.text(String(card[0]), x + 3, y + 7);
+      doc.setTextColor(18, 31, 25);
+      doc.setFontSize(10);
+      doc.text(String(card[1]), x + 3, y + 16, {
+        maxWidth: 28
+      });
+    });
+
+    return y + 28;
+  }
+
+  private drawCropPdfTableHeader(doc: jsPDF, y: number, tableLeft: number, widths: number[]) {
+    const headers = ['Crop', 'Type', 'Lifecycle', 'NDVI', 'Moisture', 'Fields', 'Status'];
+    doc.setFillColor(20, 151, 91);
+    doc.rect(tableLeft, y, 182, 9, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    let x = tableLeft;
+    headers.forEach((header, index) => {
+      doc.text(header, x + 2, y + 6);
+      x += widths[index];
+    });
+    return y + 10;
+  }
+
+  private drawPdfFooter(doc: jsPDF) {
+    const pageCount = doc.getNumberOfPages();
+
+    for (let page = 1; page <= pageCount; page += 1) {
+      doc.setPage(page);
+      doc.setDrawColor(229, 234, 227);
+      doc.line(14, 286, 196, 286);
+      doc.setTextColor(96, 112, 104);
+      doc.setFontSize(8);
+      doc.text('FarmOps Agricultural Decision Support Platform', 14, 292);
+      doc.text(`Page ${page} of ${pageCount}`, 178, 292);
+    }
+  }
+
+  private getDedupedCrops(crops: any[]) {
+    const deduped =
+      new Map<string, any>();
+
+    crops.forEach(crop => {
+      const key =
+        this.getCropCatalogKey(crop);
+
+      if (!key || deduped.has(key)) {
+        return;
+      }
+
+      deduped.set(key, {
+        ...crop,
+        name: this.getPlainCropName(crop)
+      });
+    });
+
+    return Array.from(deduped.values());
+  }
+
+  private getCropCatalogKey(crop: any) {
+    const name =
+      this.getPlainCropName(crop).toLowerCase();
+    const type =
+      String(crop?.type || '').trim().toLowerCase();
+
+    if (!name || name === 'unnamed crop') {
+      return '';
+    }
+
+    return `${name}|${type}`;
+  }
+
+  private getPlainCropName(crop: any) {
+    const raw =
+      String(crop?.name || 'Unnamed crop');
+    const withoutSymbols =
+      raw
+        .replace(/[\uD800-\uDFFF]/g, '')
+        .replace(/[\u2600-\u27BF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return withoutSymbols || 'Unnamed crop';
+  }
+
+  private getEntityId(entity: any) {
+    if (!entity) {
+      return '';
+    }
+
+    if (typeof entity === 'string') {
+      return entity;
+    }
+
+    return String(entity._id || entity.id || '');
   }
 
   private buildCropPayload() {

@@ -49,24 +49,46 @@ const getFieldSoilMoisture = (field) => {
 const getFieldNdviScore = (field) => {
   const value = Number(field.ndviScore);
 
-  if (!Number.isFinite(value)) {
+  if (Number.isFinite(value) && value > 0) {
+    return value > 1 ? value / 100 : value;
+  }
+
+  const healthIndex = getFieldHealthIndex(field);
+
+  if (!Number.isFinite(healthIndex)) {
     return null;
   }
 
-  return value > 1 ? value / 100 : value;
+  if (healthIndex >= 90) {
+    return 0.88;
+  }
+
+  if (healthIndex >= 75) {
+    return 0.76;
+  }
+
+  if (healthIndex >= 60) {
+    return 0.63;
+  }
+
+  if (healthIndex >= 40) {
+    return 0.48;
+  }
+
+  return 0.3;
 };
 
 const getFieldHealthIndex = (field) => {
   const healthIndex = Number(field.healthIndex);
 
-  if (Number.isFinite(healthIndex)) {
+  if (Number.isFinite(healthIndex) && healthIndex > 0) {
     return healthIndex;
   }
 
-  const ndviScore = getFieldNdviScore(field);
+  const explicitNdvi = Number(field.ndviScore);
 
-  if (ndviScore !== null) {
-    return Math.round(ndviScore * 100);
+  if (Number.isFinite(explicitNdvi) && explicitNdvi > 0) {
+    return Math.round((explicitNdvi > 1 ? explicitNdvi / 100 : explicitNdvi) * 100);
   }
 
   const healthStatus = String(field.healthStatus || '').toLowerCase();
@@ -242,34 +264,44 @@ const addFinancialBucketSignals = ({ bucket, candidates, owner, keyScope, label 
   }
 };
 
-const getLifecycleHarvestDate = (crop) => {
-  if (crop.expectedHarvestDate) {
+const getLifecycleHarvestDate = (field, crop) => {
+  if (field?.expectedHarvestDate) {
+    return new Date(field.expectedHarvestDate);
+  }
+
+  if (crop?.expectedHarvestDate) {
     return new Date(crop.expectedHarvestDate);
   }
 
-  if (!crop.plantingDate || !crop.lifecycleDays) {
+  const plantingDate = field?.plantingDate || crop?.plantingDate;
+  const lifecycleDays = crop?.lifecycleDays || lifecycleDurationDays;
+
+  if (!plantingDate || !lifecycleDays) {
     return null;
   }
 
-  const harvestDate = new Date(crop.plantingDate);
-  harvestDate.setDate(harvestDate.getDate() + Number(crop.lifecycleDays));
+  const harvestDate = new Date(plantingDate);
+  harvestDate.setDate(harvestDate.getDate() + Number(lifecycleDays));
   return harvestDate;
 };
 
-const getLifecycleProgress = (crop) => {
-  if (!crop.plantingDate || !crop.lifecycleDays) {
+const getLifecycleProgress = (field, crop) => {
+  const plantingDate = field?.plantingDate || crop?.plantingDate;
+  const lifecycleDays = crop?.lifecycleDays || lifecycleDurationDays;
+
+  if (!plantingDate || !lifecycleDays) {
     return null;
   }
 
-  const startedAt = new Date(crop.plantingDate);
+  const startedAt = new Date(plantingDate);
   const elapsedDays = Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 86400000));
 
-  return Math.min(100, Math.round((elapsedDays / Number(crop.lifecycleDays)) * 100));
+  return Math.min(100, Math.round((elapsedDays / Number(lifecycleDays)) * 100));
 };
 
 const isLifecycleHarvested = (field, crop) => {
   const fieldStatus = String(field.status || '').toLowerCase();
-  const cropStage = String(crop.currentStage || '').toLowerCase();
+  const cropStage = String(field.currentStage || crop.currentStage || '').toLowerCase();
 
   return fieldStatus.includes('harvested') ||
     cropStage === 'harvest';
@@ -824,9 +856,9 @@ const evaluateLifecycleSignals = async (user) => {
     }
 
     const harvested = isLifecycleHarvested(field, crop);
-    const harvestDate = getLifecycleHarvestDate(crop);
-    const progress = getLifecycleProgress(crop);
-    const currentStage = crop.currentStage || 'Planning';
+    const harvestDate = getLifecycleHarvestDate(field, crop);
+    const progress = getLifecycleProgress(field, crop);
+    const currentStage = field.currentStage || crop.currentStage || 'Planning';
 
     if (harvested) {
       addSignal(candidates, {

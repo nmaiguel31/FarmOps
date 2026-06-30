@@ -1,6 +1,8 @@
 import {
+  AfterViewInit,
   ChangeDetectorRef,
   Component,
+  NgZone,
   OnDestroy,
   OnInit,
   inject
@@ -61,7 +63,7 @@ const REPORT_THEME = {
   templateUrl: './executive-reports.html',
   styleUrl: './executive-reports.css'
 })
-export class ExecutiveReports implements OnInit, OnDestroy {
+export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
 
   farms: any[] = [];
   fields: any[] = [];
@@ -74,6 +76,15 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   periodPreset = 'this-month';
   customStartDate = '';
   customEndDate = '';
+  readonly periodOptions = [
+    { value: 'today', label: 'Today' },
+    { value: 'last-7-days', label: 'Last 7 Days' },
+    { value: 'this-month', label: 'This Month' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'last-3-months', label: 'Last 3 Months' },
+    { value: 'this-year', label: 'This Year' },
+    { value: 'custom', label: 'Custom Range' }
+  ];
 
   private farmService = inject(Farm);
   private fieldService = inject(Field);
@@ -82,13 +93,26 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   private financialService = inject(FinancialRecord);
   private operationSignalService = inject(OperationSignal);
   private cdr = inject(ChangeDetectorRef);
+  private zone = inject(NgZone);
   private pdfLogoDataUrl = '';
+  private chartRenderTimer: any = null;
+  private viewReady = false;
+  private dataReady = false;
 
   ngOnInit(): void {
     this.loadReportData();
   }
 
+  ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.renderChartsSoon();
+  }
+
   ngOnDestroy(): void {
+    if (this.chartRenderTimer) {
+      clearTimeout(this.chartRenderTimer);
+    }
+
     Chart.getChart('executiveFinancialTrendChart')?.destroy();
     Chart.getChart('executiveFinancialSummaryChart')?.destroy();
     Chart.getChart('executiveOperationsChart')?.destroy();
@@ -98,6 +122,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   loadReportData() {
     this.loading = true;
     this.loadError = '';
+    this.dataReady = false;
 
     forkJoin({
       farms: this.farmService.getFarms(),
@@ -108,39 +133,33 @@ export class ExecutiveReports implements OnInit, OnDestroy {
       signals: this.operationSignalService.getSignals({ status: 'All' })
     }).subscribe({
       next: (data: any) => {
-        this.farms = [...(data.farms || [])];
-        this.fields = this.filterFieldsByCurrentFarms(data.fields || []);
-        this.zones = this.filterZonesByCurrentFields(data.zones || []);
-        this.records = this.filterRecordsByCurrentFarms(data.records || []);
-        this.crops = this.filterCropsByCurrentContext(data.crops || []);
-        this.signals = [...(data.signals || [])];
-        this.loading = false;
-        this.cdr.detectChanges();
-        this.renderChartsSoon();
+        this.zone.run(() => {
+          this.farms = [...(data.farms || [])];
+          this.fields = this.filterFieldsByCurrentFarms(data.fields || []);
+          this.zones = this.filterZonesByCurrentFields(data.zones || []);
+          this.records = this.filterRecordsByCurrentFarms(data.records || []);
+          this.crops = this.filterCropsByCurrentContext(data.crops || []);
+          this.signals = [...(data.signals || [])];
+          this.loading = false;
+          this.dataReady = true;
+          this.cdr.markForCheck();
+          this.renderChartsSoon();
+        });
       },
       error: (error) => {
-        console.error(error);
-        this.loadError = 'Unable to load executive report data.';
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.zone.run(() => {
+          console.error(error);
+          this.loadError = 'Unable to load executive report data.';
+          this.loading = false;
+          this.dataReady = true;
+          this.cdr.markForCheck();
+        });
       }
     });
   }
 
   get hasOperationalData() {
     return this.farms.length > 0;
-  }
-
-  get periodOptions() {
-    return [
-      { value: 'today', label: 'Today' },
-      { value: 'last-7-days', label: 'Last 7 Days' },
-      { value: 'this-month', label: 'This Month' },
-      { value: 'last-month', label: 'Last Month' },
-      { value: 'last-3-months', label: 'Last 3 Months' },
-      { value: 'this-year', label: 'This Year' },
-      { value: 'custom', label: 'Custom Range' }
-    ];
   }
 
   get periodRange() {
@@ -757,7 +776,7 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   onPeriodChange() {
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     this.renderChartsSoon();
   }
 
@@ -987,11 +1006,22 @@ export class ExecutiveReports implements OnInit, OnDestroy {
   }
 
   private renderChartsSoon() {
-    setTimeout(() => {
-      this.renderFinancialTrendChart();
-      this.renderFinancialSummaryChart();
-      this.renderOperationsChart();
-      this.renderCropProfitChart();
+    if (!this.viewReady || !this.dataReady || this.loading) {
+      return;
+    }
+
+    if (this.chartRenderTimer) {
+      clearTimeout(this.chartRenderTimer);
+    }
+
+    this.chartRenderTimer = setTimeout(() => {
+      this.chartRenderTimer = null;
+      requestAnimationFrame(() => {
+        this.renderFinancialTrendChart();
+        this.renderFinancialSummaryChart();
+        this.renderOperationsChart();
+        this.renderCropProfitChart();
+      });
     }, 100);
   }
 

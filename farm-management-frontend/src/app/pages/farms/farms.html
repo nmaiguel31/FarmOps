@@ -545,7 +545,7 @@
 
             <div class="recommendation-grid">
               <article
-                *ngFor="let recommendation of getFieldRecommendations()"
+                *ngFor="let recommendation of selectedFieldRecommendations"
                 class="recommendation-card"
                 [ngClass]="getRecommendationPriorityClass(recommendation.priority)"
               >
@@ -565,7 +565,7 @@
             </div>
           </section>
 
-          <div class="lifecycle-panel" *ngIf="shouldShowLifecycleTracking(); else noLinkedCropLifecycle">
+          <div class="lifecycle-panel" *ngIf="lifecycleTrackingVisible; else noLinkedCropLifecycle">
             <div class="lifecycle-header">
               <div>
                 <h4>Lifecycle Tracking</h4>
@@ -573,19 +573,19 @@
               </div>
               <div class="lifecycle-progress">
                 <span>Overall Progress</span>
-                <strong>{{ getSelectedCropProgress() }}%</strong>
+                <strong>{{ lifecycleProgress }}%</strong>
                 <div class="progress-bar">
-                  <i [style.width.%]="getSelectedCropProgress()"></i>
+                  <i [style.width.%]="lifecycleProgress"></i>
                 </div>
               </div>
             </div>
 
             <div class="lifecycle-timeline-shell">
-              <div class="lifecycle-track" [style.--lifecycle-progress]="getSelectedCropProgress() + '%'">
-                <article *ngFor="let stage of lifecycleStages; let i = index" [class]="getLifecycleState(i)">
-                  <em *ngIf="getLifecycleState(i) === 'current'">Current Stage</em>
+              <div class="lifecycle-track" [style.--lifecycle-progress]="lifecycleProgress + '%'">
+                <article *ngFor="let stage of lifecycleStageItems" [class]="stage.state">
+                  <em *ngIf="stage.state === 'current'">Current Stage</em>
                   <span class="stage-node">
-                  <ng-container [ngSwitch]="stage">
+                  <ng-container [ngSwitch]="stage.name">
                     <svg *ngSwitchCase="'Planning'" lucideCalendar></svg>
                     <svg *ngSwitchCase="'Land Preparation'" lucideTractor></svg>
                     <svg *ngSwitchCase="'Planting'" lucideSprout></svg>
@@ -596,15 +596,15 @@
                     <svg *ngSwitchDefault lucideActivity></svg>
                   </ng-container>
                   </span>
-                  <strong class="stage-label" [ngClass]="getLifecycleState(i)">{{ stage }}</strong>
-                  <small class="stage-date" [ngClass]="getLifecycleState(i)">{{ getStageDateRange(i) }}</small>
-                  <span *ngIf="getLifecycleState(i) === 'complete'" class="stage-complete-check" aria-hidden="true"></span>
+                  <strong class="stage-label" [ngClass]="stage.state">{{ stage.name }}</strong>
+                  <small class="stage-date" [ngClass]="stage.state">{{ stage.dateRange }}</small>
+                  <span *ngIf="stage.state === 'complete'" class="stage-complete-check" aria-hidden="true"></span>
                 </article>
               </div>
             </div>
 
             <div class="lifecycle-summary-grid">
-              <article *ngFor="let item of getLifecycleInfoCards()">
+              <article *ngFor="let item of lifecycleInfoCards">
                 <span class="info-icon" aria-hidden="true" [ngSwitch]="item.icon">
                   <svg *ngSwitchCase="'planting'" lucideCalendar></svg>
                   <svg *ngSwitchCase="'stage'" lucideLeaf></svg>
@@ -642,8 +642,8 @@
           <ng-template #noLinkedCropLifecycle>
             <div class="lifecycle-panel">
               <div class="empty-state compact">
-                <strong>{{ getLifecycleUnavailableTitle() }}</strong>
-                <span>{{ getLifecycleUnavailableMessage() }}</span>
+                <strong>{{ lifecycleUnavailableTitle }}</strong>
+                <span>{{ lifecycleUnavailableMessage }}</span>
               </div>
             </div>
           </ng-template>
@@ -772,10 +772,11 @@
           type="search"
           placeholder="Search crops by name or type"
           [(ngModel)]="cropSelectorSearch"
+          (ngModelChange)="onCropSelectorSearchChange()"
           name="cropSelectorSearch">
         <select class="farmops-field" [(ngModel)]="selectedCrop" (ngModelChange)="onFieldCropAssignmentChange()" name="selectedCrop">
           <option value="">No crop assigned</option>
-          <optgroup *ngFor="let group of getGroupedCropsForSelectedFarm()" [label]="group.type">
+          <optgroup *ngFor="let group of groupedCropsForSelectedFarm" [label]="group.type">
             <option *ngFor="let crop of group.crops" [value]="crop._id">
               {{ getCropIcon(crop) }} {{ crop.name }} · {{ crop.type }}
             </option>

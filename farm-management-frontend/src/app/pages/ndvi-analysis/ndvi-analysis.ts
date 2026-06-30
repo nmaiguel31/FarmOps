@@ -380,7 +380,7 @@ export class NdviAnalysis implements OnInit, OnDestroy {
   getHealthIndex(field: any) {
     const healthIndex = Number(field.healthIndex);
 
-    if (Number.isFinite(healthIndex)) {
+    if (Number.isFinite(healthIndex) && healthIndex > 0) {
       return this.clamp(healthIndex, 0, 100);
     }
 
