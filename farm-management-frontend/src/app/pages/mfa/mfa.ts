@@ -10,6 +10,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Mfa } from '../../services/mfa';
 import { clearAuthSession } from '../../guards/auth-guard';
+import { ConfirmationService } from '../../shared/confirm/confirmation.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-mfa',
@@ -33,10 +35,13 @@ export class MfaComponent
   mfaVerified = false;
   showVerification = false;
   setupMode = false;
+  mfaActionLoading = false;
 
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
   private mfaService = inject(Mfa);
+  private toast = inject(ToastService);
+  private confirmation = inject(ConfirmationService);
 
   ngOnInit(): void {
 
@@ -73,20 +78,34 @@ export class MfaComponent
   }
 
   generateQR() {
+    if (this.mfaActionLoading) {
+      return;
+    }
+
+    this.mfaActionLoading = true;
 
     this.mfaService.setupMFA()
       .subscribe({
 
       next: (data: any) => {
+        this.mfaActionLoading = false;
 
         this.setupMode = true;
 
         this.qrCode = data.qrCode;
 
         this.showVerification = true;
+        this.toast.info('QR code generated', 'Scan the QR code with your authenticator app.');
 
         this.cdr.detectChanges();
 
+      },
+
+      error: (error) => {
+        this.mfaActionLoading = false;
+        console.error(error);
+        this.toast.error('Could not generate QR code', error?.error?.message || 'Please try again.');
+        this.cdr.detectChanges();
       }
 
       });
@@ -94,12 +113,18 @@ export class MfaComponent
   }
 
   verifyCode() {
+    if (this.mfaActionLoading) {
+      return;
+    }
+
+    this.mfaActionLoading = true;
 
     this.mfaService
       .verifyMFA(this.token)
       .subscribe({
 
       next: (data: any) => {
+        this.mfaActionLoading = false;
 
         this.message = data.message;
 
@@ -120,14 +145,17 @@ export class MfaComponent
         );
 
         this.router.navigate(['/dashboard']);
+        this.toast.success('MFA enabled', 'Your workspace is now protected with multi-factor authentication.');
 
         this.cdr.detectChanges();
 
       },
 
         error: () => {
+          this.mfaActionLoading = false;
 
           this.message = 'Invalid code';
+          this.toast.error('Invalid MFA code', 'Check the 6-digit code and try again.');
 
           this.cdr.detectChanges();
 
@@ -138,12 +166,25 @@ export class MfaComponent
   }
 
   disableMFA() {
+    if (!this.confirmation.confirmDestructive(
+      'Disable multi-factor authentication?',
+      'Your account will be signed out and protected by password-only login until MFA is enabled again.'
+    )) {
+      return;
+    }
+
+    if (this.mfaActionLoading) {
+      return;
+    }
+
+    this.mfaActionLoading = true;
 
     this.mfaService
       .disableMFA()
       .subscribe({
 
         next: (data: any) => {
+          this.mfaActionLoading = false;
 
           this.message =
             data.message;
@@ -159,6 +200,7 @@ export class MfaComponent
           clearAuthSession();
 
           this.router.navigate(['/login']);
+          this.toast.warning('MFA disabled', 'You have been signed out. Sign in again to continue.');
 
           this.cdr.detectChanges();
 
@@ -167,6 +209,9 @@ export class MfaComponent
         error: (error) => {
 
           console.error(error);
+          this.mfaActionLoading = false;
+          this.toast.error('Could not disable MFA', error?.error?.message || 'Please try again.');
+          this.cdr.detectChanges();
 
         }
 

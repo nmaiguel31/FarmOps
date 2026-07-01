@@ -650,9 +650,9 @@
                   <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
                 </select>
               </label>
-              <button type="button" class="primary-btn update-stage-btn" (click)="updateSelectedCropStage()">
+              <button type="button" class="primary-btn update-stage-btn" (click)="updateSelectedCropStage()" [disabled]="lifecycleActionLoading">
                 <svg lucideRefreshCw aria-hidden="true"></svg>
-                Update Stage
+                {{ lifecycleActionLoading ? 'Updating...' : 'Update Stage' }}
               </button>
             </div>
 
@@ -765,12 +765,12 @@
         <strong>{{ farmBoundaryCoordinates.length }} saved points</strong>
       </div>
 
-      <button *ngIf="editingFarmId === ''" class="primary-btn" type="button" (click)="createFarm()">
-        Create Farm
+      <button *ngIf="editingFarmId === ''" class="primary-btn" type="button" (click)="createFarm()" [disabled]="farmActionLoading">
+        {{ farmActionLoading ? 'Creating...' : 'Create Farm' }}
       </button>
 
-      <button *ngIf="editingFarmId !== ''" class="primary-btn" type="button" (click)="updateFarm()">
-        Update Farm
+      <button *ngIf="editingFarmId !== ''" class="primary-btn" type="button" (click)="updateFarm()" [disabled]="farmActionLoading">
+        {{ farmActionLoading ? 'Updating...' : 'Update Farm' }}
       </button>
     </form>
   </aside>
@@ -895,12 +895,12 @@
         <strong>{{ fieldBoundaryCoordinates.length }} saved points</strong>
       </div>
 
-      <button *ngIf="editingFieldId === ''" class="primary-btn" type="button" (click)="createField()">
-        Add Field
+      <button *ngIf="editingFieldId === ''" class="primary-btn" type="button" (click)="createField()" [disabled]="fieldActionLoading">
+        {{ fieldActionLoading ? 'Adding...' : 'Add Field' }}
       </button>
 
-      <button *ngIf="editingFieldId !== ''" class="primary-btn" type="button" (click)="updateField()">
-        Update Field
+      <button *ngIf="editingFieldId !== ''" class="primary-btn" type="button" (click)="updateField()" [disabled]="fieldActionLoading">
+        {{ fieldActionLoading ? 'Updating...' : 'Update Field' }}
       </button>
     </form>
   </aside>
@@ -996,12 +996,12 @@
         <strong>{{ zoneBoundaryCoordinates.length }} saved points</strong>
       </div>
 
-      <button *ngIf="editingZoneId === ''" class="primary-btn" type="button" (click)="createZone()">
-        Create Zone
+      <button *ngIf="editingZoneId === ''" class="primary-btn" type="button" (click)="createZone()" [disabled]="zoneActionLoading">
+        {{ zoneActionLoading ? 'Creating...' : 'Create Zone' }}
       </button>
 
-      <button *ngIf="editingZoneId !== ''" class="primary-btn" type="button" (click)="updateZone()">
-        Update Zone
+      <button *ngIf="editingZoneId !== ''" class="primary-btn" type="button" (click)="updateZone()" [disabled]="zoneActionLoading">
+        {{ zoneActionLoading ? 'Updating...' : 'Update Zone' }}
       </button>
     </form>
   </aside>

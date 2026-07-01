@@ -38,6 +38,8 @@ import {
   LucideWaves
 } from '@lucide/angular';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { ConfirmationService } from '../../shared/confirm/confirmation.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-farms',
@@ -172,6 +174,10 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   lifecycleUnavailableTitle = 'No crop assigned';
   lifecycleUnavailableMessage = 'Assign or create a crop for this field to enable lifecycle tracking.';
   readonly lifecycleDurationDays = 120;
+  farmActionLoading = false;
+  fieldActionLoading = false;
+  zoneActionLoading = false;
+  lifecycleActionLoading = false;
   private farmFormMap: any = null;
   private farmFormMarker: any = null;
   private farmFormPolygon: any = null;
@@ -201,6 +207,8 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private weatherService = inject(WeatherService);
   private operationSignalService = inject(OperationSignal);
   private cdr = inject(ChangeDetectorRef);
+  private toast = inject(ToastService);
+  private confirmation = inject(ConfirmationService);
 
   ngOnInit(): void {
 
@@ -271,6 +279,10 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
 }
 
   createFarm() {
+  if (this.farmActionLoading) {
+    return;
+  }
+  this.farmActionLoading = true;
 
   const farmData = {
     name: this.farmName,
@@ -294,10 +306,16 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
 
       this.loadFarms();
       this.farmFormOpen = false;
+      this.toast.success('Farm created', `${farmData.name || 'Farm'} was added.`);
+      this.farmActionLoading = false;
 
     },
 
-    error: (error) => console.error(error)
+    error: (error) => {
+      console.error(error);
+      this.farmActionLoading = false;
+      this.toast.error('Could not create farm', error?.error?.message || 'Please review the farm details and try again.');
+    }
 
   });
 
@@ -320,6 +338,10 @@ editFarm(farm: any) {
 }
 
 updateFarm() {
+  if (this.farmActionLoading) {
+    return;
+  }
+  this.farmActionLoading = true;
 
   const farmData = {
     name: this.farmName,
@@ -346,6 +368,8 @@ updateFarm() {
 
       this.loadFarms();
       this.farmFormOpen = false;
+      this.toast.success('Farm updated', `${farmData.name || 'Farm'} was saved.`);
+      this.farmActionLoading = false;
 
       this.cdr.detectChanges();
 
@@ -355,7 +379,11 @@ updateFarm() {
 
     },
 
-    error: (error) => console.error(error)
+    error: (error) => {
+      console.error(error);
+      this.farmActionLoading = false;
+      this.toast.error('Could not update farm', error?.error?.message || 'Please try again.');
+    }
 
   });
 
@@ -1063,8 +1091,9 @@ updateFarm() {
   }
   deleteFarm(id: string) {
 
-    const confirmed = confirm(
-      'Are you sure you want to delete this farm?'
+    const confirmed = this.confirmation.confirmDestructive(
+      'Delete this farm?',
+      'This will remove the farm and related operational context from the workspace. This action cannot be undone.'
     );
 
     if (!confirmed) {
@@ -1081,6 +1110,7 @@ updateFarm() {
         }
 
         this.loadFarms();
+        this.toast.success('Farm deleted', 'The farm was removed.');
 
         setTimeout(() => {
         this.cdr.detectChanges();
@@ -1092,6 +1122,7 @@ updateFarm() {
         this.fieldLifecycleError =
           error?.error?.message || 'Unable to update field.';
         console.error(error);
+        this.toast.error('Could not delete farm', error?.error?.message || 'Please try again.');
       }
 
     });
@@ -1162,6 +1193,10 @@ updateFarm() {
       return;
     }
 
+    if (this.fieldActionLoading) {
+      return;
+    }
+
     if (!this.validateFieldLifecycleBeforeSave()) {
       return;
     }
@@ -1169,6 +1204,8 @@ updateFarm() {
     if (!this.validateFieldBoundaryBeforeSave()) {
       return;
     }
+
+    this.fieldActionLoading = true;
 
     this.fieldService.createField(
       this.getFieldData()
@@ -1181,6 +1218,8 @@ updateFarm() {
         this.loadFields();
         this.loadCrops();
         this.renderSelectedFarmMap();
+        this.toast.success('Field created', 'The field was added to the selected farm.');
+        this.fieldActionLoading = false;
 
       },
 
@@ -1188,6 +1227,8 @@ updateFarm() {
         this.fieldLifecycleError =
           error?.error?.message || 'Unable to create field.';
         console.error(error);
+        this.fieldActionLoading = false;
+        this.toast.error('Could not create field', this.fieldLifecycleError);
       }
 
     });
@@ -1226,6 +1267,9 @@ updateFarm() {
   }
 
   updateField() {
+    if (this.fieldActionLoading) {
+      return;
+    }
 
     if (!this.validateFieldLifecycleBeforeSave()) {
       return;
@@ -1234,6 +1278,8 @@ updateFarm() {
     if (!this.validateFieldBoundaryBeforeSave()) {
       return;
     }
+
+    this.fieldActionLoading = true;
 
     this.fieldService.updateField(
       this.editingFieldId,
@@ -1247,10 +1293,16 @@ updateFarm() {
         this.loadFields();
         this.loadCrops();
         this.renderSelectedFarmMap();
+        this.toast.success('Field updated', 'The field changes were saved.');
+        this.fieldActionLoading = false;
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.fieldActionLoading = false;
+        this.toast.error('Could not update field', error?.error?.message || 'Please try again.');
+      }
 
     });
 
@@ -1258,8 +1310,9 @@ updateFarm() {
 
   deleteField(id: string) {
 
-    const confirmed = confirm(
-      'Are you sure you want to delete this field?'
+    const confirmed = this.confirmation.confirmDestructive(
+      'Delete this field?',
+      'This removes the field boundary, lifecycle context, and related operational view. This action cannot be undone.'
     );
 
     if (!confirmed) {
@@ -1277,10 +1330,14 @@ updateFarm() {
 
         this.loadFields();
         this.renderSelectedFarmMap();
+        this.toast.success('Field deleted', 'The field was removed.');
 
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.toast.error('Could not delete field', error?.error?.message || 'Please try again.');
+      }
 
     });
 
@@ -1292,9 +1349,15 @@ updateFarm() {
       return;
     }
 
+    if (this.zoneActionLoading) {
+      return;
+    }
+
     if (!this.validateZoneBoundaryBeforeSave()) {
       return;
     }
+
+    this.zoneActionLoading = true;
 
     this.zoneService.createZone(
       this.getZoneData()
@@ -1304,9 +1367,15 @@ updateFarm() {
         this.resetZoneForm();
         this.zoneFormOpen = false;
         this.loadZones();
+        this.toast.success('Zone created', 'The management zone was added.');
+        this.zoneActionLoading = false;
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.zoneActionLoading = false;
+        this.toast.error('Could not create zone', error?.error?.message || 'Please try again.');
+      }
 
     });
 
@@ -1338,9 +1407,15 @@ updateFarm() {
       return;
     }
 
+    if (this.zoneActionLoading) {
+      return;
+    }
+
     if (!this.validateZoneBoundaryBeforeSave()) {
       return;
     }
+
+    this.zoneActionLoading = true;
 
     this.zoneService.updateZone(
       this.editingZoneId,
@@ -1351,9 +1426,15 @@ updateFarm() {
         this.resetZoneForm();
         this.zoneFormOpen = false;
         this.loadZones();
+        this.toast.success('Zone updated', 'The management zone was saved.');
+        this.zoneActionLoading = false;
       },
 
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.zoneActionLoading = false;
+        this.toast.error('Could not update zone', error?.error?.message || 'Please try again.');
+      }
 
     });
 
@@ -1361,7 +1442,10 @@ updateFarm() {
 
   deleteZone(id: string) {
 
-    if (!confirm('Delete this zone?')) {
+    if (!this.confirmation.confirmDestructive(
+      'Delete this management zone?',
+      'This removes the zone polygon and zone-specific monitoring context. This action cannot be undone.'
+    )) {
       return;
     }
 
@@ -1372,12 +1456,14 @@ updateFarm() {
         }
 
         this.loadZones();
+        this.toast.success('Zone deleted', 'The management zone was removed.');
       },
 
       error: (error) => {
         this.lifecycleUpdateError =
           error?.error?.message || 'Unable to update crop stage.';
         console.error(error);
+        this.toast.error('Could not delete zone', error?.error?.message || 'Please try again.');
       }
     });
 
@@ -2223,6 +2309,9 @@ updateFarm() {
   }
 
   updateSelectedCropStage() {
+    if (this.lifecycleActionLoading) {
+      return;
+    }
 
     const crop = this.getSelectedCrop();
     const field = this.selectedField;
@@ -2275,17 +2364,23 @@ updateFarm() {
       polygonCoordinates: field.polygonCoordinates || []
     };
 
+    this.lifecycleActionLoading = true;
+
     this.fieldService.updateField(field._id, payload).subscribe({
       next: () => {
         this.pendingLifecycleStage = stage;
         this.lifecycleUpdateError = '';
         this.loadCrops();
         this.loadFields();
+        this.toast.success('Lifecycle stage updated', `Current stage set to ${stage}.`);
+        this.lifecycleActionLoading = false;
       },
       error: (error) => {
         this.lifecycleUpdateError =
           error?.error?.message || 'Unable to update crop stage.';
         console.error(error);
+        this.lifecycleActionLoading = false;
+        this.toast.error('Could not update lifecycle stage', this.lifecycleUpdateError);
       }
     });
 

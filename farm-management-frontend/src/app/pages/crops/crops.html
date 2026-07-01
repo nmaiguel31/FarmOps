@@ -6,13 +6,13 @@
     </div>
 
     <div class="header-actions">
-      <button type="button" class="ghost-btn" (click)="exportCsv()">
+      <button type="button" class="ghost-btn" (click)="exportCsv()" [disabled]="exportActionLoading">
         <svg lucideDownload></svg>
-        Export CSV
+        {{ exportActionLoading ? 'Exporting...' : 'Export CSV' }}
       </button>
-      <button type="button" class="ghost-btn" (click)="exportPdf()">
+      <button type="button" class="ghost-btn" (click)="exportPdf()" [disabled]="exportActionLoading">
         <svg lucideFileText></svg>
-        Export PDF
+        {{ exportActionLoading ? 'Exporting...' : 'Export PDF' }}
       </button>
       <button type="button" class="primary-btn" (click)="openCreateCrop()">
         <svg lucidePlus></svg>
@@ -407,11 +407,11 @@
         </div>
       </section>
 
-      <button *ngIf="!editingCropId" type="button" class="primary-btn full-width" (click)="createCrop()">
-        Add Crop
+      <button *ngIf="!editingCropId" type="button" class="primary-btn full-width" (click)="createCrop()" [disabled]="cropActionLoading">
+        {{ cropActionLoading ? 'Adding...' : 'Add Crop' }}
       </button>
-      <button *ngIf="editingCropId" type="button" class="primary-btn full-width" (click)="updateCrop()">
-        Update Crop
+      <button *ngIf="editingCropId" type="button" class="primary-btn full-width" (click)="updateCrop()" [disabled]="cropActionLoading">
+        {{ cropActionLoading ? 'Updating...' : 'Update Crop' }}
       </button>
     </form>
   </aside>

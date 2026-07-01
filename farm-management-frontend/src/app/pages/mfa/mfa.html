@@ -33,8 +33,12 @@
         <input class="farmops-field code-input" type="text" placeholder="Enter 6-digit code" [(ngModel)]="token">
 
         <div class="action-row">
-          <button type="button" class="primary-btn" (click)="verifyCode()">Verify Code</button>
-          <button type="button" class="danger-btn" (click)="disableMFA()">Disable MFA</button>
+          <button type="button" class="primary-btn" (click)="verifyCode()" [disabled]="mfaActionLoading">
+            {{ mfaActionLoading ? 'Verifying...' : 'Verify Code' }}
+          </button>
+          <button type="button" class="danger-btn" (click)="disableMFA()" [disabled]="mfaActionLoading">
+            {{ mfaActionLoading ? 'Working...' : 'Disable MFA' }}
+          </button>
         </div>
       </div>
 
@@ -44,7 +48,9 @@
           <p>Your account is missing an additional verification step.</p>
         </div>
 
-        <button type="button" class="primary-btn" (click)="generateQR()">Generate New QR Code</button>
+        <button type="button" class="primary-btn" (click)="generateQR()" [disabled]="mfaActionLoading">
+          {{ mfaActionLoading ? 'Generating...' : 'Generate New QR Code' }}
+        </button>
       </div>
 
       <div class="setup-flow" *ngIf="setupMode">
@@ -57,7 +63,9 @@
         </div>
 
         <div class="action-row">
-          <button type="button" class="secondary-btn" (click)="generateQR()">Regenerate QR Code</button>
+          <button type="button" class="secondary-btn" (click)="generateQR()" [disabled]="mfaActionLoading">
+            {{ mfaActionLoading ? 'Generating...' : 'Regenerate QR Code' }}
+          </button>
         </div>
 
         <div class="verify-panel">
@@ -65,7 +73,9 @@
             Verification code
             <input class="farmops-field code-input" type="text" placeholder="Enter 6-digit code" [(ngModel)]="token">
           </label>
-          <button type="button" class="primary-btn" (click)="verifyCode()">Verify</button>
+          <button type="button" class="primary-btn" (click)="verifyCode()" [disabled]="mfaActionLoading">
+            {{ mfaActionLoading ? 'Verifying...' : 'Verify' }}
+          </button>
         </div>
       </div>
 

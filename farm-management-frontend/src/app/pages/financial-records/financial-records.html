@@ -6,13 +6,13 @@
     </div>
 
     <div class="header-actions">
-      <button type="button" class="ghost-btn" (click)="exportCSV()">
+      <button type="button" class="ghost-btn" (click)="exportCSV()" [disabled]="exportActionLoading">
         <svg lucideDownload></svg>
-        Export CSV
+        {{ exportActionLoading ? 'Exporting...' : 'Export CSV' }}
       </button>
-      <button type="button" class="ghost-btn" (click)="exportPDF()">
+      <button type="button" class="ghost-btn" (click)="exportPDF()" [disabled]="exportActionLoading">
         <svg lucideFileText></svg>
-        Export PDF
+        {{ exportActionLoading ? 'Exporting...' : 'Export PDF' }}
       </button>
       <button type="button" class="primary-btn" (click)="openCreateRecord()">
         <svg lucidePlus></svg>
@@ -431,8 +431,12 @@
         <small *ngIf="recordQuantity && recordUnitPrice">Auto-calculated from quantity x unit price.</small>
       </div>
 
-      <button *ngIf="editingRecordId === ''" class="primary-btn full-width" type="button" (click)="createRecord()">Create Record</button>
-      <button *ngIf="editingRecordId !== ''" class="primary-btn full-width" type="button" (click)="updateRecord()">Update Record</button>
+      <button *ngIf="editingRecordId === ''" class="primary-btn full-width" type="button" (click)="createRecord()" [disabled]="recordActionLoading">
+        {{ recordActionLoading ? 'Creating...' : 'Create Record' }}
+      </button>
+      <button *ngIf="editingRecordId !== ''" class="primary-btn full-width" type="button" (click)="updateRecord()" [disabled]="recordActionLoading">
+        {{ recordActionLoading ? 'Updating...' : 'Update Record' }}
+      </button>
     </form>
   </aside>
 </main>

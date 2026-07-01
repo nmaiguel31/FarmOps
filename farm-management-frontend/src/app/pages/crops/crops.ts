@@ -27,6 +27,8 @@ import {
 } from '@lucide/angular';
 import { Crop } from '../../services/crop';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { ConfirmationService } from '../../shared/confirm/confirmation.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 type GrowthStageForm = {
   name: string;
@@ -61,6 +63,8 @@ export class Crops implements OnInit {
   fields: any[] = [];
   selectedCrop: any = null;
   cropsLoading = true;
+  cropActionLoading = false;
+  exportActionLoading = false;
 
   cropFormOpen = false;
   editingCropId = '';
@@ -176,6 +180,8 @@ export class Crops implements OnInit {
 
   private cropService = inject(Crop);
   private cdr = inject(ChangeDetectorRef);
+  private toast = inject(ToastService);
+  private confirmation = inject(ConfirmationService);
 
   ngOnInit(): void {
     this.resetGrowthStages();
@@ -415,42 +421,61 @@ export class Crops implements OnInit {
   }
 
   createCrop() {
+    if (this.cropActionLoading) {
+      return;
+    }
+    this.cropActionLoading = true;
+
     this.cropService.createCrop(this.buildCropPayload()).subscribe({
       next: (crop: any) => {
         this.cropFormOpen = false;
+        this.cropActionLoading = false;
         this.selectedCrop = crop;
         this.loadCrops();
+        this.toast.success('Crop created', `${crop.name || 'Crop'} is ready to use.`);
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
-        alert(error?.error?.message || 'Could not create crop.');
+        this.cropActionLoading = false;
+        this.toast.error('Could not create crop', error?.error?.message || 'Please review the crop details and try again.');
       }
     });
   }
 
   updateCrop() {
+    if (this.cropActionLoading) {
+      return;
+    }
+    this.cropActionLoading = true;
+
     this.cropService.updateCrop(
       this.editingCropId,
       this.buildCropPayload()
     ).subscribe({
       next: (crop: any) => {
         this.cropFormOpen = false;
+        this.cropActionLoading = false;
         this.editingCropId = '';
         this.selectedCrop = crop;
         this.loadCrops();
+        this.toast.success('Crop updated', `${crop.name || 'Crop'} was saved.`);
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
-        alert(error?.error?.message || 'Could not update crop.');
+        this.cropActionLoading = false;
+        this.toast.error('Could not update crop', error?.error?.message || 'Please try again.');
       }
     });
   }
 
   deleteCrop(id: string) {
     const confirmed =
-      confirm('Are you sure you want to delete this crop? Fields using it will become unassigned.');
+      this.confirmation.confirmDestructive(
+        'Delete this crop?',
+        'Fields using this crop may become unassigned. This action cannot be undone.'
+      );
 
     if (!confirmed) {
       return;
@@ -459,15 +484,21 @@ export class Crops implements OnInit {
     this.cropService.deleteCrop(id).subscribe({
       next: () => {
         this.loadCrops();
+        this.toast.success('Crop deleted', 'The crop was removed from the catalog.');
       },
       error: (error) => {
         console.error(error);
-        alert(error?.error?.message || 'Could not delete crop.');
+        this.toast.error('Could not delete crop', error?.error?.message || 'Please try again.');
       }
     });
   }
 
   exportCsv() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
+
     const headers = [
       'Name',
       'Crop Type',
@@ -513,9 +544,16 @@ export class Crops implements OnInit {
     link.download = 'farmops-crops.csv';
     link.click();
     URL.revokeObjectURL(link.href);
+    this.toast.success('Crops CSV exported', 'The crop catalog CSV is ready.');
+    this.exportActionLoading = false;
   }
 
   async exportPdf() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
+
     const doc = new jsPDF();
     const logoDataUrl = await loadFarmOpsPdfLogo();
     let y = this.drawPdfHeader(doc, logoDataUrl, 'Crop Catalog Report');
@@ -562,6 +600,8 @@ export class Crops implements OnInit {
 
     addFarmOpsPdfFooters(doc);
     doc.save('farmops-crops.pdf');
+    this.toast.success('Crops PDF exported', 'The crop catalog report is ready.');
+    this.exportActionLoading = false;
   }
 
   getCropStatus(crop: any) {

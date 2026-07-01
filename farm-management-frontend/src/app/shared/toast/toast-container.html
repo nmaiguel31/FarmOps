@@ -1,0 +1,26 @@
+<section class="toast-stack" aria-live="polite" aria-label="FarmOps notifications">
+  <article
+    class="toast-card"
+    *ngFor="let toast of toasts$ | async"
+    [ngClass]="toast.type">
+    <span class="toast-icon" [ngSwitch]="toast.type">
+      <svg *ngSwitchCase="'success'" lucideCheckCircle2></svg>
+      <svg *ngSwitchCase="'error'" lucideAlertCircle></svg>
+      <svg *ngSwitchCase="'warning'" lucideTriangleAlert></svg>
+      <svg *ngSwitchDefault lucideInfo></svg>
+    </span>
+
+    <div class="toast-copy">
+      <strong>{{ toast.title }}</strong>
+      <p *ngIf="toast.message">{{ toast.message }}</p>
+    </div>
+
+    <button
+      type="button"
+      class="toast-dismiss"
+      (click)="toastService.dismiss(toast.id)"
+      aria-label="Dismiss notification">
+      <svg lucideX></svg>
+    </button>
+  </article>
+</section>

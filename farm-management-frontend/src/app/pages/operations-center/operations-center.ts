@@ -15,6 +15,7 @@ import {
 import { Subscription, filter } from 'rxjs';
 import { OperationSignal } from '../../services/operation-signal';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { ToastService } from '../../shared/toast/toast.service';
 import {
   LucideActivity,
   LucideBadgeDollarSign,
@@ -88,6 +89,7 @@ export class OperationsCenter implements OnInit, OnDestroy {
   private operationSignalService = inject(OperationSignal);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private toast = inject(ToastService);
   private routeSubscription?: Subscription;
   private hasLoadedSignals = false;
   private loadingRequestInFlight = false;
@@ -226,12 +228,14 @@ export class OperationsCenter implements OnInit, OnDestroy {
 
         this.resolvingSignalIds.delete(signalId);
         this.message = 'Operation signal resolved.';
+        this.toast.success('Alert resolved', `${updatedSignal.title || 'Operation signal'} moved to history.`);
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.resolvingSignalIds.delete(signalId);
         this.message = 'Unable to resolve this operation signal.';
+        this.toast.error('Could not resolve alert', error?.error?.message || 'Please try again.');
         this.cdr.detectChanges();
       }
     });

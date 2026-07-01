@@ -35,6 +35,7 @@ import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { ToastService } from '../../shared/toast/toast.service';
 
 Chart.register(...registerables);
 
@@ -80,6 +81,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   signals: any[] = [];
   loading = true;
   loadError = '';
+  exportActionLoading = false;
   periodPreset = 'this-month';
   customStartDate = '';
   customEndDate = '';
@@ -101,6 +103,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   private operationSignalService = inject(OperationSignal);
   private cdr = inject(ChangeDetectorRef);
   private zone = inject(NgZone);
+  private toast = inject(ToastService);
   private pdfLogoDataUrl = '';
   private chartRenderTimer: any = null;
   private viewReady = false;
@@ -609,6 +612,11 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   exportCSV() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
+
     const sections = [
       ['Executive Summary'],
       ['Metric', 'Value', 'Notes'],
@@ -663,9 +671,16 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     link.download = 'farmops-executive-report.csv';
     link.click();
     window.URL.revokeObjectURL(url);
+    this.toast.success('Report CSV exported', 'Executive report data is ready.');
+    this.exportActionLoading = false;
   }
 
   async exportPDF() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
+
     this.pdfLogoDataUrl = await loadFarmOpsPdfLogo();
     const doc = new jsPDF();
     let y = this.drawPdfHeader(doc);
@@ -762,6 +777,8 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
 
     addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Executive-Report.pdf');
+    this.toast.success('Report PDF exported', 'Executive report PDF is ready.');
+    this.exportActionLoading = false;
   }
 
   formatCurrency(value: any) {

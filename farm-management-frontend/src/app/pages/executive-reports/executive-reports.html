@@ -7,13 +7,13 @@
     </div>
 
     <div class="hero-actions">
-      <button type="button" class="report-button secondary" (click)="exportCSV()" [disabled]="loading">
+      <button type="button" class="report-button secondary" (click)="exportCSV()" [disabled]="loading || exportActionLoading">
         <svg lucideDownload></svg>
-        Export CSV
+        {{ exportActionLoading ? 'Exporting...' : 'Export CSV' }}
       </button>
-      <button type="button" class="report-button" (click)="exportPDF()" [disabled]="loading">
+      <button type="button" class="report-button" (click)="exportPDF()" [disabled]="loading || exportActionLoading">
         <svg lucideFileText></svg>
-        Export PDF
+        {{ exportActionLoading ? 'Exporting...' : 'Export PDF' }}
       </button>
     </div>
   </section>

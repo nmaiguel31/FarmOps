@@ -28,6 +28,8 @@ import {
   LucideTrendingUp
 } from '@lucide/angular';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { ConfirmationService } from '../../shared/confirm/confirmation.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 Chart.register(...registerables);
 
@@ -58,6 +60,8 @@ export class FinancialRecords implements OnInit {
   fields: any[] = [];
   crops: any[] = [];
   recordsLoading = true;
+  recordActionLoading = false;
+  exportActionLoading = false;
 
   recordType = 'Expense';
   recordCategory = 'Other Expense';
@@ -112,6 +116,8 @@ export class FinancialRecords implements OnInit {
 
   private financialService = inject(FinancialRecord);
   private cdr = inject(ChangeDetectorRef);
+  private toast = inject(ToastService);
+  private confirmation = inject(ConfirmationService);
 
   ngOnInit(): void {
     this.loadRecords();
@@ -170,13 +176,24 @@ export class FinancialRecords implements OnInit {
   }
 
   createRecord() {
+    if (this.recordActionLoading) {
+      return;
+    }
+    this.recordActionLoading = true;
+
     this.financialService.createRecord(this.getRecordData()).subscribe({
       next: () => {
         this.resetRecordForm();
         this.recordFormOpen = false;
+        this.recordActionLoading = false;
         this.loadRecords();
+        this.toast.success('Financial record created', 'The transaction was added.');
       },
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.recordActionLoading = false;
+        this.toast.error('Could not create financial record', error?.error?.message || 'Please review the form and try again.');
+      }
     });
   }
 
@@ -201,6 +218,11 @@ export class FinancialRecords implements OnInit {
   }
 
   updateRecord() {
+    if (this.recordActionLoading) {
+      return;
+    }
+    this.recordActionLoading = true;
+
     this.financialService.updateRecord(
       this.editingRecordId,
       this.getRecordData()
@@ -208,15 +230,22 @@ export class FinancialRecords implements OnInit {
       next: () => {
         this.resetRecordForm();
         this.recordFormOpen = false;
+        this.recordActionLoading = false;
         this.loadRecords();
+        this.toast.success('Financial record updated', 'The transaction was saved.');
       },
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.recordActionLoading = false;
+        this.toast.error('Could not update financial record', error?.error?.message || 'Please try again.');
+      }
     });
   }
 
   deleteRecord(id: string) {
-    const confirmed = confirm(
-      'Are you sure you want to delete this financial record?'
+    const confirmed = this.confirmation.confirmDestructive(
+      'Delete this financial record?',
+      'This removes the transaction from profitability reports and exports. This action cannot be undone.'
     );
 
     if (!confirmed) {
@@ -224,8 +253,14 @@ export class FinancialRecords implements OnInit {
     }
 
     this.financialService.deleteRecord(id).subscribe({
-      next: () => this.loadRecords(),
-      error: (error) => console.error(error)
+      next: () => {
+        this.loadRecords();
+        this.toast.success('Financial record deleted', 'The transaction was removed.');
+      },
+      error: (error) => {
+        console.error(error);
+        this.toast.error('Could not delete financial record', error?.error?.message || 'Please try again.');
+      }
     });
   }
 
@@ -619,6 +654,10 @@ export class FinancialRecords implements OnInit {
   }
 
   exportCSV() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
     const headers = [
       'Date',
       'Type',
@@ -667,9 +706,16 @@ export class FinancialRecords implements OnInit {
     link.download = 'financial-records.csv';
     link.click();
     window.URL.revokeObjectURL(url);
+    this.toast.success('Financial CSV exported', 'The financial records CSV is ready.');
+    this.exportActionLoading = false;
   }
 
   async exportPDF() {
+    if (this.exportActionLoading) {
+      return;
+    }
+    this.exportActionLoading = true;
+
     const doc = new jsPDF();
     const records = this.filteredRecords;
     const logoDataUrl = await loadFarmOpsPdfLogo();
@@ -713,6 +759,8 @@ export class FinancialRecords implements OnInit {
 
     addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Financial-Report.pdf');
+    this.toast.success('Financial PDF exported', 'The financial report is ready.');
+    this.exportActionLoading = false;
   }
 
   private getRecordData() {

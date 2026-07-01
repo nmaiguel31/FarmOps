@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { Auth } from '../../services/auth';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -14,11 +15,18 @@ export class Login {
 
   email = '';
   password = '';
+  loginLoading = false;
 
   private authService = inject(Auth);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   onLogin() {
+    if (this.loginLoading) {
+      return;
+    }
+
+    this.loginLoading = true;
 
     this.authService.login(
       this.email,
@@ -26,6 +34,7 @@ export class Login {
     ).subscribe({
 
       next: (response: any) => {
+    this.loginLoading = false;
 
     localStorage.setItem(
       'token',
@@ -45,6 +54,7 @@ export class Login {
       );
 
       this.router.navigate(['/mfa']);
+      this.toast.info('MFA verification required', 'Enter your authenticator code to continue.');
 
     } else {
 
@@ -54,13 +64,15 @@ export class Login {
       );
 
       this.router.navigate(['/dashboard']);
+      this.toast.success('Signed in', 'Welcome back to FarmOps.');
 
     }
   },
 
       error: (error) => {
+        this.loginLoading = false;
         console.error('Login failed', error);
-        alert('Invalid credentials');
+        this.toast.error('Login failed', error?.error?.message || 'Invalid email or password.');
       }
 
     });
