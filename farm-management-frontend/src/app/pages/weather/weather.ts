@@ -30,6 +30,7 @@ import {
   WeatherInsights,
   WeatherService
 } from '../../services/weather';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { Farm } from '../../services/farm';
 import { OperationSignal } from '../../services/operation-signal';
 
@@ -56,7 +57,8 @@ type WeatherRisk = {
     LucideSun,
     LucideThermometer,
     LucideUmbrella,
-    LucideWind
+    LucideWind,
+    EmptyStateComponent
   ],
   templateUrl: './weather.html',
   styleUrl: './weather.css'

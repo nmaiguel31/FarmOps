@@ -26,6 +26,7 @@ import {
   LucideTrash2
 } from '@lucide/angular';
 import { Crop } from '../../services/crop';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 type GrowthStageForm = {
   name: string;
@@ -47,7 +48,8 @@ type GrowthStageForm = {
     LucidePlus,
     LucideSearch,
     LucideTarget,
-    LucideTrash2
+    LucideTrash2,
+    EmptyStateComponent
   ],
   templateUrl: './crops.html',
   styleUrl: './crops.css',

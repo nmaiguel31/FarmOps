@@ -22,14 +22,24 @@
     <article class="skeleton-card"></article>
   </section>
 
-  <p class="ndvi-message" *ngIf="!loading && error">{{ error }}</p>
+  <app-empty-state
+    *ngIf="!loading && error"
+    icon="alert"
+    tone="warning"
+    title="NDVI analysis could not be loaded"
+    [description]="error"
+    [compact]="true">
+  </app-empty-state>
 
-  <section class="empty-state" *ngIf="!loading && !farms.length">
-    <svg lucideLeaf></svg>
-    <h2>Create a farm to start NDVI analysis.</h2>
-    <p>FarmOps derives simulated NDVI from field health signals until real satellite data is connected.</p>
-    <a routerLink="/farms">Open Farm Operations</a>
-  </section>
+  <app-empty-state
+    *ngIf="!loading && !farms.length"
+    icon="leaf"
+    tone="leaf"
+    title="No vegetation data available"
+    description="Add farms, fields, and crop health data to generate NDVI analysis."
+    primaryLabel="Open Field Operations"
+    primaryRoute="/farms">
+  </app-empty-state>
 
   <ng-container *ngIf="!loading && selectedFarm">
     <section class="farm-context">
@@ -77,11 +87,16 @@
       </article>
     </section>
 
-    <section class="empty-state compact" *ngIf="!rankedFields.length">
-      <svg lucideSprout></svg>
-      <h2>No fields available for this farm.</h2>
-      <p>Create fields and add health or crop status information to generate simulated NDVI analysis.</p>
-    </section>
+    <app-empty-state
+      *ngIf="!rankedFields.length"
+      icon="sprout"
+      tone="leaf"
+      title="No fields available for this farm."
+      description="Create fields and add health or crop status information to generate simulated NDVI analysis."
+      primaryLabel="Open Field Operations"
+      primaryRoute="/farms"
+      [compact]="true">
+    </app-empty-state>
 
     <ng-container *ngIf="rankedFields.length">
       <section class="analysis-grid">
@@ -166,7 +181,10 @@
             </a>
           </div>
 
-          <div class="signal-loading" *ngIf="signalLoading">Refreshing NDVI signals...</div>
+          <div class="signal-loading" *ngIf="signalLoading" aria-label="Refreshing NDVI signals">
+            <span class="farmops-skeleton-line medium"></span>
+            <span class="farmops-skeleton-line short"></span>
+          </div>
 
           <div class="related-signals" *ngIf="!signalLoading && ndviSignals.length; else noSignals">
             <div class="ndvi-signal" *ngFor="let signal of ndviSignals">

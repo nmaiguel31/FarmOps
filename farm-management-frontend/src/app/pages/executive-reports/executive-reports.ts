@@ -34,6 +34,7 @@ import { Field } from '../../services/field';
 import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 Chart.register(...registerables);
 
@@ -63,7 +64,8 @@ const REPORT_THEME = {
     LucideFileText,
     LucideLeaf,
     LucideShieldAlert,
-    LucideSprout
+    LucideSprout,
+    EmptyStateComponent
   ],
   templateUrl: './executive-reports.html',
   styleUrl: './executive-reports.css'

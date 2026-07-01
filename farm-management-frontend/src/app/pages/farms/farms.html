@@ -186,7 +186,15 @@
       </div>
 
       <ng-template #noFarms>
-        <div class="empty-state">No farms found.</div>
+        <app-empty-state
+          icon="map"
+          tone="leaf"
+          title="No farms yet"
+          description="Create your first farm to start monitoring fields, crops, weather, and operations."
+          primaryLabel="Add Farm"
+          (primaryAction)="openCreateFarm()"
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
     </aside>
 
@@ -266,8 +274,9 @@
           <span class="weather-source">Open-Meteo</span>
         </div>
 
-        <div class="weather-state" *ngIf="weatherLoading">
-          Loading weather for this location...
+        <div class="weather-state weather-skeleton" *ngIf="weatherLoading" aria-label="Loading weather for this location">
+          <span class="farmops-skeleton-line medium"></span>
+          <span class="farmops-skeleton-line short"></span>
         </div>
 
         <div class="weather-state warning" *ngIf="!weatherLoading && weatherError">
@@ -384,7 +393,15 @@
           </div>
 
           <ng-template #noFields>
-            <div class="empty-state compact">No fields have been added to this farm yet.</div>
+            <app-empty-state
+              icon="sprout"
+              tone="leaf"
+              title="No fields yet"
+              description="Add a field to start tracking crop cycles, weather context, NDVI, and operational recommendations."
+              primaryLabel="Add Field"
+              (primaryAction)="openCreateField()"
+              [compact]="true">
+            </app-empty-state>
           </ng-template>
         </article>
 
@@ -506,7 +523,14 @@
             </div>
 
             <ng-template #noZones>
-              <div class="empty-state compact">No management zones have been drawn for this field yet.</div>
+              <app-empty-state
+                icon="map"
+                title="No management zones yet"
+                description="Create zones inside this field when you are ready to manage localized operations."
+                primaryLabel="Create Zone"
+                (primaryAction)="openCreateZone()"
+                [compact]="true">
+              </app-empty-state>
             </ng-template>
 
             <article class="selected-zone-card" *ngIf="selectedZone">
@@ -660,8 +684,14 @@
 
     <ng-template #noSelectedFarm>
       <section class="farm-operations empty-workspace">
-        <p class="eyebrow">No Farm Selected</p>
-        <h2>Select or create a farm to open the operations dashboard.</h2>
+        <app-empty-state
+          icon="map"
+          tone="leaf"
+          title="No farm selected"
+          description="Select or create a farm to open the operational workspace."
+          primaryLabel="Add Farm"
+          (primaryAction)="openCreateFarm()">
+        </app-empty-state>
       </section>
     </ng-template>
   </section>

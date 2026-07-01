@@ -1,0 +1,53 @@
+<section
+  class="farmops-empty-state-shell"
+  [class.compact]="compact"
+  [ngClass]="tone"
+  role="status"
+  aria-live="polite">
+  <div class="empty-icon" [ngSwitch]="icon">
+    <svg *ngSwitchCase="'alert'" lucideAlertCircle></svg>
+    <svg *ngSwitchCase="'cloud'" lucideCloudSun></svg>
+    <svg *ngSwitchCase="'finance'" lucideBadgeDollarSign></svg>
+    <svg *ngSwitchCase="'leaf'" lucideLeaf></svg>
+    <svg *ngSwitchCase="'map'" lucideMap></svg>
+    <svg *ngSwitchCase="'report'" lucideFileText></svg>
+    <svg *ngSwitchCase="'search'" lucideSearchX></svg>
+    <svg *ngSwitchCase="'security'" lucideShieldCheck></svg>
+    <svg *ngSwitchCase="'sprout'" lucideSprout></svg>
+    <svg *ngSwitchDefault lucideActivity></svg>
+  </div>
+
+  <div class="empty-copy">
+    <h2>{{ title }}</h2>
+    <p *ngIf="description">{{ description }}</p>
+  </div>
+
+  <div class="empty-actions" *ngIf="primaryLabel || secondaryLabel">
+    <a
+      *ngIf="primaryLabel && primaryRoute"
+      class="farmops-button"
+      [routerLink]="primaryRoute">
+      {{ primaryLabel }}
+    </a>
+    <button
+      *ngIf="primaryLabel && !primaryRoute"
+      type="button"
+      class="farmops-button"
+      (click)="onPrimaryAction()">
+      {{ primaryLabel }}
+    </button>
+    <a
+      *ngIf="secondaryLabel && secondaryRoute"
+      class="farmops-button secondary"
+      [routerLink]="secondaryRoute">
+      {{ secondaryLabel }}
+    </a>
+    <button
+      *ngIf="secondaryLabel && !secondaryRoute"
+      type="button"
+      class="farmops-button secondary"
+      (click)="onSecondaryAction()">
+      {{ secondaryLabel }}
+    </button>
+  </div>
+</section>

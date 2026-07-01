@@ -1,0 +1,99 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.farmops-empty-state-shell {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 40px 28px;
+  border: 1px solid var(--farmops-border, #dbe7de);
+  border-radius: var(--farmops-radius-lg, 18px);
+  background:
+    linear-gradient(180deg, rgba(22, 163, 74, 0.05), rgba(255, 255, 255, 0.88)),
+    var(--farmops-surface, #ffffff);
+  box-shadow: var(--farmops-shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.06));
+  color: var(--farmops-text, #0f241b);
+  text-align: center;
+}
+
+.farmops-empty-state-shell.compact {
+  gap: 12px;
+  padding: 24px 20px;
+  border-radius: var(--farmops-radius, 14px);
+  box-shadow: none;
+}
+
+.empty-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(22, 163, 74, 0.11);
+  color: var(--farmops-primary, #16a34a);
+}
+
+.compact .empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.empty-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2;
+}
+
+.empty-copy {
+  display: grid;
+  gap: 6px;
+  max-width: 560px;
+}
+
+.empty-copy h2 {
+  margin: 0;
+  color: var(--farmops-text, #0f241b);
+  font-size: clamp(1rem, 1.7vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.empty-copy p {
+  margin: 0;
+  color: var(--farmops-text-muted, #64748b);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.sky .empty-icon {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--farmops-blue, #2563eb);
+}
+
+.warning .empty-icon {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--farmops-warning, #f59e0b);
+}
+
+.danger .empty-icon {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--farmops-danger, #dc2626);
+}
+
+.success .empty-icon,
+.leaf .empty-icon {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--farmops-primary, #16a34a);
+}

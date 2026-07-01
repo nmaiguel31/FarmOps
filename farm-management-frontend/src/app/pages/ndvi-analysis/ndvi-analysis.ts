@@ -20,12 +20,12 @@ import {
   LucideCheckCircle2,
   LucideExternalLink,
   LucideLeaf,
-  LucideLineChart,
-  LucideSprout
+  LucideLineChart
 } from '@lucide/angular';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
 import { OperationSignal } from '../../services/operation-signal';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 type NdviClass =
   'Excellent' |
@@ -59,7 +59,7 @@ Chart.register(...registerables);
     LucideExternalLink,
     LucideLeaf,
     LucideLineChart,
-    LucideSprout
+    EmptyStateComponent
   ],
   templateUrl: './ndvi-analysis.html',
   styleUrl: './ndvi-analysis.css'

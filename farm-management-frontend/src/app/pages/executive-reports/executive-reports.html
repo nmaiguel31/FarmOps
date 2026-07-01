@@ -50,14 +50,22 @@
     <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6,7]"></div>
   </section>
 
-  <section *ngIf="!loading && loadError" class="empty-state error-state">
-    {{ loadError }}
-  </section>
+  <app-empty-state
+    *ngIf="!loading && loadError"
+    icon="alert"
+    tone="warning"
+    title="Reports could not be loaded"
+    [description]="loadError">
+  </app-empty-state>
 
-  <section *ngIf="!loading && !loadError && !hasOperationalData" class="empty-state">
-    <h2>No operational data is available yet.</h2>
-    <p>Create farms, fields, crops, and financial records to generate executive reports.</p>
-  </section>
+  <app-empty-state
+    *ngIf="!loading && !loadError && !hasOperationalData"
+    icon="report"
+    title="No report data available"
+    description="Add farms, crops, financial records, and operations data to generate executive reports."
+    primaryLabel="Add Farm"
+    primaryRoute="/farms">
+  </app-empty-state>
 
   <ng-container *ngIf="!loading && !loadError && hasOperationalData">
     <section class="summary-grid" aria-label="Executive summary">

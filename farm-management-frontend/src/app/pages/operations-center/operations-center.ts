@@ -14,6 +14,7 @@ import {
 } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { OperationSignal } from '../../services/operation-signal';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import {
   LucideActivity,
   LucideBadgeDollarSign,
@@ -40,7 +41,8 @@ import {
     LucideDroplet,
     LucideLeaf,
     LucideShieldAlert,
-    LucideSprout
+    LucideSprout,
+    EmptyStateComponent
   ],
   templateUrl: './operations-center.html',
   styleUrl: './operations-center.css'

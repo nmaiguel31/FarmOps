@@ -273,6 +273,84 @@ textarea:focus {
   animation: farmops-shimmer 1.35s ease infinite;
 }
 
+.farmops-skeleton-card,
+.farmops-skeleton-block,
+.farmops-skeleton-line,
+.farmops-skeleton-table-row {
+  background:
+    linear-gradient(90deg, #eef4eb 25%, #f7faf4 37%, #eef4eb 63%);
+  background-size: 400% 100%;
+  animation: farmops-shimmer 1.35s ease infinite;
+}
+
+.farmops-skeleton-card {
+  min-height: 160px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.farmops-skeleton-card.kpi {
+  min-height: 124px;
+}
+
+.farmops-skeleton-card.chart {
+  min-height: 320px;
+}
+
+.farmops-skeleton-block {
+  min-height: 96px;
+  border-radius: var(--radius-lg);
+}
+
+.farmops-skeleton-line {
+  display: block;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.farmops-skeleton-line.short {
+  width: 42%;
+}
+
+.farmops-skeleton-line.medium {
+  width: 68%;
+}
+
+.farmops-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.farmops-skeleton-table {
+  display: grid;
+  min-height: 360px;
+  gap: 10px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.farmops-skeleton-table-row {
+  min-height: 48px;
+  border-radius: var(--radius-sm);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @keyframes farmops-shimmer {
   0% {
     background-position: 100% 0;

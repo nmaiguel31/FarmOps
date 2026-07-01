@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
+import { forkJoin } from 'rxjs';
 import { GoogleMapsLoader } from '../../services/google-maps-loader';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
@@ -22,9 +23,10 @@ import {
   LucideBell,
   LucideChartNoAxesCombined,
   LucideCloudSun,
-  LucideDroplet,
+  LucideFileText,
   LucideLeaf,
-  LucideReceipt,
+  LucideMap,
+  LucidePlus,
   LucideSprout,
   LucideTrendingUp
 } from '@lucide/angular';
@@ -43,9 +45,10 @@ declare const google: any;
     LucideBell,
     LucideChartNoAxesCombined,
     LucideCloudSun,
-    LucideDroplet,
+    LucideFileText,
     LucideLeaf,
-    LucideReceipt,
+    LucideMap,
+    LucidePlus,
     LucideSprout,
     LucideTrendingUp
   ],
@@ -72,6 +75,8 @@ export class Dashboard implements OnInit {
   }> = [];
   operationSignals: any[] = [];
   weatherLoading = false;
+  dashboardLoading = true;
+  dashboardLoadError = '';
 
   totalFarms = 0;
   totalFields = 0;
@@ -188,28 +193,11 @@ export class Dashboard implements OnInit {
   get commandKpis() {
     return [
       {
-        label: 'Total Revenue',
-        value: this.totalRevenue,
-        detail: `${this.totalRecords} financial records`,
-        tone: 'revenue',
-        icon: 'revenue',
-        currency: true
-      },
-      {
-        label: 'Net Profit',
-        value: this.netProfit,
-        detail: 'Revenue minus expenses',
-        tone: 'profit',
-        icon: 'profit',
-        currency: true
-      },
-      {
-        label: 'Total Costs',
-        value: this.totalExpenses,
-        detail: 'Tracked expenses',
-        tone: 'expenses',
-        icon: 'expenses',
-        currency: true
+        label: 'Active Farms',
+        value: this.totalFarms,
+        detail: `${this.totalFields} fields monitored`,
+        tone: 'farms',
+        icon: 'farms'
       },
       {
         label: 'Active Fields',
@@ -219,19 +207,185 @@ export class Dashboard implements OnInit {
         icon: 'fields'
       },
       {
-        label: 'Avg Health',
-        value: `${this.averageHealthIndex}%`,
-        detail: 'Field/zone signal',
-        tone: 'health',
-        icon: 'health'
+        label: 'Active Crops',
+        value: this.activeCrops,
+        detail: `${this.totalCrops} assigned crops`,
+        tone: 'crops',
+        icon: 'crops'
       },
       {
-        label: 'Profit Margin',
-        value: `${this.profitMargin}%`,
-        detail: 'Net profit share of revenue',
-        tone: 'profit',
-        icon: 'profit'
+        label: 'Active Alerts',
+        value: this.openAlerts,
+        detail: `${this.criticalHighOperationSignals} critical/high`,
+        tone: this.openAlerts ? 'alerts' : 'stable',
+        icon: 'alerts'
+      },
+      {
+        label: 'Net Profit',
+        value: this.netProfit,
+        detail: `${this.profitMargin}% margin`,
+        tone: this.netProfit >= 0 ? 'profit' : 'expenses',
+        icon: 'profit',
+        currency: true
       }
+    ];
+  }
+
+  get greetingName() {
+    return 'Nicolas';
+  }
+
+  get commandBriefs() {
+    const briefs: Array<{ label: string; value: string; tone: string; icon: string }> = [];
+
+    if (this.openAlerts > 0) {
+      briefs.push({
+        label: 'Requires attention',
+        value: `${this.openAlerts} active alert${this.openAlerts === 1 ? '' : 's'}`,
+        tone: 'danger',
+        icon: 'alerts'
+      });
+    }
+
+    if (this.weatherAlerts.length > 0) {
+      briefs.push({
+        label: 'Weather watch',
+        value: `${this.weatherAlerts.length} farm${this.weatherAlerts.length === 1 ? '' : 's'} with risk`,
+        tone: 'weather',
+        icon: 'weather'
+      });
+    }
+
+    if (this.upcomingHarvests.length > 0) {
+      briefs.push({
+        label: 'Lifecycle due',
+        value: `${this.upcomingHarvests.length} crop${this.upcomingHarvests.length === 1 ? '' : 's'} near harvest`,
+        tone: 'crop',
+        icon: 'crop'
+      });
+    }
+
+    if (this.totalRecords > 0) {
+      briefs.push({
+        label: 'Net profit',
+        value: this.formatCurrency(this.netProfit),
+        tone: this.netProfit >= 0 ? 'profit' : 'danger',
+        icon: 'profit'
+      });
+    }
+
+    return briefs;
+  }
+
+  get operationsOverview() {
+    const activeAlerts = this.activeOperationSignals;
+
+    return [
+      {
+        label: 'Active Alerts',
+        value: activeAlerts.length,
+        detail: activeAlerts.length ? 'Open operational signals' : 'No active signals',
+        tone: activeAlerts.length ? 'danger' : 'good'
+      },
+      {
+        label: 'Weather Risks',
+        value: activeAlerts.filter(signal => signal.category === 'Weather').length,
+        detail: this.weatherRiskLabel,
+        tone: this.weatherRiskLabel === 'Stable' ? 'good' : 'warning'
+      },
+      {
+        label: 'Critical NDVI Fields',
+        value: activeAlerts.filter(signal => signal.category === 'NDVI' && ['Critical', 'High'].includes(signal.priority)).length,
+        detail: 'Vegetation risk signals',
+        tone: 'warning'
+      },
+      {
+        label: 'Lifecycle Due',
+        value: activeAlerts.filter(signal => signal.category === 'Crop Lifecycle').length,
+        detail: `${this.upcomingHarvests.length} upcoming harvests`,
+        tone: this.upcomingHarvests.length ? 'warning' : 'good'
+      },
+      {
+        label: 'Financial Risks',
+        value: activeAlerts.filter(signal => signal.category === 'Financial').length,
+        detail: this.netProfit < 0 ? 'Expenses exceed revenue' : 'Financials stable',
+        tone: this.netProfit < 0 ? 'danger' : 'good'
+      }
+    ];
+  }
+
+  get farmHealthRows() {
+    return this.farms.map(farm => {
+      const farmId =
+        this.getEntityId(farm);
+      const farmFields =
+        this.fields.filter(field => this.getEntityId(field.farm) === farmId);
+      const healthValues =
+        farmFields
+          .map(field => this.getFieldHealthIndex(field))
+          .filter((value): value is number => value !== null);
+      const score =
+        healthValues.length ? this.average(healthValues) : 0;
+
+      return {
+        farm,
+        score,
+        status: this.getHealthStatus(score),
+        tone: this.getHealthTone(score),
+        fields: farmFields.length
+      };
+    });
+  }
+
+  get financialSnapshot() {
+    return [
+      { label: 'Revenue', value: this.totalRevenue, tone: 'good' },
+      { label: 'Expenses', value: this.totalExpenses, tone: 'warning' },
+      { label: 'Net Profit', value: this.netProfit, tone: this.netProfit >= 0 ? 'good' : 'danger' },
+      { label: 'Profit Margin', value: `${this.profitMargin}%`, tone: this.profitMargin >= 15 ? 'good' : 'warning', plain: true }
+    ];
+  }
+
+  get recentActivityTimeline() {
+    const financial =
+      this.records.map(record => ({
+        type: record.type === 'Income' ? 'Income added' : 'Expense added',
+        title: record.description || record.category || 'Financial record',
+        detail: `${record.category || 'Uncategorized'} | ${this.formatCurrency(Number(record.amount || 0))}`,
+        date: record.date || record.createdAt,
+        tone: record.type === 'Income' ? 'good' : 'warning'
+      }));
+    const signals =
+      this.operationSignals.map(signal => ({
+        type: signal.status === 'Resolved' ? 'Alert resolved' : 'Alert created',
+        title: signal.title || signal.category || 'Operational signal',
+        detail: this.getOperationItemTarget(signal),
+        date: signal.resolvedAt || signal.createdAt,
+        tone: signal.status === 'Resolved' ? 'good' : 'danger'
+      }));
+    const fields =
+      this.fields.map(field => ({
+        type: 'Field updated',
+        title: field.name || 'Field',
+        detail: `${this.getFieldCropLabel(field)} | ${field.status || 'Mapped'}`,
+        date: field.updatedAt || field.createdAt,
+        tone: 'field'
+      }));
+
+    return [...financial, ...signals, ...fields]
+      .filter(item => item.date)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }
+
+  get quickActions() {
+    return [
+      { label: 'Add Farm', route: '/farms', icon: 'plus' },
+      { label: 'Add Field', route: '/farms', icon: 'map' },
+      { label: 'Add Crop', route: '/crops', icon: 'crop' },
+      { label: 'Financial Record', route: '/financial-records', icon: 'finance' },
+      { label: 'Operations Center', route: '/operations-center', icon: 'alerts' },
+      { label: 'Reports', route: '/reports', icon: 'report' }
     ];
   }
 
@@ -422,62 +576,39 @@ export class Dashboard implements OnInit {
   }
 
   loadDashboardData() {
+    this.dashboardLoading = true;
+    this.dashboardLoadError = '';
 
-    this.farmService.getFarms().subscribe({
+    forkJoin({
+      farms: this.farmService.getFarms(),
+      fields: this.fieldService.getFields(),
+      zones: this.zoneService.getZones(),
+      crops: this.cropService.getCrops(),
+      records: this.financialService.getRecords(),
+      signals: this.operationSignalService.getActiveSignals()
+    }).subscribe({
       next: (data: any) => {
-        this.farms = [...data];
+        this.farms = [...(data.farms || [])];
+        this.allFields = [...(data.fields || [])];
+        this.allZones = [...(data.zones || [])];
+        this.allCrops = [...(data.crops || [])];
+        this.allRecords = [...(data.records || [])];
+        this.operationSignals = [...(data.signals || [])].filter(signal => signal.status === 'Active');
         this.reconcileDashboardData();
+        this.dashboardLoading = false;
         this.renderFarmMap();
         this.selectDefaultWeatherFarm();
         this.loadWeatherAlerts();
         this.renderChartsSoon();
         this.cdr.detectChanges();
       },
-      error: (error) => console.error(error)
-    });
-
-    this.fieldService.getFields().subscribe({
-      next: (data: any) => {
-        this.allFields = [...data];
-        this.reconcileDashboardData();
-        this.renderFarmMap();
-        this.renderChartsSoon();
+      error: (error) => {
+        console.error(error);
+        this.dashboardLoadError = 'Unable to load dashboard data.';
+        this.dashboardLoading = false;
         this.cdr.detectChanges();
-      },
-      error: (error) => console.error(error)
+      }
     });
-
-    this.zoneService.getZones().subscribe({
-      next: (data: any) => {
-        this.allZones = [...data];
-        this.reconcileDashboardData();
-        this.renderChartsSoon();
-        this.cdr.detectChanges();
-      },
-      error: (error) => console.error(error)
-    });
-
-    this.cropService.getCrops().subscribe({
-      next: (data: any) => {
-        this.allCrops = [...data];
-        this.reconcileDashboardData();
-        this.renderChartsSoon();
-        this.cdr.detectChanges();
-      },
-      error: (error) => console.error(error)
-    });
-
-    this.financialService.getRecords().subscribe({
-      next: (data: any) => {
-        this.allRecords = [...data];
-        this.reconcileDashboardData();
-        this.renderChartsSoon();
-        this.cdr.detectChanges();
-      },
-      error: (error) => console.error(error)
-    });
-
-    this.refreshOperationSignals();
 
   }
 
@@ -489,6 +620,17 @@ export class Dashboard implements OnInit {
       },
       error: (error) => console.error(error)
     });
+  }
+
+  formatCurrency(value: any) {
+    return new Intl.NumberFormat(
+      'en-US',
+      {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+      }
+    ).format(Number(value || 0));
   }
 
   private generateWeatherOperationSignals() {
@@ -787,6 +929,46 @@ export class Dashboard implements OnInit {
 
   getOperationItemCategory(item: any) {
     return item.category || 'Operational Signal';
+  }
+
+  getHealthStatus(score: number) {
+    if (score >= 85) {
+      return 'Excellent';
+    }
+
+    if (score >= 70) {
+      return 'Healthy';
+    }
+
+    if (score >= 50) {
+      return 'Watchlist';
+    }
+
+    if (score > 0) {
+      return 'Critical';
+    }
+
+    return 'No field data';
+  }
+
+  getHealthTone(score: number) {
+    if (score >= 85) {
+      return 'excellent';
+    }
+
+    if (score >= 70) {
+      return 'good';
+    }
+
+    if (score >= 50) {
+      return 'warning';
+    }
+
+    if (score > 0) {
+      return 'danger';
+    }
+
+    return 'empty';
   }
 
   getRecommendationPriority(field: any) {

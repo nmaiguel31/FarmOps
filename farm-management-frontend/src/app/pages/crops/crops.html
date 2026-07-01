@@ -113,7 +113,7 @@
       </div>
 
       <div class="crop-loading-shell" *ngIf="cropsLoading" aria-live="polite">
-        <span>Loading crop catalog...</span>
+        <span class="sr-only">Loading crop catalog...</span>
         <div class="skeleton-table">
           <div class="skeleton-row" *ngFor="let row of [1,2,3,4,5,6,7,8]">
             <i></i>
@@ -196,10 +196,16 @@
       </div>
 
       <ng-template #noCrops>
-        <div class="empty-state" *ngIf="!cropsLoading">
-          <strong>No crops found.</strong>
-          <span>Create a farm first, then FarmOps can seed crop templates for that farm.</span>
-        </div>
+        <app-empty-state
+          *ngIf="!cropsLoading"
+          icon="leaf"
+          tone="leaf"
+          title="No crops found"
+          description="Add crop templates to define lifecycle durations, NDVI targets, moisture targets, and planting seasons."
+          primaryLabel="Add Crop"
+          (primaryAction)="openCreateCrop()"
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
 
       <div class="about-card">

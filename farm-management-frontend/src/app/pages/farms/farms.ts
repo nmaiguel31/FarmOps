@@ -37,6 +37,7 @@ import {
   LucideTrash2,
   LucideWaves
 } from '@lucide/angular';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 @Component({
   selector: 'app-farms',
@@ -57,7 +58,8 @@ import {
     LucideSprout,
     LucideTractor,
     LucideTrash2,
-    LucideWaves
+    LucideWaves,
+    EmptyStateComponent
   ],
   templateUrl: './farms.html',
   styleUrl: './farms.css',

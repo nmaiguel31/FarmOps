@@ -140,10 +140,13 @@
   </ng-template>
 
   <ng-template #stableState>
-    <section class="stable-state">
-      <svg lucideCheckCircle2></svg>
-      <h2>All operations are currently stable.</h2>
-      <p>New operational signals will appear here when FarmOps detects risks.</p>
-    </section>
+    <app-empty-state
+      icon="security"
+      tone="success"
+      title="No active operations"
+      description="FarmOps will automatically surface weather, NDVI, financial, irrigation, and lifecycle signals when attention is needed."
+      primaryLabel="View Dashboard"
+      primaryRoute="/dashboard">
+    </app-empty-state>
   </ng-template>
 </main>

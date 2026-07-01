@@ -16,18 +16,24 @@
     </label>
   </section>
 
-  <section class="empty-state" *ngIf="!loadingFarms && !farms.length">
-    <svg lucideCloudSun></svg>
-    <h2>Create a farm to view weather conditions.</h2>
-    <p>FarmOps uses saved farm coordinates to load local weather and operational risk context.</p>
-    <a routerLink="/farms">Open Farm Operations</a>
-  </section>
+  <app-empty-state
+    *ngIf="!loadingFarms && !farms.length"
+    icon="cloud"
+    tone="sky"
+    title="Create a farm to view weather conditions."
+    description="FarmOps uses saved farm coordinates to load local weather and operational risk context."
+    primaryLabel="Open Farm Operations"
+    primaryRoute="/farms">
+  </app-empty-state>
 
-  <section class="empty-state" *ngIf="!loadingFarms && farms.length && !selectedFarm">
-    <svg lucideCloudSun></svg>
-    <h2>Select a farm to view weather conditions.</h2>
-    <p>Weather monitoring is available for farms with saved latitude and longitude.</p>
-  </section>
+  <app-empty-state
+    *ngIf="!loadingFarms && farms.length && !selectedFarm"
+    icon="cloud"
+    tone="sky"
+    title="Select a farm to view weather conditions."
+    description="Weather monitoring is available for farms with saved latitude and longitude."
+    [compact]="true">
+  </app-empty-state>
 
   <ng-container *ngIf="selectedFarm">
     <section class="farm-context">
@@ -54,7 +60,14 @@
       <article class="skeleton-card"></article>
     </section>
 
-    <p class="weather-message" *ngIf="!loadingWeather && weatherError">{{ weatherError }}</p>
+    <app-empty-state
+      *ngIf="!loadingWeather && weatherError"
+      icon="alert"
+      tone="warning"
+      title="Weather data could not be loaded"
+      [description]="weatherError"
+      [compact]="true">
+    </app-empty-state>
 
     <ng-container *ngIf="!loadingWeather && weather">
       <section class="weather-overview">
@@ -166,7 +179,10 @@
             </a>
           </div>
 
-          <div class="signal-loading" *ngIf="signalLoading">Refreshing weather signals...</div>
+          <div class="signal-loading" *ngIf="signalLoading" aria-label="Refreshing weather signals">
+            <span class="farmops-skeleton-line medium"></span>
+            <span class="farmops-skeleton-line short"></span>
+          </div>
 
           <div class="related-signals" *ngIf="!signalLoading && weatherSignals.length; else noSignals">
             <div class="weather-signal" *ngFor="let signal of weatherSignals">

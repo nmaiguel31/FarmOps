@@ -27,6 +27,7 @@ import {
   LucideTrash2,
   LucideTrendingUp
 } from '@lucide/angular';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 Chart.register(...registerables);
 
@@ -44,7 +45,8 @@ Chart.register(...registerables);
     LucidePlus,
     LucideReceipt,
     LucideTrash2,
-    LucideTrendingUp
+    LucideTrendingUp,
+    EmptyStateComponent
   ],
   templateUrl: './financial-records.html',
   styleUrl: './financial-records.css',
@@ -55,6 +57,7 @@ export class FinancialRecords implements OnInit {
   farms: any[] = [];
   fields: any[] = [];
   crops: any[] = [];
+  recordsLoading = true;
 
   recordType = 'Expense';
   recordCategory = 'Other Expense';
@@ -150,13 +153,19 @@ export class FinancialRecords implements OnInit {
   }
 
   loadRecords() {
+    this.recordsLoading = true;
     this.financialService.getRecords().subscribe({
       next: (data: any) => {
         this.records = [...data];
+        this.recordsLoading = false;
         this.renderChartsSoon();
         this.cdr.detectChanges();
       },
-      error: (error) => console.error(error)
+      error: (error) => {
+        console.error(error);
+        this.recordsLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 

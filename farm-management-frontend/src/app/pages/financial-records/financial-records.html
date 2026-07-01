@@ -77,10 +77,15 @@
         <canvas id="financeRevenueExpenseChart"></canvas>
       </div>
       <ng-template #noFinanceHistory>
-        <div class="empty-state compact">
-          <strong>Insufficient financial history</strong>
-          <span>Add dated income and expense records to show the chart.</span>
-        </div>
+        <app-empty-state
+          icon="finance"
+          tone="sky"
+          title="Insufficient financial history"
+          description="Add dated income and expense records to show the chart."
+          primaryLabel="Add Record"
+          (primaryAction)="openCreateRecord()"
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
     </article>
 
@@ -111,7 +116,12 @@
         </div>
       </div>
       <ng-template #noCropProfit>
-        <div class="empty-state compact">Not enough crop financial data yet.</div>
+        <app-empty-state
+          icon="leaf"
+          title="Not enough crop financial data yet"
+          description="Link income or expense records to crops to generate crop profitability insights."
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
     </article>
   </section>
@@ -185,6 +195,11 @@
       <button type="button" class="reset-btn" (click)="resetFilters()">Reset</button>
     </div>
 
+    <div class="farmops-skeleton-table" *ngIf="recordsLoading; else recordsContent" aria-label="Loading financial records">
+      <div class="farmops-skeleton-table-row" *ngFor="let item of [1,2,3,4,5]"></div>
+    </div>
+
+    <ng-template #recordsContent>
     <div class="records-table" *ngIf="filteredRecords.length > 0; else noRecords">
       <div class="table-head">
         <span>Date</span>
@@ -226,9 +241,17 @@
         </div>
       </article>
     </div>
+    </ng-template>
 
     <ng-template #noRecords>
-      <div class="empty-state">No financial records match the current filters.</div>
+      <app-empty-state
+        icon="finance"
+        tone="sky"
+        title="No financial records yet"
+        description="Add revenue or expense records to generate profitability insights."
+        primaryLabel="Add Record"
+        (primaryAction)="openCreateRecord()">
+      </app-empty-state>
     </ng-template>
   </section>
 
@@ -248,7 +271,12 @@
         </div>
       </div>
       <ng-template #noExpenseCategories>
-        <div class="empty-state compact">No expense categories in this view.</div>
+        <app-empty-state
+          icon="finance"
+          title="No expense categories in this view"
+          description="Expense categories will appear after matching expense records are added."
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
     </article>
 
@@ -267,7 +295,12 @@
         </div>
       </div>
       <ng-template #noLargestExpenses>
-        <div class="empty-state compact">No expense records in this view.</div>
+        <app-empty-state
+          icon="finance"
+          title="No expense records in this view"
+          description="Largest expenses will appear once expense records match the selected filters."
+          [compact]="true">
+        </app-empty-state>
       </ng-template>
     </article>
   </section>
