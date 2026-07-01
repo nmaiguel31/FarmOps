@@ -38,7 +38,7 @@
 }
 
 .toast-card.info {
-  border-left-color: var(--color-cloud-blue);
+  border-left-color: var(--color-sky);
 }
 
 .toast-icon {
@@ -62,8 +62,8 @@
 }
 
 .toast-card.info .toast-icon {
-  color: var(--color-cloud-blue);
-  background: rgba(79, 131, 168, 0.12);
+  color: var(--color-sky);
+  background: var(--color-sky-soft);
 }
 
 .toast-icon svg,
@@ -126,5 +126,10 @@
   .toast-stack {
     right: 16px;
     bottom: 16px;
+  }
+
+  .toast-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    border-radius: var(--radius-lg);
   }
 }

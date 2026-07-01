@@ -369,6 +369,8 @@ tbody tr:hover,
   border: 1px solid rgba(20, 145, 95, 0.16);
   border-radius: var(--radius-sm);
   font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .farmops-clear-filters:hover {
@@ -537,7 +539,14 @@ td {
 .table-wrap,
 .records-table {
   max-width: 100%;
+  overflow-x: auto;
   scrollbar-gutter: stable;
+}
+
+.table-shell table,
+.table-wrap table,
+.records-table table {
+  min-width: 760px;
 }
 
 .chart-shell,
