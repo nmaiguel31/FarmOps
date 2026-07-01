@@ -89,6 +89,7 @@ export class FinancialRecords implements OnInit {
   filterPaymentStatus = 'All';
   filterStartDate = '';
   filterEndDate = '';
+  filterSearch = '';
   chartView: 'month' | 'day' = 'month';
 
   readonly incomeCategories = [
@@ -308,6 +309,9 @@ export class FinancialRecords implements OnInit {
   }
 
   get filteredRecords() {
+    const search =
+      this.normalizeSearch(this.filterSearch);
+
     return this.records.filter(record => {
       return this.matchesFilter(this.filterType, record.type) &&
         this.matchesFilter(this.filterFarm, this.getEntityId(record.farm)) &&
@@ -315,7 +319,8 @@ export class FinancialRecords implements OnInit {
         this.matchesFilter(this.filterCrop, this.getEntityId(record.crop)) &&
         this.matchesFilter(this.filterCategory, record.category) &&
         this.matchesFilter(this.filterPaymentStatus, record.paymentStatus || 'Paid') &&
-        this.matchesDateRange(record);
+        this.matchesDateRange(record) &&
+        this.matchesSearch(record, search);
     });
   }
 
@@ -645,6 +650,7 @@ export class FinancialRecords implements OnInit {
     this.filterPaymentStatus = 'All';
     this.filterStartDate = '';
     this.filterEndDate = '';
+    this.filterSearch = '';
     this.renderChartsSoon();
   }
 
@@ -829,6 +835,30 @@ export class FinancialRecords implements OnInit {
 
   private matchesFilter(filter: string, value: any) {
     return filter === 'All' || String(value || '') === filter;
+  }
+
+  private matchesSearch(record: any, search: string) {
+    if (!search) {
+      return true;
+    }
+
+    return [
+      record.description,
+      record.notes,
+      record.category,
+      record.type,
+      record.paymentStatus,
+      this.getFarmName(record),
+      this.getFieldName(record),
+      this.getCropName(record),
+      record.buyer,
+      record.vendor
+    ]
+      .some(value => this.normalizeSearch(value).includes(search));
+  }
+
+  private normalizeSearch(value: any) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
   private matchesDateRange(record: any) {

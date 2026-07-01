@@ -23,29 +23,34 @@
     </article>
   </section>
 
-  <section class="operations-filters" aria-label="Operations filters">
-    <label>
+  <section class="operations-filters farmops-filter-bar" aria-label="Operations filters">
+    <label class="farmops-filter-field grow">
+      <span>Search</span>
+      <input type="search" placeholder="Search title, farm, field, category..." [(ngModel)]="filterSearch" (ngModelChange)="onFilterChange()">
+    </label>
+
+    <label class="farmops-filter-field">
       <span>Status</span>
       <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
         <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
       </select>
     </label>
 
-    <label>
+    <label class="farmops-filter-field">
       <span>Category</span>
       <select [(ngModel)]="filterCategory" (change)="onFilterChange()">
         <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
       </select>
     </label>
 
-    <label>
+    <label class="farmops-filter-field">
       <span>Priority</span>
       <select [(ngModel)]="filterPriority" (change)="onFilterChange()">
         <option *ngFor="let priority of priorities" [value]="priority">{{ priority }}</option>
       </select>
     </label>
 
-    <label>
+    <label class="farmops-filter-field">
       <span>Farm</span>
       <select [(ngModel)]="filterFarm" (change)="onFilterChange()">
         <option value="All">All Farms</option>
@@ -53,7 +58,7 @@
       </select>
     </label>
 
-    <label>
+    <label class="farmops-filter-field">
       <span>Field</span>
       <select [(ngModel)]="filterField" (change)="onFilterChange()">
         <option value="All">All Fields</option>
@@ -61,8 +66,10 @@
       </select>
     </label>
 
-    <button type="button" class="ghost-action" (click)="resetFilters()">Reset</button>
+    <button type="button" class="farmops-clear-filters" (click)="resetFilters()">Clear filters</button>
   </section>
+
+  <p class="farmops-filter-summary" *ngIf="!loading">{{ resultSummary }}</p>
 
   <p class="operations-message" *ngIf="message">{{ message }}</p>
 

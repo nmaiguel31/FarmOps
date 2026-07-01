@@ -134,8 +134,13 @@
       </div>
     </div>
 
-    <div class="finance-filters">
-      <label>
+    <div class="finance-filters farmops-filter-bar">
+      <label class="farmops-filter-field grow">
+        Search
+        <input class="farmops-field" type="search" placeholder="Search description, category, farm, field, crop..." [(ngModel)]="filterSearch" (ngModelChange)="onFiltersChanged()" name="filterSearch">
+      </label>
+
+      <label class="farmops-filter-field">
         Type
         <select class="farmops-field" [(ngModel)]="filterType" (ngModelChange)="onFiltersChanged()" name="filterType">
           <option>All</option>
@@ -144,7 +149,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="farmops-filter-field">
         Category
         <select class="farmops-field" [(ngModel)]="filterCategory" (ngModelChange)="onFiltersChanged()" name="filterCategory">
           <option value="All">All Categories</option>
@@ -152,7 +157,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="farmops-filter-field">
         Farm
         <select class="farmops-field" [(ngModel)]="filterFarm" (ngModelChange)="onFilterFarmChange()" name="filterFarm">
           <option value="All">All Farms</option>
@@ -160,7 +165,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="farmops-filter-field">
         Field
         <select class="farmops-field" [(ngModel)]="filterField" (ngModelChange)="onFilterFieldChange()" name="filterField">
           <option value="All">All Fields</option>
@@ -168,7 +173,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="farmops-filter-field">
         Crop
         <select class="farmops-field" [(ngModel)]="filterCrop" (ngModelChange)="onFiltersChanged()" name="filterCrop">
           <option value="All">All Crops</option>
@@ -176,7 +181,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="farmops-filter-field">
         Payment Status
         <select class="farmops-field" [(ngModel)]="filterPaymentStatus" (ngModelChange)="onFiltersChanged()" name="filterPaymentStatus">
           <option value="All">All Statuses</option>
@@ -192,7 +197,7 @@
         </span>
       </label>
 
-      <button type="button" class="reset-btn" (click)="resetFilters()">Reset</button>
+      <button type="button" class="farmops-clear-filters" (click)="resetFilters()">Clear filters</button>
     </div>
 
     <div class="farmops-skeleton-table" *ngIf="recordsLoading; else recordsContent" aria-label="Loading financial records">
@@ -247,8 +252,8 @@
       <app-empty-state
         icon="finance"
         tone="sky"
-        title="No financial records yet"
-        description="Add revenue or expense records to generate profitability insights."
+        [title]="records.length ? 'No results found' : 'No financial records yet'"
+        [description]="records.length ? 'Try adjusting your search or filters.' : 'Add revenue or expense records to generate profitability insights.'"
         primaryLabel="Add Record"
         (primaryAction)="openCreateRecord()">
       </app-empty-state>

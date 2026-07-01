@@ -115,61 +115,70 @@
           <h2>Farms and fields</h2>
         </div>
 
-        <div class="filter-grid">
-          <input class="farmops-field" type="text" placeholder="Search farm location" [(ngModel)]="searchLocation" (input)="filterFarms()">
-          <input class="farmops-field" type="text" placeholder="Search field" [(ngModel)]="fieldSearch">
+        <div class="filter-grid farmops-filter-bar">
+          <label class="farmops-filter-field grow">
+            <span>Farm search</span>
+            <input class="farmops-field" type="search" placeholder="Search farm name, location, fields..." [(ngModel)]="searchLocation" (ngModelChange)="filterFarms()">
+          </label>
+          <label class="farmops-filter-field grow">
+            <span>Field search</span>
+            <input class="farmops-field" type="search" placeholder="Search field, crop, status, health..." [(ngModel)]="fieldSearch" (ngModelChange)="refreshFarmFieldGroups()">
+          </label>
         </div>
 
-        <div class="filter-chips">
-          <button type="button" [class.active]="fieldFilter === 'All'" (click)="setFieldFilter('All')">All</button>
-          <button type="button" [class.active]="fieldFilter === 'Active'" (click)="setFieldFilter('Active')">Active</button>
-          <button type="button" [class.active]="fieldFilter === 'Planned'" (click)="setFieldFilter('Planned')">Planned</button>
-          <button type="button" [class.active]="fieldFilter === 'Harvested'" (click)="setFieldFilter('Harvested')">Harvested</button>
+        <div class="filter-chips farmops-chip-group">
+          <button type="button" class="farmops-filter-chip" [class.active]="fieldFilter === 'All'" (click)="setFieldFilter('All')">All</button>
+          <button type="button" class="farmops-filter-chip" [class.active]="fieldFilter === 'Active'" (click)="setFieldFilter('Active')">Active</button>
+          <button type="button" class="farmops-filter-chip" [class.active]="fieldFilter === 'Resting'" (click)="setFieldFilter('Resting')">Resting</button>
+          <button type="button" class="farmops-filter-chip" [class.active]="fieldFilter === 'Harvested'" (click)="setFieldFilter('Harvested')">Harvested</button>
+          <button type="button" class="farmops-clear-filters" (click)="clearWorkspaceFilters()">Clear filters</button>
         </div>
+
+        <p class="farmops-filter-summary">Showing {{ filteredFarmGroups.length }} of {{ farms.length }} farms</p>
       </div>
 
-      <div class="farm-list" *ngIf="filteredFarms.length > 0; else noFarms">
-        <article class="farm-group" *ngFor="let farm of filteredFarms">
+      <div class="farm-list" *ngIf="filteredFarmGroups.length > 0; else noFarms">
+        <article class="farm-group" *ngFor="let group of filteredFarmGroups">
           <button
             type="button"
             class="farm-list-item"
-            [class.active]="selectedFarm?._id === farm._id"
-            (click)="toggleFarm(farm)"
+            [class.active]="selectedFarm?._id === group.farm._id"
+            (click)="toggleFarm(group.farm)"
           >
-            <span class="expand-indicator">{{ isFarmExpanded(farm) ? '-' : '+' }}</span>
+            <span class="expand-indicator">{{ isFarmExpanded(group.farm) ? '-' : '+' }}</span>
 
             <div class="farm-heading">
-              <span class="farm-avatar">{{ farm.name?.charAt(0) || 'F' }}</span>
+              <span class="farm-avatar">{{ group.farm.name?.charAt(0) || 'F' }}</span>
               <div>
                 <span class="panel-kicker">Farm Asset</span>
-                <h3>{{ farm.name }}</h3>
-                <p>{{ farm.location }}</p>
+                <h3>{{ group.farm.name }}</h3>
+                <p>{{ group.farm.location }}</p>
               </div>
             </div>
 
             <div class="farm-summary">
               <div>
                 <span>Size</span>
-                <strong>{{ formatArea(farm.size) }}</strong>
+                <strong>{{ formatArea(group.farm.size) }}</strong>
               </div>
               <div>
                 <span>Fields</span>
-                <strong>{{ getFieldCountForFarm(farm) }}</strong>
+                <strong>{{ group.fieldCount }}</strong>
               </div>
             </div>
           </button>
 
           <div class="farm-row-actions">
-            <button type="button" class="secondary-btn" (click)="searchByLocation(farm.location)">Similar</button>
-            <button type="button" class="edit-btn" (click)="editFarm(farm)">Edit Farm</button>
-            <button type="button" class="delete-btn" (click)="deleteFarm(farm._id)">Delete</button>
+            <button type="button" class="secondary-btn" (click)="searchByLocation(group.farm.location)">Similar</button>
+            <button type="button" class="edit-btn" (click)="editFarm(group.farm)">Edit Farm</button>
+            <button type="button" class="delete-btn" (click)="deleteFarm(group.farm._id)">Delete</button>
           </div>
 
-          <div class="field-list nested" *ngIf="isFarmExpanded(farm)">
+          <div class="field-list nested" *ngIf="isFarmExpanded(group.farm)">
             <button
               type="button"
               class="field-row"
-              *ngFor="let field of getFieldsForFarm(farm)"
+              *ngFor="let field of group.fields"
               [class.active]="selectedField?._id === field._id"
               (click)="selectField(field)"
             >
@@ -180,7 +189,7 @@
               <small [ngClass]="getBadgeClass(field.status)">{{ field.status }}</small>
             </button>
 
-            <div class="empty-state compact" *ngIf="getFieldsForFarm(farm).length === 0">No matching fields.</div>
+            <div class="empty-state compact" *ngIf="group.fields.length === 0">No matching fields.</div>
           </div>
         </article>
       </div>
@@ -189,8 +198,8 @@
         <app-empty-state
           icon="map"
           tone="leaf"
-          title="No farms yet"
-          description="Create your first farm to start monitoring fields, crops, weather, and operations."
+          [title]="farms.length ? 'No results found' : 'No farms yet'"
+          [description]="farms.length ? 'Try adjusting your search or filters.' : 'Create your first farm to start monitoring fields, crops, weather, and operations.'"
           primaryLabel="Add Farm"
           (primaryAction)="openCreateFarm()"
           [compact]="true">

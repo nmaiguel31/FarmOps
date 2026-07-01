@@ -87,13 +87,14 @@
         </div>
       </div>
 
-      <div class="filters-row">
-        <label class="search-field">
+      <div class="filters-row farmops-filter-bar">
+        <label class="search-field farmops-filter-field grow">
+          <span>Search</span>
           <svg lucideSearch></svg>
           <input type="search" placeholder="Search crops..." [(ngModel)]="filterSearch" (ngModelChange)="onFiltersChanged()" name="filterSearch">
         </label>
 
-        <label>
+        <label class="farmops-filter-field">
           <span>Crop Type</span>
           <select [(ngModel)]="filterType" (ngModelChange)="onFiltersChanged()" name="filterType">
             <option value="All">All Types</option>
@@ -101,7 +102,7 @@
           </select>
         </label>
 
-        <label>
+        <label class="farmops-filter-field">
           <span>Status</span>
           <select [(ngModel)]="filterStatus" (ngModelChange)="onFiltersChanged()" name="filterStatus">
             <option value="All">All Statuses</option>
@@ -109,7 +110,7 @@
           </select>
         </label>
 
-        <button type="button" class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+        <button type="button" class="farmops-clear-filters" (click)="resetFilters()">Clear filters</button>
       </div>
 
       <div class="crop-loading-shell" *ngIf="cropsLoading" aria-live="polite">
@@ -200,8 +201,8 @@
           *ngIf="!cropsLoading"
           icon="leaf"
           tone="leaf"
-          title="No crops found"
-          description="Add crop templates to define lifecycle durations, NDVI targets, moisture targets, and planting seasons."
+          [title]="cropCatalog.length ? 'No results found' : 'No crops found'"
+          [description]="cropCatalog.length ? 'Try adjusting your search or filters.' : 'Add crop templates to define lifecycle durations, NDVI targets, moisture targets, and planting seasons.'"
           primaryLabel="Add Crop"
           (primaryAction)="openCreateCrop()"
           [compact]="true">

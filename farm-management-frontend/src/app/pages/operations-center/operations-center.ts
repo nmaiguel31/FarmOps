@@ -61,6 +61,7 @@ export class OperationsCenter implements OnInit, OnDestroy {
   filterPriority = 'All';
   filterFarm = 'All';
   filterField = 'All';
+  filterSearch = '';
 
   readonly statuses = [
     'Active',
@@ -177,6 +178,9 @@ export class OperationsCenter implements OnInit, OnDestroy {
   }
 
   applyFilters() {
+    const search =
+      this.normalizeSearch(this.filterSearch);
+
     this.signals = this.allSignals.filter(signal => {
       const statusMatches =
         this.filterStatus === 'All' ||
@@ -193,12 +197,25 @@ export class OperationsCenter implements OnInit, OnDestroy {
       const fieldMatches =
         this.filterField === 'All' ||
         this.getSignalFieldId(signal) === this.filterField;
+      const searchMatches =
+        !search ||
+        [
+          signal.title,
+          signal.description,
+          signal.category,
+          signal.priority,
+          signal.status,
+          this.getFarmName(signal),
+          this.getFieldName(signal)
+        ]
+          .some(value => this.normalizeSearch(value).includes(search));
 
       return statusMatches &&
         categoryMatches &&
         priorityMatches &&
         farmMatches &&
-        fieldMatches;
+        fieldMatches &&
+        searchMatches;
     });
   }
 
@@ -251,9 +268,18 @@ export class OperationsCenter implements OnInit, OnDestroy {
     this.filterPriority = 'All';
     this.filterFarm = 'All';
     this.filterField = 'All';
+    this.filterSearch = '';
     this.message = '';
     this.applyFilters();
     this.cdr.detectChanges();
+  }
+
+  get resultSummary() {
+    return `Showing ${this.signals.length} of ${this.allSignals.length} signals`;
+  }
+
+  private normalizeSearch(value: any) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
   viewFarm(signal: any) {

@@ -74,6 +74,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   farmLocationMap!: ElementRef;
   farms: any[] = [];
   filteredFarms: any[] = [];
+  filteredFarmGroups: Array<{ farm: any; fields: any[]; fieldCount: number }> = [];
   fields: any[] = [];
   zones: any[] = [];
   crops: any[] = [];
@@ -395,7 +396,7 @@ updateFarm() {
       next: (data: any) => {
 
         this.farms = [...data];
-        this.filteredFarms = [...data];
+        this.filterFarms(false);
         if (this.pendingFarmId) {
           this.applyPendingSelection();
         } else if (!this.selectedFarm && this.farms.length > 0) {
@@ -408,6 +409,7 @@ updateFarm() {
         }
 
         this.refreshGroupedCropsForSelectedFarm();
+        this.refreshFarmFieldGroups();
         this.renderSelectedFarmMap();
         this.loadWeatherForSelection();
         this.cdr.detectChanges();
@@ -432,6 +434,7 @@ updateFarm() {
         this.fields = [...data];
         this.syncSelectedField();
         this.applyPendingSelection();
+        this.refreshFarmFieldGroups();
         this.refreshSelectedFieldViewModel();
         this.renderSelectedFarmMap();
         this.loadWeatherForSelection();
@@ -1067,11 +1070,12 @@ updateFarm() {
         (field.farm?._id || field.farm) === farm._id;
 
       const searchValue =
-        `${field.name || ''} ${this.getFieldCropLabel(field)} ${field.status || ''}`
+        `${field.name || ''} ${farm.name || ''} ${this.getFieldCropLabel(field)} ${field.status || ''} ${field.healthStatus || ''} ${field.irrigationStatus || ''}`
           .toLowerCase();
 
       const matchesSearch =
-        searchValue.includes(this.fieldSearch.toLowerCase());
+        !this.normalizeSearch(this.fieldSearch) ||
+        searchValue.includes(this.normalizeSearch(this.fieldSearch));
 
       const matchesFilter =
         this.fieldFilter === 'All' ||
@@ -1087,8 +1091,14 @@ updateFarm() {
   setFieldFilter(filter: string) {
 
     this.fieldFilter = filter;
+    this.refreshFarmFieldGroups();
 
   }
+
+  private normalizeSearch(value: any) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
   deleteFarm(id: string) {
 
     const confirmed = this.confirmation.confirmDestructive(
@@ -2436,33 +2446,70 @@ updateFarm() {
 
   }
 
-  filterFarms() {
+  filterFarms(renderMaps = true) {
+
+  const search =
+    this.normalizeSearch(this.searchLocation);
+  const ownerSearch =
+    this.normalizeSearch(this.searchOwner);
 
   this.filteredFarms = this.farms.filter((farm) => {
 
-    const matchesLocation =
-      farm.location
-        ?.toLowerCase()
-        .includes(
-          this.searchLocation.toLowerCase()
-        );
+    const farmFields =
+      this.fields.filter(field => (field.farm?._id || field.farm) === farm._id);
+    const farmSearchText =
+      [
+        farm.name,
+        farm.location,
+        farm.owner?.email,
+        farmFields.length,
+        ...farmFields.map(field => `${field.name || ''} ${this.getFieldCropLabel(field)} ${field.status || ''}`)
+      ].join(' ');
+    const matchesSearch =
+      !search || this.normalizeSearch(farmSearchText).includes(search);
 
     const matchesOwner =
-      farm.owner?.email
-        ?.toLowerCase()
-        .includes(
-          this.searchOwner.toLowerCase()
-        );
+      !ownerSearch ||
+      this.normalizeSearch(farm.owner?.email).includes(ownerSearch);
 
-    return matchesLocation && matchesOwner;
+    return matchesSearch && matchesOwner;
 
     
 
   });
 
-  setTimeout(() => {
-  this.renderMaps();
-}, 100);
+  this.refreshFarmFieldGroups();
+
+  if (renderMaps) {
+    setTimeout(() => {
+    this.renderMaps();
+  }, 100);
+  }
+
+}
+
+refreshFarmFieldGroups() {
+
+  this.filteredFarmGroups = this.filteredFarms.map(farm => {
+    const fields =
+      this.getFieldsForFarm(farm);
+
+    return {
+      farm,
+      fields,
+      fieldCount: fields.length
+    };
+  });
+
+}
+
+clearWorkspaceFilters() {
+
+  this.searchLocation = '';
+  this.searchOwner = '';
+  this.fieldSearch = '';
+  this.fieldFilter = 'All';
+  this.filterFarms();
 
 }
 

@@ -68,6 +68,17 @@
   </app-empty-state>
 
   <ng-container *ngIf="!loading && !loadError && hasOperationalData">
+    <section class="period-card farmops-filter-bar">
+      <label class="farmops-filter-field grow">
+        <span>Search report tables</span>
+        <input class="farmops-field" type="search" placeholder="Search farm, crop, status, stage..." [(ngModel)]="reportSearch">
+      </label>
+      <button type="button" class="farmops-clear-filters" (click)="clearReportFilters()">Clear filters</button>
+      <p class="farmops-filter-summary">
+        Showing {{ filteredFarmPerformanceRows.length }} farm rows and {{ filteredCropPerformanceRows.length }} crop rows
+      </p>
+    </section>
+
     <section class="summary-grid" aria-label="Executive summary">
       <article class="summary-card" *ngFor="let card of summaryCards" [class]="'summary-card ' + card.tone">
         <span class="summary-icon" [class]="card.icon">
@@ -96,7 +107,7 @@
       </div>
 
       <div class="table-shell">
-        <table *ngIf="hasCropPerformanceData; else noCropPerformance">
+        <table *ngIf="filteredFarmPerformanceRows.length; else noFarmPerformance">
           <thead>
             <tr>
               <th>Farm</th>
@@ -111,7 +122,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of farmPerformanceRows">
+            <tr *ngFor="let row of filteredFarmPerformanceRows">
               <td>
                 <strong>{{ row.farm.name }}</strong>
                 <small>{{ row.farm.location || 'Location not specified' }}</small>
@@ -127,6 +138,9 @@
             </tr>
           </tbody>
         </table>
+        <ng-template #noFarmPerformance>
+          <div class="table-empty">No results found. Try adjusting your search or filters.</div>
+        </ng-template>
       </div>
     </section>
 
@@ -139,7 +153,7 @@
       </div>
 
       <div class="table-shell">
-        <table>
+        <table *ngIf="filteredCropPerformanceRows.length; else noCropPerformance">
           <thead>
             <tr>
               <th>Crop</th>
@@ -153,7 +167,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of cropPerformanceRows">
+            <tr *ngFor="let row of filteredCropPerformanceRows">
               <td><strong>{{ row.crop.name }}</strong><small>{{ row.crop.type || 'Crop' }}</small></td>
               <td>{{ row.farm }}</td>
               <td>{{ formatCurrency(row.revenue) }}</td>

@@ -85,6 +85,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   periodPreset = 'this-month';
   customStartDate = '';
   customEndDate = '';
+  reportSearch = '';
   readonly periodOptions = [
     { value: 'today', label: 'Today' },
     { value: 'last-7-days', label: 'Last 7 Days' },
@@ -427,6 +428,26 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  get filteredFarmPerformanceRows() {
+    const search =
+      this.normalizeSearch(this.reportSearch);
+
+    if (!search) {
+      return this.farmPerformanceRows;
+    }
+
+    return this.farmPerformanceRows.filter(row =>
+      [
+        row.farm?.name,
+        row.farm?.location,
+        row.status,
+        row.averageNdvi,
+        row.fields
+      ]
+        .some(value => this.normalizeSearch(value).includes(search))
+    );
+  }
+
   get cropPerformanceRows() {
     const rowKeys = new Map<string, { cropId: string; farmId: string; crop: any; farm: any }>();
 
@@ -501,6 +522,31 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
           stage
         };
       });
+  }
+
+  get filteredCropPerformanceRows() {
+    const search =
+      this.normalizeSearch(this.reportSearch);
+
+    if (!search) {
+      return this.cropPerformanceRows;
+    }
+
+    return this.cropPerformanceRows.filter(row =>
+      [
+        row.crop?.name,
+        row.crop?.type,
+        row.farm,
+        row.stage,
+        row.averageHealth,
+        row.ndvi
+      ]
+        .some(value => this.normalizeSearch(value).includes(search))
+    );
+  }
+
+  clearReportFilters() {
+    this.reportSearch = '';
   }
 
   get operationsSummary() {
@@ -1470,6 +1516,10 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
 
   private getReportingPeriodLabel() {
     return `${this.periodLabel}: ${this.startDateLabel} - ${this.endDateLabel}`;
+  }
+
+  private normalizeSearch(value: any) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
 }

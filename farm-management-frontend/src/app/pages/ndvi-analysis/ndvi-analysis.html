@@ -108,8 +108,18 @@
             </div>
           </div>
 
-          <div class="field-ranking">
-            <article class="field-rank-card" *ngFor="let item of rankedFields" [ngClass]="getClassTone(item.classification)">
+          <div class="farmops-filter-bar ndvi-filter-bar">
+            <label class="farmops-filter-field grow">
+              <span>Search</span>
+              <input type="search" placeholder="Search field, crop, health, trend..." [(ngModel)]="fieldSearch">
+            </label>
+            <button type="button" class="farmops-clear-filters" (click)="clearFilters()">Clear filters</button>
+          </div>
+
+          <p class="farmops-filter-summary">Showing {{ filteredRankedFields.length }} of {{ rankedFields.length }} fields</p>
+
+          <div class="field-ranking" *ngIf="filteredRankedFields.length; else noNdviResults">
+            <article class="field-rank-card" *ngFor="let item of filteredRankedFields" [ngClass]="getClassTone(item.classification)">
               <div>
                 <strong>{{ item.name }}</strong>
                 <span>{{ item.crop }}</span>
@@ -126,6 +136,15 @@
               </span>
             </article>
           </div>
+
+          <ng-template #noNdviResults>
+            <app-empty-state
+              icon="search"
+              title="No results found"
+              description="Try adjusting your search or filters."
+              [compact]="true">
+            </app-empty-state>
+          </ng-template>
         </article>
 
         <article class="trend-panel">

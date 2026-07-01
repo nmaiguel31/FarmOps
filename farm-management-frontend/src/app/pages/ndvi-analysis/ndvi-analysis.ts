@@ -74,6 +74,7 @@ export class NdviAnalysis implements OnInit, OnDestroy {
   error = '';
   ndviSignals: any[] = [];
   signalLoading = false;
+  fieldSearch = '';
 
   private farmService = inject(Farm);
   private fieldService = inject(Field);
@@ -230,6 +231,32 @@ export class NdviAnalysis implements OnInit, OnDestroy {
     return this.selectedFarmFields
       .map(field => this.buildFieldNdviView(field))
       .sort((a, b) => b.ndvi - a.ndvi);
+  }
+
+  get filteredRankedFields(): FieldNdviView[] {
+    const search =
+      this.normalizeSearch(this.fieldSearch);
+
+    if (!search) {
+      return this.rankedFields;
+    }
+
+    return this.rankedFields.filter(field =>
+      [
+        field.name,
+        field.crop,
+        field.classification,
+        field.trend,
+        field.field?.status,
+        field.field?.irrigationStatus,
+        field.field?.healthStatus
+      ]
+        .some(value => this.normalizeSearch(value).includes(search))
+    );
+  }
+
+  clearFilters() {
+    this.fieldSearch = '';
   }
 
   get averageNdvi() {
@@ -555,6 +582,10 @@ export class NdviAnalysis implements OnInit, OnDestroy {
 
   getEntityId(entity: any) {
     return String(entity?._id || entity || '');
+  }
+
+  private normalizeSearch(value: any) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
   private getStableVariation(field: any, range: number) {
