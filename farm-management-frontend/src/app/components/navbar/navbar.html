@@ -50,19 +50,24 @@
       <span>Reports</span>
     </a>
 
+    <a routerLink="/profile" routerLinkActive="active">
+      <svg class="nav-icon" lucideUserRound></svg>
+      <span>Profile</span>
+    </a>
+
     <a routerLink="/mfa" routerLinkActive="active">
       <svg class="nav-icon" lucideShieldCheck></svg>
       <span>Security</span>
     </a>
   </nav>
 
-  <section class="farm-status" aria-label="Farm status">
-    <span class="status-dot"></span>
+  <a class="farm-status profile-status" routerLink="/profile" aria-label="User profile">
+    <span class="profile-avatar">{{ displayInitials }}</span>
     <div>
-      <strong>Operations Online</strong>
-      <small>Farm data synced</small>
+      <strong>{{ displayName }}</strong>
+      <small>View profile</small>
     </div>
-  </section>
+  </a>
 
   <button type="button" class="logout-button" (click)="logout()">
     <svg class="nav-icon" lucideLogOut></svg>

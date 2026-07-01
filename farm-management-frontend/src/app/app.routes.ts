@@ -9,6 +9,7 @@ import { OperationsCenter } from './pages/operations-center/operations-center';
 import { Weather } from './pages/weather/weather';
 import { NdviAnalysis } from './pages/ndvi-analysis/ndvi-analysis';
 import { ExecutiveReports } from './pages/executive-reports/executive-reports';
+import { Profile } from './pages/profile/profile';
 import {
   authGuard,
   mfaAccessGuard,
@@ -75,6 +76,12 @@ export const routes: Routes = [
   {
     path: 'reports',
     component: ExecutiveReports,
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'profile',
+    component: Profile,
     canActivate: [authGuard]
   },
 

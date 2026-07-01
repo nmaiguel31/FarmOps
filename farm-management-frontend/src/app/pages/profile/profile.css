@@ -1,0 +1,366 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top right, rgba(20, 145, 95, .1), transparent 32rem),
+    var(--color-page);
+}
+
+.profile-page {
+  display: grid;
+  width: min(100%, var(--page-max-width));
+  gap: 24px;
+  margin: 0 auto;
+  padding: var(--page-padding);
+}
+
+.profile-hero,
+.profile-card,
+.stat-card,
+.profile-error,
+.skeleton-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.profile-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding: 30px 34px;
+}
+
+.eyebrow {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(36px, 4vw, 58px);
+  line-height: 1;
+}
+
+h2 {
+  font-size: 23px;
+  line-height: 1.2;
+}
+
+.profile-hero p,
+.muted {
+  margin-top: 10px;
+  color: var(--color-muted-strong);
+  line-height: 1.55;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr);
+  gap: 24px;
+}
+
+.profile-card {
+  padding: 26px;
+}
+
+.summary-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.avatar {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  border-radius: 24px;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.summary-list {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.summary-list span,
+.readonly-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  color: var(--color-muted-strong);
+  background: #f8faf7;
+  border: 1px solid #e5ece4;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.summary-list strong {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 15px;
+  text-transform: none;
+}
+
+.summary-list strong.enabled {
+  color: var(--color-primary-strong);
+}
+
+.section-heading {
+  margin-bottom: 20px;
+}
+
+.profile-form {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.farmops-field {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.readonly-field {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 46px;
+  text-transform: none;
+}
+
+.readonly-field svg,
+.primary-action svg,
+.secondary-action svg,
+.danger-action svg,
+.stat-card svg {
+  width: 18px;
+  height: 18px;
+}
+
+.primary-action,
+.secondary-action,
+.danger-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-action {
+  min-width: 184px;
+  flex: 0 0 auto;
+}
+
+.profile-action svg,
+.profile-action span {
+  flex: 0 0 auto;
+}
+
+.action-arrow {
+  color: currentColor;
+  font-size: 16px;
+  line-height: 1;
+  opacity: .78;
+}
+
+.primary-action {
+  color: #fff;
+  background: var(--color-primary);
+  box-shadow: var(--shadow-soft);
+}
+
+.primary-action:disabled {
+  cursor: not-allowed;
+  opacity: .7;
+}
+
+.secondary-action {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.danger-action {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.stats-grid,
+.profile-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  display: grid;
+  min-height: 138px;
+  gap: 8px;
+  align-content: center;
+  padding: 20px;
+}
+
+.stat-card svg {
+  color: var(--color-primary);
+}
+
+.stat-card span {
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.stat-card strong {
+  color: var(--color-text);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.stat-card .text-value {
+  font-size: 18px;
+}
+
+.lower {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.security-shortcut,
+.session-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+}
+
+.security-shortcut > div,
+.session-card > div {
+  min-width: 0;
+}
+
+.profile-error {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 34px;
+  text-align: center;
+}
+
+.skeleton-card {
+  display: grid;
+  min-height: 138px;
+  gap: 12px;
+  padding: 20px;
+}
+
+.skeleton-card span,
+.skeleton-card strong,
+.skeleton-card small {
+  overflow: hidden;
+  background: #eef3ef;
+  border-radius: 999px;
+}
+
+.skeleton-card span {
+  width: 42px;
+  height: 42px;
+}
+
+.skeleton-card strong {
+  width: 70%;
+  height: 18px;
+}
+
+.skeleton-card small {
+  width: 50%;
+  height: 12px;
+}
+
+@media (max-width: 1320px) {
+  .stats-grid,
+  .profile-loading-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .profile-hero,
+  .security-shortcut,
+  .session-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-grid,
+  .lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-hero,
+  .profile-card {
+    padding: 22px;
+  }
+
+  .summary-card,
+  .summary-list,
+  .stats-grid,
+  .profile-loading-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+  }
+}

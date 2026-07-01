@@ -17,6 +17,7 @@ import { Crop } from '../../services/crop';
 import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
 import { WeatherInsights, WeatherService } from '../../services/weather';
+import { Auth } from '../../services/auth';
 import {
   LucideActivity,
   LucideBadgeDollarSign,
@@ -106,6 +107,7 @@ export class Dashboard implements OnInit {
   private financialService = inject(FinancialRecord);
   private operationSignalService = inject(OperationSignal);
   private weatherService = inject(WeatherService);
+  private authService = inject(Auth);
   private mapsLoader = inject(GoogleMapsLoader);
   private cdr = inject(ChangeDetectorRef);
 
@@ -232,7 +234,8 @@ export class Dashboard implements OnInit {
   }
 
   get greetingName() {
-    return 'Nicolas';
+    const name = this.authService.getDisplayName();
+    return name ? `${name} 👋` : '👋';
   }
 
   get commandBriefs() {

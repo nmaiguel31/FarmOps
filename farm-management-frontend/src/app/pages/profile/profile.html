@@ -1,0 +1,151 @@
+<main class="profile-page">
+  <section class="profile-hero">
+    <div>
+      <p class="eyebrow">FarmOps Account</p>
+      <h1>User Profile</h1>
+      <p>Manage your workspace identity, account status, and security shortcuts.</p>
+    </div>
+
+    <a routerLink="/mfa" class="secondary-action profile-action">
+      <svg lucideShieldCheck></svg>
+      <span>Manage Security</span>
+      <span class="action-arrow" aria-hidden="true">→</span>
+    </a>
+  </section>
+
+  <section class="profile-loading-grid" *ngIf="profileLoading">
+    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]">
+      <span></span>
+      <strong></strong>
+      <small></small>
+    </div>
+  </section>
+
+  <section class="profile-error" *ngIf="!profileLoading && loadError && !user">
+    <strong>Profile unavailable</strong>
+    <p>{{ loadError }}</p>
+    <button type="button" class="primary-action" (click)="loadProfile()">Try again</button>
+  </section>
+
+  <ng-container *ngIf="!profileLoading && user">
+    <section class="profile-grid">
+      <article class="profile-card summary-card">
+        <div class="avatar">{{ initials }}</div>
+        <div>
+          <p class="eyebrow">Profile Summary</p>
+          <h2>{{ user.fullName || 'No name added' }}</h2>
+          <p class="muted">{{ user.email }}</p>
+        </div>
+
+        <div class="summary-list">
+          <span>Account Status <strong>{{ accountStatus }}</strong></span>
+          <span>Member Since <strong>{{ memberSince }}</strong></span>
+          <span>Last Login <strong>{{ lastLogin }}</strong></span>
+          <span>MFA Status <strong [class.enabled]="user.mfaEnabled">{{ mfaStatus }}</strong></span>
+        </div>
+      </article>
+
+      <article class="profile-card form-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Personal Information</p>
+            <h2>Workspace identity</h2>
+          </div>
+        </div>
+
+        <form class="profile-form" (ngSubmit)="updateProfile()">
+          <label>
+            Full Name
+            <input class="farmops-field" name="fullName" [(ngModel)]="fullName" maxlength="120" placeholder="Add your full name">
+          </label>
+
+          <label>
+            Email
+            <span class="readonly-field">
+              <svg lucideMail></svg>
+              {{ user.email }}
+            </span>
+          </label>
+
+          <button type="submit" class="primary-action" [disabled]="saving">
+            <svg lucideSave></svg>
+            {{ saving ? 'Saving...' : 'Update Profile' }}
+          </button>
+        </form>
+      </article>
+    </section>
+
+    <section class="profile-loading-grid" *ngIf="statsLoading">
+      <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]">
+        <span></span>
+        <strong></strong>
+        <small></small>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Account statistics" *ngIf="!statsLoading">
+      <article class="stat-card">
+        <svg lucideMap></svg>
+        <span>Farms Managed</span>
+        <strong>{{ stats.farmsManaged }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <svg lucideLeaf></svg>
+        <span>Fields Managed</span>
+        <strong>{{ stats.fieldsManaged }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <svg lucideSprout></svg>
+        <span>Crops Registered</span>
+        <strong>{{ stats.cropsRegistered }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <svg lucideBadgeDollarSign></svg>
+        <span>Financial Records</span>
+        <strong>{{ stats.financialRecords }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <svg lucideFileText></svg>
+        <span>Reports Generated</span>
+        <strong class="text-value">{{ stats.reportsGenerated }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <svg lucideBell></svg>
+        <span>Alerts Resolved</span>
+        <strong>{{ stats.alertsResolved }}</strong>
+      </article>
+    </section>
+
+    <section class="profile-grid lower">
+      <article class="profile-card security-shortcut">
+        <div>
+          <p class="eyebrow">Security Shortcut</p>
+          <h2>Multi-factor authentication is {{ mfaStatus | lowercase }}</h2>
+          <p class="muted">Review authenticator setup and account protection settings from the Security page.</p>
+        </div>
+        <a routerLink="/mfa" class="secondary-action profile-action">
+          <svg lucideShieldCheck></svg>
+          <span>Manage Security</span>
+          <span class="action-arrow" aria-hidden="true">→</span>
+        </a>
+      </article>
+
+      <article class="profile-card session-card">
+        <div>
+          <p class="eyebrow">Session</p>
+          <h2>Sign out of FarmOps</h2>
+          <p class="muted">End this browser session and return to the login page.</p>
+        </div>
+        <button type="button" class="danger-action" (click)="logout()">
+          <svg lucideLogOut></svg>
+          Logout
+        </button>
+      </article>
+    </section>
+  </ng-container>
+</main>

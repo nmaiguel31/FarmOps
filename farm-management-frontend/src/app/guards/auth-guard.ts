@@ -11,6 +11,7 @@ const HOURS_24 =
 export function clearAuthSession() {
 
 localStorage.removeItem('token');
+localStorage.removeItem('farmopsUser');
 localStorage.removeItem('mfaVerified');
 localStorage.removeItem('mfaVerifiedAt');
 

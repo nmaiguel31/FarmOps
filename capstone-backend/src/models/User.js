@@ -6,6 +6,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  fullName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   password: {
     type: String,
     required: true,
@@ -28,6 +33,9 @@ const userSchema = new mongoose.Schema({
   mfaSecret: {
   type: String,
   default: ''
+  },
+  lastLogin: {
+  type: Date
   }
 }, { timestamps: true });
 
