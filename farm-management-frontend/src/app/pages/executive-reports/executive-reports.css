@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  padding: 32px 32px 48px calc(var(--sidebar-width) + 32px);
+  padding: var(--page-padding) var(--page-padding) 48px;
   background:
     radial-gradient(circle at top right, var(--color-focus-ring), transparent 32rem),
     var(--color-page);
@@ -236,9 +236,14 @@ h2 {
 }
 
 .table-shell {
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: 12px;
+}
+
+.table-shell table {
+  min-width: 920px;
 }
 
 .table-empty {
@@ -304,7 +309,12 @@ td small {
 
 .chart-wrap {
   position: relative;
+  min-width: 0;
   min-height: 320px;
+}
+
+.chart-wrap canvas {
+  max-width: 100%;
 }
 
 .operations-grid {

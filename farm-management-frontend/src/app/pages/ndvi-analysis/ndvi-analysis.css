@@ -2,7 +2,7 @@
   display: grid;
   gap: 24px;
   min-height: 100vh;
-  padding: 32px;
+  padding: var(--page-padding);
   background:
     radial-gradient(circle at top right, rgba(20, 145, 95, .1), transparent 32rem),
     radial-gradient(circle at bottom left, rgba(121, 173, 50, .1), transparent 28rem),
@@ -472,9 +472,33 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .ndvi-hero,
+  .farm-context {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .farm-selector,
+  .simulation-note {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .field-rank-card {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .ndvi-score {
+    text-align: left;
+  }
+}
+
 @media (max-width: 760px) {
   .ndvi-page {
-    padding: 20px;
+    padding: 18px;
   }
 
   .ndvi-hero,

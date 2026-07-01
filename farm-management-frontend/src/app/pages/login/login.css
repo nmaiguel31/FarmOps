@@ -305,6 +305,38 @@
   line-height: 1.45;
 }
 
+@media (max-width: 1180px) and (min-width: 901px) {
+  .login-page {
+    grid-template-columns: 58% 42%;
+  }
+
+  .brand-lockup {
+    top: 110px;
+    left: 42px;
+    width: 420px;
+    max-width: calc(100% - 84px);
+  }
+
+  .visual-copy {
+    left: 42px;
+    bottom: 160px;
+    width: min(calc(100% - 84px), 500px);
+  }
+
+  .visual-copy h1 {
+    font-size: clamp(36px, 3.2vw, 48px);
+  }
+
+  .login-card {
+    padding: 28px;
+  }
+
+  .login-panel {
+    width: min(100%, 400px);
+    gap: 22px;
+  }
+}
+
 @keyframes loginFadeIn {
   from {
     opacity: 0;

@@ -2,7 +2,7 @@
   display: grid;
   gap: 24px;
   min-height: 100vh;
-  padding: 32px;
+  padding: var(--page-padding);
   background:
     radial-gradient(circle at top right, rgba(20, 145, 95, 0.08), transparent 32rem),
     var(--color-page);
@@ -165,8 +165,8 @@
 }
 
 .operations-filters {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(130px, 1fr)) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   align-items: end;
   padding: 18px;
@@ -174,7 +174,13 @@
 
 .operations-filters label {
   display: grid;
+  flex: 1 1 190px;
   gap: 8px;
+  min-width: min(190px, 100%);
+}
+
+.operations-filters .farmops-filter-field.grow {
+  flex: 2 1 320px;
 }
 
 .operations-filters select {
@@ -389,15 +395,14 @@
 }
 
 @media (max-width: 1100px) {
-  .operations-kpis,
-  .operations-filters {
+  .operations-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
   .operations-page {
-    padding: 20px;
+    padding: 18px;
   }
 
   .operations-hero,
@@ -406,7 +411,6 @@
   }
 
   .operations-kpis,
-  .operations-filters,
   .signal-card {
     grid-template-columns: 1fr;
   }

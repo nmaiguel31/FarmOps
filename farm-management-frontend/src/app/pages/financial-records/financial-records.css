@@ -391,12 +391,13 @@
 }
 
 .records-panel {
+  overflow: hidden;
   padding: 24px;
 }
 
 .finance-filters {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(130px, 1fr)) minmax(250px, 1.35fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: end;
   margin: 0 -24px 18px;
@@ -410,6 +411,24 @@
 .finance-form label {
   display: grid;
   gap: 8px;
+}
+
+.finance-filters .farmops-filter-field {
+  flex: 1 1 170px;
+  min-width: min(170px, 100%);
+}
+
+.finance-filters .farmops-filter-field.grow {
+  flex: 2 1 320px;
+}
+
+.finance-filters .date-filter {
+  flex: 1 1 280px;
+  min-width: min(280px, 100%);
+}
+
+.finance-filters .reset-btn {
+  flex: 0 0 auto;
 }
 
 .date-filter span {
@@ -670,12 +689,15 @@
     grid-template-columns: 1fr;
   }
 
-  .finance-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .reset-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 1100px) {
+  .finance-context-panel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
 
@@ -692,10 +714,9 @@
 
   .header-actions,
   .summary-grid,
-  .finance-filters,
-  .form-grid,
-  .form-grid.three-up,
-  .profit-by-crop,
+    .form-grid,
+    .form-grid.three-up,
+    .profit-by-crop,
   .date-filter span {
     display: grid;
     width: 100%;
@@ -717,6 +738,12 @@
     margin-left: -22px;
     padding-right: 22px;
     padding-left: 22px;
+  }
+
+  .finance-filters .farmops-filter-field,
+  .finance-filters .date-filter,
+  .finance-filters .reset-btn {
+    flex-basis: 100%;
   }
 
   .chart-shell {

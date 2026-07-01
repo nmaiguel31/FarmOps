@@ -2,7 +2,7 @@
   display: grid;
   gap: 24px;
   min-height: 100vh;
-  padding: 32px;
+  padding: var(--page-padding);
   background:
     radial-gradient(circle at top right, rgba(64, 145, 214, .11), transparent 32rem),
     radial-gradient(circle at bottom left, rgba(20, 145, 95, .09), transparent 28rem),
@@ -460,9 +460,23 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .weather-hero,
+  .farm-context {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .farm-selector,
+  .coordinate-card {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 760px) {
   .weather-page {
-    padding: 20px;
+    padding: 18px;
   }
 
   .weather-hero,

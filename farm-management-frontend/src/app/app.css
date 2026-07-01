@@ -4,11 +4,19 @@
 }
 
 .app-shell-content {
+  min-width: 0;
   min-height: 100vh;
   margin-left: var(--sidebar-width);
   padding-top: 0;
+  overflow-x: clip;
   background: var(--color-page);
   transition: margin-left 180ms ease;
+}
+
+@supports not (overflow: clip) {
+  .app-shell-content {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 760px) {

@@ -8,7 +8,7 @@
 .farms-page {
   width: min(100%, 1720px);
   margin: 0 auto;
-  padding: 26px;
+  padding: var(--page-padding);
   overflow: hidden;
 }
 
@@ -1351,6 +1351,18 @@
   .recommendation-grid,
   .lifecycle-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .farm-drawer,
+  .field-drawer {
+    width: min(680px, 100%);
+    padding: 24px;
+  }
+
+  .farm-location-map {
+    min-height: 360px;
   }
 }
 

@@ -52,6 +52,8 @@
   --shadow-card: 0 10px 26px rgba(31, 54, 40, 0.06);
   --shadow-soft: 0 16px 40px rgba(20, 145, 95, 0.18);
   --shadow-elevated: 0 20px 54px rgba(31, 54, 40, 0.1);
+  --page-max-width: 1720px;
+  --page-padding: clamp(18px, 2.2vw, 34px);
 }
 
 * {
@@ -531,8 +533,34 @@ td {
   font-size: 14px;
 }
 
+.table-shell,
+.table-wrap,
+.records-table {
+  max-width: 100%;
+  scrollbar-gutter: stable;
+}
+
+.chart-shell,
+.chart-wrap,
+.chart-container {
+  min-width: 0;
+}
+
+.chart-shell canvas,
+.chart-wrap canvas,
+.chart-container canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+}
+
 @media (max-width: 760px) {
   :root {
     --topbar-height: 64px;
+    --page-padding: 18px;
   }
 }

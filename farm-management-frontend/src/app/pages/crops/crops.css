@@ -8,7 +8,7 @@
 .crops-page {
   width: min(100%, 1560px);
   margin: 0 auto;
-  padding: 30px;
+  padding: var(--page-padding);
 }
 
 .page-header,
@@ -195,8 +195,8 @@ button {
 }
 
 .filters-row {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.3fr) minmax(160px, .7fr) minmax(160px, .7fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   align-items: end;
   padding: 0 24px 20px;
@@ -235,6 +235,16 @@ button {
 
 .search-field {
   position: relative;
+  flex: 2 1 320px;
+}
+
+.filters-row .farmops-filter-field {
+  flex: 1 1 180px;
+  min-width: min(180px, 100%);
+}
+
+.filters-row .reset-btn {
+  flex: 0 0 auto;
 }
 
 .search-field svg {
@@ -778,7 +788,6 @@ tbody tr.selected {
   .page-header,
   .header-actions,
   .table-pagination,
-  .filters-row,
   .form-grid,
   .stage-row {
     grid-template-columns: 1fr;
@@ -793,6 +802,11 @@ tbody tr.selected {
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filters-row .farmops-filter-field,
+  .filters-row .reset-btn {
+    flex-basis: 100%;
   }
 
   .details-title {
