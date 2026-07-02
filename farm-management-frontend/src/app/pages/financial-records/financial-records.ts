@@ -30,6 +30,11 @@ import {
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import {
+  getCurrentCrops,
+  getCurrentFields,
+  getEntityId as getScopedEntityId
+} from '../../shared/current-data-scope';
 
 Chart.register(...registerables);
 
@@ -62,6 +67,10 @@ export class FinancialRecords implements OnInit {
   recordsLoading = true;
   recordActionLoading = false;
   exportActionLoading = false;
+  profitByCropBreakdown = {
+    totalProfit: 0,
+    entries: [] as Array<{ crop: string; profit: number; percent: number }>
+  };
 
   recordType = 'Expense';
   recordCategory = 'Other Expense';
@@ -114,6 +123,7 @@ export class FinancialRecords implements OnInit {
     'Pending',
     'Overdue'
   ];
+  readonly skeletonRows = [1, 2, 3, 4, 5];
 
   private financialService = inject(FinancialRecord);
   private cdr = inject(ChangeDetectorRef);
@@ -352,21 +362,11 @@ export class FinancialRecords implements OnInit {
   }
 
   get validFields() {
-    const farmIds =
-      new Set(this.farms.map(farm => this.getEntityId(farm)).filter(Boolean));
-
-    return this.fields.filter(field =>
-      farmIds.has(this.getEntityId(field.farm))
-    );
+    return getCurrentFields(this.farms, this.fields);
   }
 
   get validCrops() {
-    const farmIds =
-      new Set(this.farms.map(farm => this.getEntityId(farm)).filter(Boolean));
-
-    return this.crops.filter(crop =>
-      farmIds.has(this.getEntityId(crop.farm))
-    );
+    return getCurrentCrops(this.farms, this.validFields, this.crops, this.records);
   }
 
   get filterFieldOptions() {
@@ -509,7 +509,7 @@ export class FinancialRecords implements OnInit {
   }
 
   get hasCropProfit() {
-    return this.getProfitByCropBreakdown().entries.length > 0;
+    return this.profitByCropBreakdown.entries.length > 0;
   }
 
   get hasFieldProfit() {
@@ -520,6 +520,26 @@ export class FinancialRecords implements OnInit {
     return this.recordType === 'Income'
       ? this.incomeCategories
       : this.expenseCategories;
+  }
+
+  get categoryOptions() {
+    return this.getCategoryOptions();
+  }
+
+  trackById(_index: number, item: any) {
+    return this.getEntityId(item) || item?.name || item?.label || _index;
+  }
+
+  trackByValue(_index: number, item: any) {
+    return item;
+  }
+
+  trackByCropProfit(_index: number, item: any) {
+    return item.crop;
+  }
+
+  trackByLabel(_index: number, item: any) {
+    return item?.label || item?.category || item?.crop || item?.title || _index;
   }
 
   getAmountPreview() {
@@ -898,7 +918,7 @@ export class FinancialRecords implements OnInit {
   }
 
   private getEntityId(entity: any) {
-    return String(entity?._id || entity || '');
+    return getScopedEntityId(entity);
   }
 
   private getTodayInput() {
@@ -1003,10 +1023,15 @@ export class FinancialRecords implements OnInit {
   }
 
   private renderChartsSoon() {
+    this.refreshChartSummaries();
     setTimeout(() => {
       this.renderRevenueExpenseChart();
       this.renderProfitByCropChart();
     }, 150);
+  }
+
+  private refreshChartSummaries() {
+    this.profitByCropBreakdown = this.getProfitByCropBreakdown();
   }
 
   private renderRevenueExpenseChart() {

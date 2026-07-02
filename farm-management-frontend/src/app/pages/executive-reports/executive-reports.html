@@ -22,7 +22,7 @@
     <div class="period-control">
       <label for="reportPeriod">Reporting Period</label>
       <select id="reportPeriod" class="farmops-field" [(ngModel)]="periodPreset" (ngModelChange)="onPeriodChange()">
-        <option *ngFor="let option of periodOptions" [value]="option.value">
+        <option *ngFor="let option of periodOptions; trackBy: trackByValue" [value]="option.value">
           {{ option.label }}
         </option>
       </select>
@@ -47,7 +47,7 @@
   </section>
 
   <section *ngIf="loading" class="report-skeleton-grid" aria-label="Loading executive reports">
-    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6,7]"></div>
+    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6,7]; trackBy: trackByValue"></div>
   </section>
 
   <app-empty-state
@@ -80,7 +80,7 @@
     </section>
 
     <section class="summary-grid" aria-label="Executive summary">
-      <article class="summary-card" *ngFor="let card of summaryCards" [class]="'summary-card ' + card.tone">
+      <article class="summary-card" *ngFor="let card of summaryCards; trackBy: trackByLabel" [class]="'summary-card ' + card.tone">
         <span class="summary-icon" [class]="card.icon">
           <svg *ngIf="card.icon === 'health'" lucideActivity></svg>
           <svg *ngIf="card.icon === 'profit'" lucideBadgeDollarSign></svg>
@@ -122,7 +122,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of filteredFarmPerformanceRows">
+            <tr *ngFor="let row of filteredFarmPerformanceRows; trackBy: trackById">
               <td>
                 <strong>{{ row.farm.name }}</strong>
                 <small>{{ row.farm.location || 'Location not specified' }}</small>
@@ -167,7 +167,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of filteredCropPerformanceRows">
+            <tr *ngFor="let row of filteredCropPerformanceRows; trackBy: trackById">
               <td><strong>{{ row.crop.name }}</strong><small>{{ row.crop.type || 'Crop' }}</small></td>
               <td>{{ row.farm }}</td>
               <td>{{ formatCurrency(row.revenue) }}</td>
@@ -258,7 +258,7 @@
           </div>
         </div>
         <div class="operations-grid">
-          <div class="operation-tile" *ngFor="let item of operationsSummary" [class]="item.tone">
+          <div class="operation-tile" *ngFor="let item of operationsSummary; trackBy: trackByLabel" [class]="item.tone">
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
           </div>
@@ -273,10 +273,10 @@
           </div>
         </div>
         <div class="recommendation-groups">
-          <section class="recommendation-group" *ngFor="let group of executiveRecommendations">
+          <section class="recommendation-group" *ngFor="let group of executiveRecommendations; trackBy: trackByLabel">
             <h3>{{ group.category }}</h3>
             <ul class="recommendation-list">
-              <li *ngFor="let recommendation of group.items">
+              <li *ngFor="let recommendation of group.items; trackBy: trackByValue">
                 {{ recommendation }}
               </li>
             </ul>

@@ -36,6 +36,14 @@ import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
+import {
+  getCurrentCrops,
+  getCurrentFields,
+  getCurrentRecords,
+  getCurrentSignals,
+  getCurrentZones,
+  getEntityId as getScopedEntityId
+} from '../../shared/current-data-scope';
 
 Chart.register(...registerables);
 
@@ -146,11 +154,11 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
       next: (data: any) => {
         this.zone.run(() => {
           this.farms = [...(data.farms || [])];
-          this.fields = this.filterFieldsByCurrentFarms(data.fields || []);
-          this.zones = this.filterZonesByCurrentFields(data.zones || []);
-          this.records = this.filterRecordsByCurrentFarms(data.records || []);
-          this.crops = this.filterCropsByCurrentContext(data.crops || []);
-          this.signals = [...(data.signals || [])];
+          this.fields = getCurrentFields(this.farms, data.fields || []);
+          this.zones = getCurrentZones(this.fields, data.zones || []);
+          this.records = getCurrentRecords(this.farms, data.records || []);
+          this.crops = getCurrentCrops(this.farms, this.fields, data.crops || [], this.records);
+          this.signals = getCurrentSignals(this.farms, this.fields, data.signals || []);
           this.loading = false;
           this.dataReady = true;
           this.cdr.markForCheck();
@@ -849,42 +857,20 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     this.renderChartsSoon();
   }
 
-  private filterFieldsByCurrentFarms(fields: any[]) {
-    const farmIds = new Set(this.farms.map(farm => this.getEntityId(farm)).filter(Boolean));
-    return fields.filter(field => farmIds.has(this.getEntityId(field.farm)));
+  trackById(index: number, item: any) {
+    return String(item?._id || item?.id || item?.farm?._id || item?.crop?._id || item?.label || index);
   }
 
-  private filterZonesByCurrentFields(zones: any[]) {
-    const fieldIds = new Set(this.fields.map(field => this.getEntityId(field)).filter(Boolean));
-    return zones.filter(zone => fieldIds.has(this.getEntityId(zone.field)));
+  trackByValue(_index: number, item: any) {
+    return item?.value || item;
   }
 
-  private filterCropsByCurrentContext(crops: any[]) {
-    const farmIds = new Set(this.farms.map(farm => this.getEntityId(farm)).filter(Boolean));
-    const fieldCropIds = new Set(
-      this.fields.map(field => this.getEntityId(field.crop)).filter(Boolean)
-    );
-    const recordCropIds = new Set(
-      this.records.map(record => this.getEntityId(record.crop)).filter(Boolean)
-    );
-
-    return crops.filter(crop => {
-      const cropId = this.getEntityId(crop);
-      const farmId = this.getEntityId(crop.farm);
-
-      return (farmId && farmIds.has(farmId)) ||
-        fieldCropIds.has(cropId) ||
-        recordCropIds.has(cropId);
-    });
-  }
-
-  private filterRecordsByCurrentFarms(records: any[]) {
-    const farmIds = new Set(this.farms.map(farm => this.getEntityId(farm)).filter(Boolean));
-    return records.filter(record => farmIds.has(this.getEntityId(record.farm)));
+  trackByLabel(index: number, item: any) {
+    return item?.label || item?.category || item?.title || item || index;
   }
 
   private getEntityId(entity: any) {
-    return String(entity?._id || entity || '');
+    return getScopedEntityId(entity);
   }
 
   private isWithinPeriod(dateValue: any) {

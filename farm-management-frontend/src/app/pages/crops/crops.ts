@@ -29,6 +29,11 @@ import { Crop } from '../../services/crop';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import {
+  getCurrentFields,
+  getCurrentFarms,
+  getEntityId as getScopedEntityId
+} from '../../shared/current-data-scope';
 
 type GrowthStageForm = {
   name: string;
@@ -220,8 +225,6 @@ export class Crops implements OnInit {
   }
 
   loadCrops() {
-    const startedAt =
-      performance.now();
     this.cropsLoading = true;
 
     this.cropService.getCrops().subscribe({
@@ -238,17 +241,11 @@ export class Crops implements OnInit {
         }
 
         this.cropsLoading = false;
-        console.info(
-          `GET /api/crops completed in ${Math.round(performance.now() - startedAt)}ms`
-        );
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.cropsLoading = false;
-        console.info(
-          `GET /api/crops failed after ${Math.round(performance.now() - startedAt)}ms`
-        );
         this.cdr.detectChanges();
       }
     });
@@ -322,9 +319,11 @@ export class Crops implements OnInit {
       return null;
     }
 
-    return [...this.cropCatalog].sort(
+    const mostPlanted = [...this.cropCatalog].sort(
       (a, b) => this.getFieldsCount(b) - this.getFieldsCount(a)
     )[0];
+
+    return this.getFieldsCount(mostPlanted) > 0 ? mostPlanted : null;
   }
 
   get averageLifecycle() {
@@ -373,6 +372,18 @@ export class Crops implements OnInit {
   goToPage(page: number) {
     this.currentPage =
       Math.min(Math.max(page, 1), this.totalPages);
+  }
+
+  trackById(index: number, item: any) {
+    return this.getEntityId(item) || item?.name || item?.label || index;
+  }
+
+  trackByValue(_index: number, item: any) {
+    return item;
+  }
+
+  trackByStage(index: number, stage: any) {
+    return stage?.name || index;
   }
 
   openCreateCrop() {
@@ -611,7 +622,7 @@ export class Crops implements OnInit {
   getFieldsCount(crop: any) {
     const validFarmIds =
       new Set(
-        this.farms
+        getCurrentFarms(this.farms)
           .map(farm => this.getEntityId(farm))
           .filter(Boolean)
       );
@@ -637,11 +648,7 @@ export class Crops implements OnInit {
       return 0;
     }
 
-    return this.fields.filter(field => {
-      if (!validFarmIds.has(this.getEntityId(field.farm))) {
-        return false;
-      }
-
+    return getCurrentFields(this.farms, this.fields).filter(field => {
       const fieldCropId =
         this.getEntityId(field.crop);
 
@@ -812,15 +819,7 @@ export class Crops implements OnInit {
   }
 
   private getEntityId(entity: any) {
-    if (!entity) {
-      return '';
-    }
-
-    if (typeof entity === 'string') {
-      return entity;
-    }
-
-    return String(entity._id || entity.id || '');
+    return getScopedEntityId(entity);
   }
 
   private buildCropPayload() {

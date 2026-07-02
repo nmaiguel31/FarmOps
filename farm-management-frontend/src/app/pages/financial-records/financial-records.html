@@ -32,13 +32,13 @@
       Farm
       <select class="farmops-field" [(ngModel)]="filterFarm" (ngModelChange)="onFilterFarmChange()" name="contextFarm">
         <option value="All">All Farms</option>
-        <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+        <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">{{ farm.name }}</option>
       </select>
     </label>
   </section>
 
   <section class="summary-grid" aria-label="Financial summary">
-    <article class="summary-card" *ngFor="let item of financialSummaryCards" [ngClass]="item.tone">
+    <article class="summary-card" *ngFor="let item of financialSummaryCards; trackBy: trackByLabel" [ngClass]="item.tone">
       <div class="summary-icon" [ngSwitch]="item.icon">
         <svg *ngSwitchCase="'revenue'" lucideBadgeDollarSign></svg>
         <svg *ngSwitchCase="'expenses'" lucideReceipt></svg>
@@ -103,12 +103,12 @@
           <canvas id="financeProfitByCropChart"></canvas>
           <div class="donut-center">
             <span>Total Profit</span>
-            <strong>{{ getProfitByCropBreakdown().totalProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
+            <strong>{{ profitByCropBreakdown.totalProfit | currency:'USD':'symbol':'1.0-0' }}</strong>
           </div>
         </div>
 
         <div class="crop-profit-list">
-          <div *ngFor="let item of getProfitByCropBreakdown().entries">
+          <div *ngFor="let item of profitByCropBreakdown.entries; trackBy: trackByCropProfit">
             <span>{{ item.crop }}</span>
             <strong>{{ item.profit | currency:'USD':'symbol':'1.0-0' }}</strong>
             <small>{{ item.percent }}%</small>
@@ -153,7 +153,7 @@
         Category
         <select class="farmops-field" [(ngModel)]="filterCategory" (ngModelChange)="onFiltersChanged()" name="filterCategory">
           <option value="All">All Categories</option>
-          <option *ngFor="let category of allCategories" [value]="category">{{ category }}</option>
+          <option *ngFor="let category of allCategories; trackBy: trackByValue" [value]="category">{{ category }}</option>
         </select>
       </label>
 
@@ -161,7 +161,7 @@
         Farm
         <select class="farmops-field" [(ngModel)]="filterFarm" (ngModelChange)="onFilterFarmChange()" name="filterFarm">
           <option value="All">All Farms</option>
-          <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+          <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">{{ farm.name }}</option>
         </select>
       </label>
 
@@ -169,7 +169,7 @@
         Field
         <select class="farmops-field" [(ngModel)]="filterField" (ngModelChange)="onFilterFieldChange()" name="filterField">
           <option value="All">All Fields</option>
-          <option *ngFor="let field of filterFieldOptions" [value]="field._id">{{ field.name }}</option>
+          <option *ngFor="let field of filterFieldOptions; trackBy: trackById" [value]="field._id">{{ field.name }}</option>
         </select>
       </label>
 
@@ -177,7 +177,7 @@
         Crop
         <select class="farmops-field" [(ngModel)]="filterCrop" (ngModelChange)="onFiltersChanged()" name="filterCrop">
           <option value="All">All Crops</option>
-          <option *ngFor="let crop of filterCropOptions" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
+          <option *ngFor="let crop of filterCropOptions; trackBy: trackById" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
         </select>
       </label>
 
@@ -185,7 +185,7 @@
         Payment Status
         <select class="farmops-field" [(ngModel)]="filterPaymentStatus" (ngModelChange)="onFiltersChanged()" name="filterPaymentStatus">
           <option value="All">All Statuses</option>
-          <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+          <option *ngFor="let status of paymentStatuses; trackBy: trackByValue" [value]="status">{{ status }}</option>
         </select>
       </label>
 
@@ -201,7 +201,7 @@
     </div>
 
     <div class="farmops-skeleton-table" *ngIf="recordsLoading; else recordsContent" aria-label="Loading financial records">
-      <div class="farmops-skeleton-table-row" *ngFor="let item of [1,2,3,4,5]"></div>
+      <div class="farmops-skeleton-table-row" *ngFor="let item of skeletonRows; trackBy: trackByValue"></div>
     </div>
 
     <ng-template #recordsContent>
@@ -221,7 +221,7 @@
 
       <article
         class="table-row"
-        *ngFor="let record of filteredRecords"
+        *ngFor="let record of filteredRecords; trackBy: trackById"
         [class.income-row]="record.type === 'Income'"
         [class.expense-row]="record.type === 'Expense'"
       >
@@ -270,7 +270,7 @@
       </div>
 
       <div class="expense-list" *ngIf="topExpenseCategories.length; else noExpenseCategories">
-        <div *ngFor="let item of topExpenseCategories">
+        <div *ngFor="let item of topExpenseCategories; trackBy: trackByLabel">
           <span>{{ item.label }}</span>
           <strong>{{ item.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
         </div>
@@ -294,7 +294,7 @@
       </div>
 
       <div class="expense-list" *ngIf="largestExpenseRecords.length; else noLargestExpenses">
-        <div *ngFor="let record of largestExpenseRecords">
+        <div *ngFor="let record of largestExpenseRecords; trackBy: trackById">
           <span>{{ record.category }} · {{ getFarmName(record) }}</span>
           <strong>{{ record.amount | currency:'USD':'symbol':'1.0-0' }}</strong>
         </div>
@@ -331,7 +331,7 @@
         <label>
           Category
           <select class="farmops-field" [(ngModel)]="recordCategory" name="recordCategory">
-            <option *ngFor="let category of getCategoryOptions()" [value]="category">{{ category }}</option>
+            <option *ngFor="let category of categoryOptions; trackBy: trackByValue" [value]="category">{{ category }}</option>
           </select>
         </label>
 
@@ -345,7 +345,7 @@
         Farm
         <select class="farmops-field" [(ngModel)]="selectedFarm" (ngModelChange)="onFarmChange()" name="selectedFarm">
           <option value="">Select Farm</option>
-          <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+          <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">{{ farm.name }}</option>
         </select>
       </label>
 
@@ -354,7 +354,7 @@
           Field
           <select class="farmops-field" [(ngModel)]="selectedField" (ngModelChange)="onFieldChange()" name="selectedField">
             <option value="">Optional field</option>
-            <option *ngFor="let field of visibleFields" [value]="field._id">{{ field.name }}</option>
+            <option *ngFor="let field of visibleFields; trackBy: trackById" [value]="field._id">{{ field.name }}</option>
           </select>
         </label>
 
@@ -362,7 +362,7 @@
           Crop
           <select class="farmops-field" [(ngModel)]="selectedCrop" name="selectedCrop">
             <option value="">Optional crop</option>
-            <option *ngFor="let crop of visibleCrops" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
+            <option *ngFor="let crop of visibleCrops; trackBy: trackById" [value]="crop._id">{{ getCropIcon(crop) }} {{ crop.name }}</option>
           </select>
         </label>
       </div>
@@ -415,7 +415,7 @@
         <label>
           Payment Status
           <select class="farmops-field" [(ngModel)]="recordPaymentStatus" name="recordPaymentStatus">
-            <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+            <option *ngFor="let status of paymentStatuses; trackBy: trackByValue" [value]="status">{{ status }}</option>
           </select>
         </label>
       </div>

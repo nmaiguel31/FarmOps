@@ -1,7 +1,7 @@
 <section class="toast-stack" aria-live="polite" aria-label="FarmOps notifications">
   <article
     class="toast-card"
-    *ngFor="let toast of toasts$ | async"
+    *ngFor="let toast of toasts$ | async; trackBy: trackToast"
     [ngClass]="toast.type">
     <span class="toast-icon" [ngSwitch]="toast.type">
       <svg *ngSwitchCase="'success'" lucideCheckCircle2></svg>

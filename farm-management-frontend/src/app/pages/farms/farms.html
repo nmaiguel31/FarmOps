@@ -69,7 +69,7 @@
           <label>
             Radius
             <select class="farmops-field" [(ngModel)]="nearbyRadiusKm" name="nearbyRadiusKm">
-              <option *ngFor="let radius of nearbyRadiusOptions" [ngValue]="radius">{{ radius }} km</option>
+              <option *ngFor="let radius of nearbyRadiusOptions; trackBy: trackByValue" [ngValue]="radius">{{ radius }} km</option>
             </select>
           </label>
         </div>
@@ -79,7 +79,7 @@
         </div>
 
         <div class="nearby-list" *ngIf="hasValidFarmCoordinates(selectedFarm) && nearbyFarmResults.length > 0">
-          <article class="nearby-card" *ngFor="let result of nearbyFarmResults">
+          <article class="nearby-card" *ngFor="let result of nearbyFarmResults; trackBy: trackById">
             <div>
               <strong>{{ result.farm.name }}</strong>
               <span>{{ result.farm.location || 'No location saved' }}</span>
@@ -138,7 +138,7 @@
       </div>
 
       <div class="farm-list" *ngIf="filteredFarmGroups.length > 0; else noFarms">
-        <article class="farm-group" *ngFor="let group of filteredFarmGroups">
+        <article class="farm-group" *ngFor="let group of filteredFarmGroups; trackBy: trackByFieldGroup">
           <button
             type="button"
             class="farm-list-item"
@@ -178,7 +178,7 @@
             <button
               type="button"
               class="field-row"
-              *ngFor="let field of group.fields"
+              *ngFor="let field of group.fields; trackBy: trackById"
               [class.active]="selectedField?._id === field._id"
               (click)="selectField(field)"
             >
@@ -339,14 +339,14 @@
             </div>
             <strong>Recommended activities:</strong>
             <div style="display:flex;flex-wrap:wrap;gap:10px">
-              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }}</span>
+              <span *ngFor="let activity of weatherOperationalRecommendations; trackBy: trackByValue">✓ {{ activity }}</span>
             </div>
           </article>
 
           <article style="display:grid;gap:16px;padding:18px;background:#fff;border:1px solid var(--color-border);border-radius:16px">
             <span class="panel-kicker">Weekly Forecast</span>
             <div class="forecast-strip">
-            <article *ngFor="let day of weatherInsights.forecast" [style.background]="getConditionAccent(day.condition)" [style.border-color]="getRainRiskColor(day.rainProbability)" style="display:grid;gap:10px;text-align:center;align-content:start">
+            <article *ngFor="let day of weatherForecastCards; trackBy: trackByLabel" [style.background]="day.conditionAccent" [style.border-color]="day.rainRiskColor" style="display:grid;gap:10px;text-align:center;align-content:start">
               <span>{{ formatForecastDate(day.date) }}</span>
               <strong style="font-size:34px;line-height:1">{{ getForecastIcon(day.condition) }}</strong>
               <div style="display:grid;gap:3px">
@@ -365,11 +365,11 @@
               <strong>🌧 {{ formatWeatherValue(weatherInsights.rainProbability, '%') }}</strong>
             </div>
             <small style="display:none">Recommended activities:
-              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }} </span>
+              <span *ngFor="let activity of weatherOperationalRecommendations; trackBy: trackByValue">✓ {{ activity }} </span>
             </small>
             <strong>Recommended activities:</strong>
             <div style="display:flex;flex-wrap:wrap;gap:10px">
-              <span *ngFor="let activity of getOperationalRecommendations()">✓ {{ activity }}</span>
+              <span *ngFor="let activity of weatherOperationalRecommendations; trackBy: trackByValue">✓ {{ activity }}</span>
             </div>
           </article>
         </ng-container>
@@ -389,7 +389,7 @@
             <button
               type="button"
               class="field-row"
-              *ngFor="let field of selectedFarmFields"
+              *ngFor="let field of selectedFarmFields; trackBy: trackById"
               [class.active]="selectedField?._id === field._id"
               (click)="selectField(field)"
             >
@@ -512,7 +512,7 @@
 
             <div class="zone-grid" *ngIf="selectedFieldZones.length; else noZones">
               <article
-                *ngFor="let zone of selectedFieldZones"
+                *ngFor="let zone of selectedFieldZones; trackBy: trackById"
                 class="zone-card"
                 [class.active]="selectedZone?._id === zone._id"
                 (click)="selectZone(zone)"
@@ -578,7 +578,7 @@
 
             <div class="recommendation-grid">
               <article
-                *ngFor="let recommendation of selectedFieldRecommendations"
+                *ngFor="let recommendation of selectedFieldRecommendations; trackBy: trackByRecommendation"
                 class="recommendation-card"
                 [ngClass]="getRecommendationPriorityClass(recommendation.priority)"
               >
@@ -615,7 +615,7 @@
 
             <div class="lifecycle-timeline-shell">
               <div class="lifecycle-track" [style.--lifecycle-progress]="lifecycleProgress + '%'">
-                <article *ngFor="let stage of lifecycleStageItems" [class]="stage.state">
+                <article *ngFor="let stage of lifecycleStageItems; trackBy: trackByLifecycleStage" [class]="stage.state">
                   <em *ngIf="stage.state === 'current'">Current Stage</em>
                   <span class="stage-node">
                   <ng-container [ngSwitch]="stage.name">
@@ -637,7 +637,7 @@
             </div>
 
             <div class="lifecycle-summary-grid">
-              <article *ngFor="let item of lifecycleInfoCards">
+              <article *ngFor="let item of lifecycleInfoCards; trackBy: trackByLabel">
                 <span class="info-icon" aria-hidden="true" [ngSwitch]="item.icon">
                   <svg *ngSwitchCase="'planting'" lucideCalendar></svg>
                   <svg *ngSwitchCase="'stage'" lucideLeaf></svg>
@@ -656,7 +656,7 @@
               <label>
                 Update stage
                 <select class="farmops-field" [ngModel]="pendingLifecycleStage" (ngModelChange)="setPendingLifecycleStage($event)" name="cropLifecycleStage">
-                  <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
+                  <option *ngFor="let stage of lifecycleStages; trackBy: trackByValue" [value]="stage">{{ stage }}</option>
                 </select>
               </label>
               <button type="button" class="primary-btn update-stage-btn" (click)="updateSelectedCropStage()" [disabled]="lifecycleActionLoading">
@@ -815,8 +815,8 @@
           name="cropSelectorSearch">
         <select class="farmops-field" [(ngModel)]="selectedCrop" (ngModelChange)="onFieldCropAssignmentChange()" name="selectedCrop">
           <option value="">No crop assigned</option>
-          <optgroup *ngFor="let group of groupedCropsForSelectedFarm" [label]="group.type">
-            <option *ngFor="let crop of group.crops" [value]="crop._id">
+          <optgroup *ngFor="let group of groupedCropsForSelectedFarm; trackBy: trackByLabel" [label]="group.type">
+            <option *ngFor="let crop of group.crops; trackBy: trackById" [value]="crop._id">
               {{ getCropIcon(crop) }} {{ crop.name }} · {{ crop.type }}
             </option>
           </optgroup>
@@ -832,7 +832,7 @@
         <label>
           Crop Stage
           <select class="farmops-field" [ngModel]="fieldCurrentStage" (ngModelChange)="onFieldStageChange($event)" name="fieldCurrentStage">
-            <option *ngFor="let stage of lifecycleStages" [value]="stage">{{ stage }}</option>
+            <option *ngFor="let stage of lifecycleStages; trackBy: trackByValue" [value]="stage">{{ stage }}</option>
           </select>
         </label>
       </div>

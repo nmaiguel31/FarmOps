@@ -23,6 +23,13 @@ import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
 import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
+import {
+  getCurrentCrops,
+  getCurrentFields,
+  getCurrentRecords,
+  getCurrentFarms,
+  getCurrentSignals
+} from '../../shared/current-data-scope';
 import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
@@ -131,11 +138,11 @@ export class Profile implements OnInit {
       signals: this.signalService.getSignals()
     }).subscribe({
       next: (data: any) => {
-        const farms = data.farms || [];
-        const fields = data.fields || [];
-        const crops = data.crops || [];
-        const records = data.records || [];
-        const signals = data.signals || [];
+        const farms = getCurrentFarms(data.farms || []);
+        const fields = getCurrentFields(farms, data.fields || []);
+        const records = getCurrentRecords(farms, data.records || []);
+        const crops = getCurrentCrops(farms, fields, data.crops || [], records);
+        const signals = getCurrentSignals(farms, fields, data.signals || []);
 
         this.stats = {
           farmsManaged: farms.length,
@@ -179,6 +186,10 @@ export class Profile implements OnInit {
     clearAuthSession();
     this.authService.setCurrentUser(null);
     this.router.navigate(['/login']);
+  }
+
+  trackByValue(_index: number, item: any) {
+    return item;
   }
 
   private formatDate(value?: string) {

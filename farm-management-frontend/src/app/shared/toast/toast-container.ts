@@ -26,4 +26,8 @@ import { ToastService } from './toast.service';
 export class ToastContainerComponent {
   readonly toastService = inject(ToastService);
   readonly toasts$ = this.toastService.toasts$;
+
+  trackToast(_index: number, toast: any) {
+    return toast.id;
+  }
 }

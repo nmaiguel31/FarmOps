@@ -14,7 +14,7 @@
   </section>
 
   <section class="profile-loading-grid" *ngIf="profileLoading">
-    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]">
+    <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]; trackBy: trackByValue">
       <span></span>
       <strong></strong>
       <small></small>
@@ -76,7 +76,7 @@
     </section>
 
     <section class="profile-loading-grid" *ngIf="statsLoading">
-      <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]">
+      <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]; trackBy: trackByValue">
         <span></span>
         <strong></strong>
         <small></small>

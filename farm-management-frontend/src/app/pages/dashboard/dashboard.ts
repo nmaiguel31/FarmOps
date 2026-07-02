@@ -19,6 +19,14 @@ import { OperationSignal } from '../../services/operation-signal';
 import { WeatherInsights, WeatherService } from '../../services/weather';
 import { Auth } from '../../services/auth';
 import {
+  getCurrentCrops,
+  getCurrentFields,
+  getCurrentRecords,
+  getCurrentSignals,
+  getCurrentZones,
+  getEntityId as getScopedEntityId
+} from '../../shared/current-data-scope';
+import {
   LucideActivity,
   LucideBadgeDollarSign,
   LucideBell,
@@ -75,6 +83,9 @@ export class Dashboard implements OnInit {
     type: string;
   }> = [];
   operationSignals: any[] = [];
+  readonly skeletonThree = [1, 2, 3];
+  readonly skeletonFour = [1, 2, 3, 4];
+  readonly skeletonFive = [1, 2, 3, 4, 5];
   weatherLoading = false;
   dashboardLoading = true;
   dashboardLoadError = '';
@@ -134,6 +145,22 @@ export class Dashboard implements OnInit {
 
   get openAlerts() {
     return this.activeOperationSignals.length;
+  }
+
+  trackByValue(_index: number, item: any) {
+    return item;
+  }
+
+  trackByLabel(_index: number, item: any) {
+    return item?.label || item?.route || item?.title || _index;
+  }
+
+  trackByFarmHealth(_index: number, row: any) {
+    return this.getEntityId(row?.farm) || row?.farm?.name || _index;
+  }
+
+  trackByActivity(_index: number, item: any) {
+    return `${item?.type || ''}:${item?.title || ''}:${item?.detail || ''}`;
   }
 
   get activeOperationSignals() {
@@ -596,8 +623,12 @@ export class Dashboard implements OnInit {
         this.allZones = [...(data.zones || [])];
         this.allCrops = [...(data.crops || [])];
         this.allRecords = [...(data.records || [])];
-        this.operationSignals = [...(data.signals || [])].filter(signal => signal.status === 'Active');
+        const rawSignals = [...(data.signals || [])];
         this.reconcileDashboardData();
+        this.operationSignals = this.farms.length
+          ? getCurrentSignals(this.farms, this.fields, rawSignals)
+            .filter(signal => signal.status === 'Active')
+          : [];
         this.dashboardLoading = false;
         this.renderFarmMap();
         this.selectDefaultWeatherFarm();
@@ -618,7 +649,10 @@ export class Dashboard implements OnInit {
   private refreshOperationSignals() {
     this.operationSignalService.getActiveSignals().subscribe({
       next: (data: any) => {
-        this.operationSignals = [...data].filter(signal => signal.status === 'Active');
+        this.operationSignals = this.farms.length
+          ? getCurrentSignals(this.farms, this.fields, [...data])
+            .filter(signal => signal.status === 'Active')
+          : [];
         this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
@@ -711,28 +745,13 @@ export class Dashboard implements OnInit {
       this.weatherSummary = null;
     }
 
-    this.fields =
-      this.allFields.filter(field =>
-        validFarmIds.has(this.getEntityId(field.farm))
-      );
+    this.fields = getCurrentFields(this.farms, this.allFields);
 
-    const validFieldIds =
-      new Set(this.fields.map(field => this.getEntityId(field)).filter(Boolean));
+    this.zones = getCurrentZones(this.fields, this.allZones);
 
-    this.zones =
-      this.allZones.filter(zone =>
-        validFieldIds.has(this.getEntityId(zone.field))
-      );
+    this.records = getCurrentRecords(this.farms, this.allRecords);
 
-    this.crops =
-      this.allCrops.filter(crop =>
-        validFarmIds.has(this.getEntityId(crop.farm))
-      );
-
-    this.records =
-      this.allRecords.filter(record =>
-        validFarmIds.has(this.getEntityId(record.farm))
-      );
+    this.crops = getCurrentCrops(this.farms, this.fields, this.allCrops, this.records);
 
     this.totalFields = this.fields.length;
     this.totalZones = this.zones.length;
@@ -749,11 +768,7 @@ export class Dashboard implements OnInit {
 
   private getEntityId(entity: any) {
 
-    if (!entity) {
-      return '';
-    }
-
-    return String(entity._id || entity);
+    return getScopedEntityId(entity);
 
   }
 

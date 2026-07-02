@@ -16,7 +16,7 @@
     </div>
 
     <div class="hero-briefs" *ngIf="!dashboardLoading && commandBriefs.length">
-      <article class="brief-card" *ngFor="let brief of commandBriefs" [ngClass]="brief.tone">
+      <article class="brief-card" *ngFor="let brief of commandBriefs; trackBy: trackByLabel" [ngClass]="brief.tone">
         <span class="brief-icon" [ngSwitch]="brief.icon">
           <svg *ngSwitchCase="'alerts'" lucideBell></svg>
           <svg *ngSwitchCase="'weather'" lucideCloudSun></svg>
@@ -32,13 +32,13 @@
     </div>
 
     <div class="hero-briefs" *ngIf="dashboardLoading">
-      <div class="skeleton brief-skeleton" *ngFor="let item of [1,2,3,4]"></div>
+      <div class="skeleton brief-skeleton" *ngFor="let item of skeletonFour; trackBy: trackByValue"></div>
     </div>
   </section>
 
   <section class="kpi-grid" aria-label="Daily command metrics">
     <ng-container *ngIf="dashboardLoading; else loadedKpis">
-      <article class="kpi-card skeleton-card" *ngFor="let item of [1,2,3,4,5]">
+      <article class="kpi-card skeleton-card" *ngFor="let item of skeletonFive; trackBy: trackByValue">
         <div class="skeleton skeleton-icon"></div>
         <div class="skeleton skeleton-line short"></div>
         <div class="skeleton skeleton-line"></div>
@@ -47,7 +47,7 @@
     </ng-container>
 
     <ng-template #loadedKpis>
-      <article class="kpi-card" *ngFor="let kpi of commandKpis" [ngClass]="kpi.tone">
+      <article class="kpi-card" *ngFor="let kpi of commandKpis; trackBy: trackByLabel" [ngClass]="kpi.tone">
         <div class="metric-icon" [ngSwitch]="kpi.icon">
           <svg *ngSwitchCase="'farms'" lucideMap></svg>
           <svg *ngSwitchCase="'fields'" lucideLeaf></svg>
@@ -81,7 +81,7 @@
       </div>
 
       <div class="overview-grid" *ngIf="!dashboardLoading; else overviewSkeleton">
-        <article class="overview-item" *ngFor="let item of operationsOverview" [ngClass]="item.tone">
+        <article class="overview-item" *ngFor="let item of operationsOverview; trackBy: trackByLabel" [ngClass]="item.tone">
           <span>{{ item.label }}</span>
           <strong>{{ item.value }}</strong>
           <p>{{ item.detail }}</p>
@@ -90,7 +90,7 @@
 
       <ng-template #overviewSkeleton>
         <div class="overview-grid">
-          <div class="skeleton overview-skeleton" *ngFor="let item of [1,2,3,4,5]"></div>
+          <div class="skeleton overview-skeleton" *ngFor="let item of skeletonFive; trackBy: trackByValue"></div>
         </div>
       </ng-template>
     </article>
@@ -177,7 +177,7 @@
         </div>
 
         <div class="farm-health-list" *ngIf="!dashboardLoading && farmHealthRows.length; else farmHealthState">
-          <article class="farm-health-row" *ngFor="let row of farmHealthRows">
+          <article class="farm-health-row" *ngFor="let row of farmHealthRows; trackBy: trackByFarmHealth">
             <div>
               <strong>{{ row.farm.name }}</strong>
               <span>{{ row.fields }} fields</span>
@@ -194,7 +194,7 @@
 
         <ng-template #farmHealthState>
           <div class="skeleton-stack" *ngIf="dashboardLoading; else noFarmHealth">
-            <div class="skeleton skeleton-row" *ngFor="let item of [1,2,3]"></div>
+            <div class="skeleton skeleton-row" *ngFor="let item of skeletonThree; trackBy: trackByValue"></div>
           </div>
           <ng-template #noFarmHealth>
             <div class="empty-state small">
@@ -215,7 +215,7 @@
         </div>
 
         <div class="quick-action-grid">
-          <a *ngFor="let action of quickActions" [routerLink]="action.route" class="quick-action">
+          <a *ngFor="let action of quickActions; trackBy: trackByLabel" [routerLink]="action.route" class="quick-action">
             <span [ngSwitch]="action.icon">
               <svg *ngSwitchCase="'plus'" lucidePlus></svg>
               <svg *ngSwitchCase="'map'" lucideMap></svg>
@@ -243,7 +243,7 @@
       </div>
 
       <div class="finance-summary" *ngIf="!dashboardLoading; else financeSkeleton">
-        <article *ngFor="let item of financialSnapshot" [ngClass]="item.tone">
+        <article *ngFor="let item of financialSnapshot; trackBy: trackByLabel" [ngClass]="item.tone">
           <span>{{ item.label }}</span>
           <strong *ngIf="!item.plain; else plainFinanceValue">
             {{ item.value | currency:'USD':'symbol':'1.0-0' }}
@@ -256,7 +256,7 @@
 
       <ng-template #financeSkeleton>
         <div class="finance-summary">
-          <div class="skeleton finance-skeleton" *ngFor="let item of [1,2,3,4]"></div>
+          <div class="skeleton finance-skeleton" *ngFor="let item of skeletonFour; trackBy: trackByValue"></div>
         </div>
       </ng-template>
 
@@ -283,7 +283,7 @@
       </div>
 
       <div class="status-grid" *ngIf="!dashboardLoading && totalCrops; else cropState">
-        <div class="status-card" *ngFor="let item of cropStatusOverview" [ngClass]="item.tone">
+        <div class="status-card" *ngFor="let item of cropStatusOverview; trackBy: trackByLabel" [ngClass]="item.tone">
           <span>{{ item.label }}</span>
           <strong>{{ item.count }}</strong>
           <p>Crops</p>
@@ -292,7 +292,7 @@
 
       <ng-template #cropState>
         <div class="skeleton-stack" *ngIf="dashboardLoading; else noCrops">
-          <div class="skeleton skeleton-row" *ngFor="let item of [1,2,3]"></div>
+          <div class="skeleton skeleton-row" *ngFor="let item of skeletonThree; trackBy: trackByValue"></div>
         </div>
         <ng-template #noCrops>
           <div class="empty-state">
@@ -314,7 +314,7 @@
       </div>
 
       <div class="activity-timeline" *ngIf="!dashboardLoading && recentActivityTimeline.length; else activityState">
-        <article class="timeline-item" *ngFor="let item of recentActivityTimeline" [ngClass]="item.tone">
+        <article class="timeline-item" *ngFor="let item of recentActivityTimeline; trackBy: trackByActivity" [ngClass]="item.tone">
           <span class="timeline-dot"></span>
           <div>
             <small>{{ item.type }}</small>
@@ -326,7 +326,7 @@
 
       <ng-template #activityState>
         <div class="skeleton-stack" *ngIf="dashboardLoading; else noActivity">
-          <div class="skeleton skeleton-row" *ngFor="let item of [1,2,3]"></div>
+          <div class="skeleton skeleton-row" *ngFor="let item of skeletonThree; trackBy: trackByValue"></div>
         </div>
         <ng-template #noActivity>
           <div class="empty-state">

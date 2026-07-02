@@ -9,7 +9,7 @@
   </section>
 
   <section class="operations-kpis" aria-label="Operations summary">
-    <article class="operation-kpi" *ngFor="let card of summaryCards" [ngClass]="card.tone">
+    <article class="operation-kpi" *ngFor="let card of summaryCards; trackBy: trackByLabel" [ngClass]="card.tone">
       <div class="kpi-icon" [ngSwitch]="card.icon">
         <svg *ngSwitchCase="'bell'" lucideBell></svg>
         <svg *ngSwitchCase="'critical'" lucideShieldAlert></svg>
@@ -32,21 +32,21 @@
     <label class="farmops-filter-field">
       <span>Status</span>
       <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
-        <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        <option *ngFor="let status of statuses; trackBy: trackById" [value]="status">{{ status }}</option>
       </select>
     </label>
 
     <label class="farmops-filter-field">
       <span>Category</span>
       <select [(ngModel)]="filterCategory" (change)="onFilterChange()">
-        <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+        <option *ngFor="let category of categories; trackBy: trackById" [value]="category">{{ category }}</option>
       </select>
     </label>
 
     <label class="farmops-filter-field">
       <span>Priority</span>
       <select [(ngModel)]="filterPriority" (change)="onFilterChange()">
-        <option *ngFor="let priority of priorities" [value]="priority">{{ priority }}</option>
+        <option *ngFor="let priority of priorities; trackBy: trackById" [value]="priority">{{ priority }}</option>
       </select>
     </label>
 
@@ -54,7 +54,7 @@
       <span>Farm</span>
       <select [(ngModel)]="filterFarm" (change)="onFilterChange()">
         <option value="All">All Farms</option>
-        <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+        <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">{{ farm.name }}</option>
       </select>
     </label>
 
@@ -62,7 +62,7 @@
       <span>Field</span>
       <select [(ngModel)]="filterField" (change)="onFilterChange()">
         <option value="All">All Fields</option>
-        <option *ngFor="let field of fields" [value]="field._id">{{ field.name }}</option>
+        <option *ngFor="let field of fields; trackBy: trackById" [value]="field._id">{{ field.name }}</option>
       </select>
     </label>
 
@@ -74,7 +74,7 @@
   <p class="operations-message" *ngIf="message">{{ message }}</p>
 
   <section class="signals-list loading-list" *ngIf="loading; else signalsContent" aria-label="Loading operation signals">
-    <article class="signal-card skeleton-card" *ngFor="let item of [1, 2, 3]">
+    <article class="signal-card skeleton-card" *ngFor="let item of [1, 2, 3]; trackBy: trackById">
       <div class="signal-icon skeleton-block"></div>
       <div class="signal-content">
         <div class="skeleton-line short"></div>
@@ -87,7 +87,7 @@
 
   <ng-template #signalsContent>
     <section class="signals-list" *ngIf="signals.length; else stableState">
-      <article class="signal-card" *ngFor="let signal of signals" [ngClass]="signal.priority.toLowerCase()">
+      <article class="signal-card" *ngFor="let signal of signals; trackBy: trackById" [ngClass]="signal.priority.toLowerCase()">
         <div class="signal-icon" [ngSwitch]="getCategoryIcon(signal.category)">
           <svg *ngSwitchCase="'irrigation'" lucideDroplet></svg>
           <svg *ngSwitchCase="'weather'" lucideCloudSun></svg>

@@ -40,6 +40,7 @@ import {
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { getCurrentFields } from '../../shared/current-data-scope';
 
 @Component({
   selector: 'app-farms',
@@ -75,6 +76,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   farms: any[] = [];
   filteredFarms: any[] = [];
   filteredFarmGroups: Array<{ farm: any; fields: any[]; fieldCount: number }> = [];
+  allFields: any[] = [];
   fields: any[] = [];
   zones: any[] = [];
   crops: any[] = [];
@@ -131,6 +133,8 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   isDrawingFieldBoundary = false;
   isDrawingZoneBoundary = false;
   weatherInsights: WeatherInsights | null = null;
+  weatherOperationalRecommendations: string[] = [];
+  weatherForecastCards: Array<any> = [];
   weatherLoading = false;
   weatherError = '';
   selectedMapLayer = this.getInitialMapLayer();
@@ -396,6 +400,7 @@ updateFarm() {
       next: (data: any) => {
 
         this.farms = [...data];
+        this.reconcileCurrentFields();
         this.filterFarms(false);
         if (this.pendingFarmId) {
           this.applyPendingSelection();
@@ -431,7 +436,8 @@ updateFarm() {
 
       next: (data: any) => {
 
-        this.fields = [...data];
+        this.allFields = Array.isArray(data) ? [...data] : [];
+        this.reconcileCurrentFields();
         this.syncSelectedField();
         this.applyPendingSelection();
         this.refreshFarmFieldGroups();
@@ -449,6 +455,10 @@ updateFarm() {
 
     });
 
+  }
+
+  private reconcileCurrentFields() {
+    this.fields = getCurrentFields(this.farms, this.allFields);
   }
 
   loadZones() {
@@ -525,6 +535,30 @@ updateFarm() {
     const area = Number(value || 0);
     return Number.isFinite(area) ? area.toFixed(2) : '0.00';
 
+  }
+
+  trackById(index: number, item: any) {
+    return String(item?._id || item?.id || item?.value || item?.name || index);
+  }
+
+  trackByValue(_index: number, item: any) {
+    return item;
+  }
+
+  trackByLabel(index: number, item: any) {
+    return item?.label || item?.name || item?.title || item?.type || index;
+  }
+
+  trackByFieldGroup(index: number, group: any) {
+    return String(group?.farm?._id || group?.farm?.id || group?.farm?.name || index);
+  }
+
+  trackByLifecycleStage(_index: number, stage: any) {
+    return stage?.name || stage;
+  }
+
+  trackByRecommendation(_index: number, recommendation: any) {
+    return recommendation?.title || recommendation;
   }
 
   formatWeatherValue(value: any, suffix = '') {
@@ -693,6 +727,21 @@ updateFarm() {
 
   getOperationalRecommendations() {
 
+    return this.weatherOperationalRecommendations;
+
+  }
+
+  private refreshWeatherPresentation() {
+    this.weatherOperationalRecommendations = this.buildOperationalRecommendations();
+    this.weatherForecastCards =
+      (this.weatherInsights?.forecast || []).map(day => ({
+        ...day,
+        conditionAccent: this.getConditionAccent(day.condition),
+        rainRiskColor: this.getRainRiskColor(day.rainProbability)
+      }));
+  }
+
+  private buildOperationalRecommendations() {
     if (!this.weatherInsights) {
       return [];
     }
@@ -708,7 +757,6 @@ updateFarm() {
     }
 
     return recommendations;
-
   }
 
   private hasHighRainRisk() {
@@ -788,6 +836,7 @@ updateFarm() {
     const coordinates = this.getWeatherCoordinates();
 
     this.weatherInsights = null;
+    this.refreshWeatherPresentation();
     this.weatherError = '';
 
     if (!coordinates) {
@@ -804,6 +853,7 @@ updateFarm() {
       .subscribe({
         next: (weather) => {
           this.weatherInsights = weather;
+          this.refreshWeatherPresentation();
           this.weatherLoading = false;
           this.weatherError = '';
           this.generateWeatherOperationSignals();
@@ -812,6 +862,7 @@ updateFarm() {
         },
         error: () => {
           this.weatherInsights = null;
+          this.refreshWeatherPresentation();
           this.weatherLoading = false;
           this.weatherError =
             'Weather data is temporarily unavailable for this location.';

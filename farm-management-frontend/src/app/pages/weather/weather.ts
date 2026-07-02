@@ -173,6 +173,14 @@ export class Weather implements OnInit, OnDestroy {
     this.loadWeatherForSelectedFarm();
   }
 
+  trackById(index: number, item: any) {
+    return String(item?._id || item?.id || item?.date || item?.label || item?.title || index);
+  }
+
+  trackByLabel(index: number, item: any) {
+    return item?.label || item?.title || item?.action || index;
+  }
+
   loadWeatherForSelectedFarm() {
     if (!this.selectedFarm) {
       return;

@@ -259,6 +259,15 @@ export class NdviAnalysis implements OnInit, OnDestroy {
     this.fieldSearch = '';
   }
 
+  trackById(index: number, item: any) {
+    const entity = item?.field || item;
+    return String(entity?._id || entity?.id || item?.date || item?.title || index);
+  }
+
+  trackByLabel(index: number, item: any) {
+    return item?.label || item?.title || item || index;
+  }
+
   get averageNdvi() {
     const values = this.rankedFields.map(field => field.ndvi);
 

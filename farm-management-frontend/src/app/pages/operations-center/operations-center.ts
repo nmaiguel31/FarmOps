@@ -12,10 +12,13 @@ import {
   Router,
   RouterModule
 } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { Subscription, filter, forkJoin } from 'rxjs';
 import { OperationSignal } from '../../services/operation-signal';
+import { Farm } from '../../services/farm';
+import { Field } from '../../services/field';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
+import { getCurrentFields, getCurrentSignals } from '../../shared/current-data-scope';
 import {
   LucideActivity,
   LucideBadgeDollarSign,
@@ -52,6 +55,8 @@ export class OperationsCenter implements OnInit, OnDestroy {
 
   allSignals: any[] = [];
   signals: any[] = [];
+  private farmsData: any[] = [];
+  private fieldsData: any[] = [];
   loading = false;
   message = '';
   resolvingSignalIds = new Set<string>();
@@ -88,6 +93,8 @@ export class OperationsCenter implements OnInit, OnDestroy {
   ];
 
   private operationSignalService = inject(OperationSignal);
+  private farmService = inject(Farm);
+  private fieldService = inject(Field);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private toast = inject(ToastService);
@@ -135,9 +142,19 @@ export class OperationsCenter implements OnInit, OnDestroy {
     }
     this.cdr.detectChanges();
 
-    this.operationSignalService.getSignals().subscribe({
+    forkJoin({
+      farms: this.farmService.getFarms(),
+      fields: this.fieldService.getFields(),
+      signals: this.operationSignalService.getSignals()
+    }).subscribe({
       next: (data: any) => {
-        this.allSignals = Array.isArray(data) ? [...data] : [];
+        this.farmsData = Array.isArray(data.farms) ? [...data.farms] : [];
+        this.fieldsData = getCurrentFields(this.farmsData, data.fields || []);
+        this.allSignals = getCurrentSignals(
+          this.farmsData,
+          this.fieldsData,
+          Array.isArray(data.signals) ? [...data.signals] : []
+        );
         this.applyFilters();
         this.loading = false;
         this.loadingRequestInFlight = false;
@@ -272,6 +289,14 @@ export class OperationsCenter implements OnInit, OnDestroy {
     this.message = '';
     this.applyFilters();
     this.cdr.detectChanges();
+  }
+
+  trackById(index: number, item: any) {
+    return String(item?._id || item?.id || item?.label || item || index);
+  }
+
+  trackByLabel(index: number, item: any) {
+    return item?.label || item?.title || item || index;
   }
 
   get resultSummary() {

@@ -9,7 +9,7 @@
     <label class="farm-selector" *ngIf="farms.length">
       <span>Select Farm</span>
       <select [(ngModel)]="selectedFarmId" (change)="selectFarm()">
-        <option *ngFor="let farm of farms" [value]="farm._id">
+        <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">
           {{ farm.name }}{{ farm.location ? ' · ' + farm.location : '' }}
         </option>
       </select>
@@ -107,7 +107,7 @@
       </section>
 
       <section class="risk-grid">
-        <article class="risk-card" *ngFor="let risk of weatherRisks" [ngClass]="risk.status.toLowerCase()">
+        <article class="risk-card" *ngFor="let risk of weatherRisks; trackBy: trackByLabel" [ngClass]="risk.status.toLowerCase()">
           <div class="risk-icon" [ngSwitch]="risk.icon">
             <svg *ngSwitchCase="'rain'" lucideCloudRain></svg>
             <svg *ngSwitchCase="'heat'" lucideThermometer></svg>
@@ -132,7 +132,7 @@
         </div>
 
         <div class="forecast-grid">
-          <article class="forecast-card" *ngFor="let day of weather.forecast">
+          <article class="forecast-card" *ngFor="let day of weather.forecast; trackBy: trackById">
             <span>{{ formatForecastDate(day.date) }}</span>
             <div class="forecast-icon" [ngSwitch]="getForecastIcon(day.condition)">
               <svg *ngSwitchCase="'rain'" lucideCloudRain></svg>
@@ -157,7 +157,7 @@
           </div>
 
           <div class="recommendation-list">
-            <div class="recommendation-card" *ngFor="let recommendation of recommendations">
+            <div class="recommendation-card" *ngFor="let recommendation of recommendations; trackBy: trackByLabel">
               <svg lucideCheckCircle2></svg>
               <div>
                 <strong>{{ recommendation.title }}</strong>
@@ -185,7 +185,7 @@
           </div>
 
           <div class="related-signals" *ngIf="!signalLoading && weatherSignals.length; else noSignals">
-            <div class="weather-signal" *ngFor="let signal of weatherSignals">
+            <div class="weather-signal" *ngFor="let signal of weatherSignals; trackBy: trackById">
               <span class="signal-priority" [ngClass]="signal.priority.toLowerCase()">{{ signal.priority }}</span>
               <div>
                 <strong>{{ signal.title }}</strong>

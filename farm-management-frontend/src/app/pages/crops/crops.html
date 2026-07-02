@@ -98,7 +98,7 @@
           <span>Crop Type</span>
           <select [(ngModel)]="filterType" (ngModelChange)="onFiltersChanged()" name="filterType">
             <option value="All">All Types</option>
-            <option *ngFor="let type of uniqueCropTypes" [value]="type">{{ type }}</option>
+            <option *ngFor="let type of uniqueCropTypes; trackBy: trackByValue" [value]="type">{{ type }}</option>
           </select>
         </label>
 
@@ -106,7 +106,7 @@
           <span>Status</span>
           <select [(ngModel)]="filterStatus" (ngModelChange)="onFiltersChanged()" name="filterStatus">
             <option value="All">All Statuses</option>
-            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            <option *ngFor="let status of statuses; trackBy: trackByValue" [value]="status">{{ status }}</option>
           </select>
         </label>
 
@@ -116,7 +116,7 @@
       <div class="crop-loading-shell" *ngIf="cropsLoading" aria-live="polite">
         <span class="sr-only">Loading crop catalog...</span>
         <div class="skeleton-table">
-          <div class="skeleton-row" *ngFor="let row of [1,2,3,4,5,6,7,8]">
+          <div class="skeleton-row" *ngFor="let row of [1,2,3,4,5,6,7,8]; trackBy: trackByValue">
             <i></i>
             <i></i>
             <i></i>
@@ -142,7 +142,7 @@
           </thead>
           <tbody>
             <tr
-              *ngFor="let crop of paginatedCrops"
+              *ngFor="let crop of paginatedCrops; trackBy: trackById"
               [class.selected]="selectedCrop?._id === crop._id"
               (click)="selectCrop(crop)">
               <td>
@@ -185,7 +185,7 @@
           <button
             type="button"
             class="page-btn"
-            *ngFor="let page of pageNumbers"
+            *ngFor="let page of pageNumbers; trackBy: trackByValue"
             [class.active]="page === currentPage"
             (click)="goToPage(page)">
             {{ page }}
@@ -287,7 +287,7 @@
       <div class="growth-card">
         <h3>Growth Stages</h3>
         <ol>
-          <li *ngFor="let stage of selectedCrop.growthStages || []">
+          <li *ngFor="let stage of selectedCrop.growthStages || []; trackBy: trackByStage">
             <span></span>
             <strong>{{ stage.name }}</strong>
             <small>{{ getStageRange(stage) }}</small>
@@ -335,7 +335,7 @@
         <label>
           Status
           <select [(ngModel)]="cropStatus" name="cropStatus">
-            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            <option *ngFor="let status of statuses; trackBy: trackByValue" [value]="status">{{ status }}</option>
           </select>
         </label>
 
@@ -343,7 +343,7 @@
           Farm
           <select [(ngModel)]="selectedFarm" name="selectedFarm">
             <option value="">Select Farm</option>
-            <option *ngFor="let farm of farms" [value]="farm._id">{{ farm.name }}</option>
+            <option *ngFor="let farm of farms; trackBy: trackById" [value]="farm._id">{{ farm.name }}</option>
           </select>
         </label>
 
@@ -395,7 +395,7 @@
 
       <section class="stages-editor">
         <h3>Growth Stage Durations</h3>
-        <div class="stage-row" *ngFor="let stage of cropGrowthStages; let i = index">
+        <div class="stage-row" *ngFor="let stage of cropGrowthStages; let i = index; trackBy: trackByStage">
           <strong>{{ stage.name }}</strong>
           <label>
             Start
