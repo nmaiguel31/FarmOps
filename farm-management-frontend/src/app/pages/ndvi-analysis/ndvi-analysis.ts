@@ -17,7 +17,6 @@ import { Chart, registerables } from 'chart.js';
 import {
   LucideActivity,
   LucideBarChart3,
-  LucideCheckCircle2,
   LucideExternalLink,
   LucideLeaf,
   LucideLineChart
@@ -26,6 +25,8 @@ import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
 import { OperationSignal } from '../../services/operation-signal';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
+import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
+import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
 
 type NdviClass =
   'Excellent' |
@@ -55,11 +56,12 @@ Chart.register(...registerables);
     RouterModule,
     LucideActivity,
     LucideBarChart3,
-    LucideCheckCircle2,
     LucideExternalLink,
     LucideLeaf,
     LucideLineChart,
-    EmptyStateComponent
+    EmptyStateComponent,
+    MetricInfoTooltip,
+    RecommendationCard
   ],
   templateUrl: './ndvi-analysis.html',
   styleUrl: './ndvi-analysis.css'
@@ -320,7 +322,7 @@ export class NdviAnalysis implements OnInit, OnDestroy {
     ).length;
   }
 
-  get aiInterpretation() {
+  get vegetationInterpretation() {
     const classification = this.vegetationClassification;
     const decliningFields =
       this.rankedFields.filter(field => field.trend === 'Declining').length;

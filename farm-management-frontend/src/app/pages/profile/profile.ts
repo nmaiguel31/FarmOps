@@ -82,7 +82,6 @@ export class Profile implements OnInit {
       this.profileLoading = false;
     }
 
-    this.loadStats();
     this.loadProfile();
   }
 
@@ -110,7 +109,11 @@ export class Profile implements OnInit {
     this.profileLoading = !this.user;
     this.loadError = '';
 
-    this.authService.getProfile().subscribe({
+    this.authService.getProfile().pipe(
+      finalize(() => {
+        this.loadStats();
+      })
+    ).subscribe({
       next: (user) => {
         this.applyUser(user);
         this.profileLoading = false;

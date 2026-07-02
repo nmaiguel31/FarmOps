@@ -91,7 +91,7 @@
           <svg *ngIf="card.icon === 'crops'" lucideSprout></svg>
         </span>
         <div>
-          <p>{{ card.label }}</p>
+          <p>{{ card.label }} <app-metric-info [metric]="card.metric" align="start"></app-metric-info></p>
           <strong>{{ card.value }}</strong>
           <small>{{ card.helper }}</small>
         </div>
@@ -275,11 +275,20 @@
         <div class="recommendation-groups">
           <section class="recommendation-group" *ngFor="let group of executiveRecommendations; trackBy: trackByLabel">
             <h3>{{ group.category }}</h3>
-            <ul class="recommendation-list">
-              <li *ngFor="let recommendation of group.items; trackBy: trackByValue">
-                {{ recommendation }}
-              </li>
-            </ul>
+            <div class="recommendation-list">
+              <app-recommendation-card
+                *ngFor="let recommendation of group.items; trackBy: trackByValue"
+                [title]="group.category + ' Recommendation'"
+                [recommendedAction]="recommendation"
+                description="Executive-level decision-support guidance generated from current report data."
+                [source]="group.category"
+                priority="Executive"
+                dataSource="Farm performance, financial records, operations signals, weather, lifecycle and vegetation indicators"
+                [triggerCondition]="recommendation"
+                ruleType="Executive recommendation rule"
+                [compact]="true">
+              </app-recommendation-card>
+            </div>
           </section>
         </div>
       </article>

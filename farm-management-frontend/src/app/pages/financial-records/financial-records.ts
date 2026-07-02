@@ -8,7 +8,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
-import { catchError, forkJoin, of } from 'rxjs';
 import { FinancialRecord } from '../../services/financial-record';
 import jsPDF from 'jspdf';
 import {
@@ -31,6 +30,7 @@ import {
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
 import {
   getCurrentCrops,
   getCurrentFields,
@@ -54,7 +54,8 @@ Chart.register(...registerables);
     LucideReceipt,
     LucideTrash2,
     LucideTrendingUp,
-    EmptyStateComponent
+    EmptyStateComponent,
+    MetricInfoTooltip
   ],
   templateUrl: './financial-records.html',
   styleUrl: './financial-records.css',
@@ -132,33 +133,10 @@ export class FinancialRecords implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    this.loadFinancialData();
-  }
-
-  loadFinancialData() {
-    this.recordsLoading = true;
-
-    forkJoin({
-      records: this.financialService.getRecords().pipe(catchError(error => this.handleListRequestError(error))),
-      farms: this.financialService.getFarms().pipe(catchError(error => this.handleListRequestError(error))),
-      fields: this.financialService.getFields().pipe(catchError(error => this.handleListRequestError(error))),
-      crops: this.financialService.getCrops().pipe(catchError(error => this.handleListRequestError(error)))
-    }).subscribe({
-      next: ({ records, farms, fields, crops }: any) => {
-        this.records = [...this.normalizeList(records)];
-        this.farms = [...this.normalizeList(farms)];
-        this.fields = [...this.normalizeList(fields)];
-        this.crops = [...this.normalizeList(crops)];
-        this.recordsLoading = false;
-        this.renderChartsSoon();
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error(error);
-        this.recordsLoading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.loadRecords();
+    this.loadFarms();
+    this.loadFields();
+    this.loadCrops();
   }
 
   loadFarms() {
@@ -472,6 +450,7 @@ export class FinancialRecords implements OnInit {
         detail: this.selectedFarmContext,
         tone: 'income',
         icon: 'revenue',
+        metric: 'revenue',
         helper: `${this.filteredRecords.filter(record => record.type === 'Income').length} income records`
       },
       {
@@ -480,6 +459,7 @@ export class FinancialRecords implements OnInit {
         detail: this.selectedFarmContext,
         tone: 'expense',
         icon: 'expenses',
+        metric: 'expenses',
         helper: `${this.filteredRecords.filter(record => record.type === 'Expense').length} expense records`
       },
       {
@@ -488,6 +468,7 @@ export class FinancialRecords implements OnInit {
         detail: 'Revenue minus expenses',
         tone: 'profit',
         icon: 'profit',
+        metric: 'profit',
         helper: this.netProfit >= 0 ? 'Positive operating margin' : 'Expenses exceed revenue'
       },
       {
@@ -496,6 +477,7 @@ export class FinancialRecords implements OnInit {
         detail: 'Net profit as a share of revenue',
         tone: 'margin',
         icon: 'margin',
+        metric: 'profitMargin',
         plain: true,
         helper: this.totalIncome ? 'Calculated from real revenue' : 'No revenue recorded yet'
       },
@@ -505,6 +487,7 @@ export class FinancialRecords implements OnInit {
         detail: 'Pending and overdue records',
         tone: 'pending',
         icon: 'pending',
+        metric: 'pendingPayments',
         helper: `${this.filteredRecords.filter(record => ['Pending', 'Overdue'].includes(record.paymentStatus || 'Paid')).length} pending items`
       }
     ];
@@ -899,11 +882,6 @@ export class FinancialRecords implements OnInit {
 
   private normalizeSearch(value: any) {
     return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  private handleListRequestError(error: any) {
-    console.error(error);
-    return of([]);
   }
 
   private normalizeList(value: any): any[] {

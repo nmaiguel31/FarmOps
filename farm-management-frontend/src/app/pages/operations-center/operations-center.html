@@ -17,7 +17,7 @@
         <svg *ngSwitchDefault lucideCheckCircle2></svg>
       </div>
       <div>
-        <span>{{ card.label }}</span>
+        <span>{{ card.label }} <app-metric-info [metric]="card.metric" align="start"></app-metric-info></span>
         <strong>{{ card.value }}</strong>
       </div>
     </article>
@@ -30,7 +30,7 @@
     </label>
 
     <label class="farmops-filter-field">
-      <span>Status</span>
+      <span>Status <app-metric-info metric="status" align="start"></app-metric-info></span>
       <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
         <option *ngFor="let status of statuses; trackBy: trackById" [value]="status">{{ status }}</option>
       </select>
@@ -44,7 +44,7 @@
     </label>
 
     <label class="farmops-filter-field">
-      <span>Priority</span>
+      <span>Priority <app-metric-info metric="priority" align="start"></app-metric-info></span>
       <select [(ngModel)]="filterPriority" (change)="onFilterChange()">
         <option *ngFor="let priority of priorities; trackBy: trackById" [value]="priority">{{ priority }}</option>
       </select>
@@ -123,10 +123,17 @@
             <span>{{ formatDate(signal.createdAt) }}</span>
           </div>
 
-          <div class="recommended-action">
-            <strong>Recommended action</strong>
-            <span>{{ signal.recommendedAction }}</span>
-          </div>
+          <app-recommendation-card
+            title="Recommended Action"
+            [description]="signal.description"
+            [recommendedAction]="signal.recommendedAction"
+            [source]="signal.category"
+            [priority]="signal.priority"
+            dataSource="Operations Center signal data"
+            [triggerCondition]="signal.title"
+            ruleType="Operational signal rule"
+            [compact]="true">
+          </app-recommendation-card>
 
           <div class="signal-actions">
             <button type="button" class="secondary-action" *ngIf="hasLinkedFarm(signal)" (click)="viewFarm(signal)">View Farm</button>

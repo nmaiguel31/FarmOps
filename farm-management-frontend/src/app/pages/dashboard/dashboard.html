@@ -57,7 +57,7 @@
           <svg *ngSwitchDefault lucideChartNoAxesCombined></svg>
         </div>
         <div>
-          <span>{{ kpi.label }}</span>
+          <span>{{ kpi.label }} <app-metric-info [metric]="kpi.metric" align="start"></app-metric-info></span>
           <strong *ngIf="kpi.currency; else plainKpiValue">
             {{ kpi.value | currency:'USD':'symbol':'1.0-0' }}
           </strong>
@@ -75,14 +75,14 @@
       <div class="section-header">
         <div>
           <span class="panel-kicker">Operations Overview</span>
-          <h2>What needs attention</h2>
+          <h2>What needs attention <app-metric-info metric="operationsOverview" align="start"></app-metric-info></h2>
         </div>
         <a routerLink="/operations-center" class="text-link">View operations</a>
       </div>
 
       <div class="overview-grid" *ngIf="!dashboardLoading; else overviewSkeleton">
         <article class="overview-item" *ngFor="let item of operationsOverview; trackBy: trackByLabel" [ngClass]="item.tone">
-          <span>{{ item.label }}</span>
+          <span>{{ item.label }} <app-metric-info [metric]="item.metric" align="start"></app-metric-info></span>
           <strong>{{ item.value }}</strong>
           <p>{{ item.detail }}</p>
         </article>
@@ -99,7 +99,7 @@
       <div class="section-header compact">
         <div>
           <span class="panel-kicker">Weather Today</span>
-          <h2>{{ weatherRiskLabel }}</h2>
+          <h2>{{ weatherRiskLabel }} <app-metric-info metric="weatherRisk" align="end"></app-metric-info></h2>
           <p>{{ selectedWeatherContext }}</p>
         </div>
         <span class="weather-icon"><svg lucideCloudSun></svg></span>
@@ -172,7 +172,7 @@
         <div class="section-header compact">
           <div>
             <span class="panel-kicker">Farm Health Overview</span>
-            <h2>Farm condition</h2>
+            <h2>Farm condition <app-metric-info metric="farmHealth" align="end"></app-metric-info></h2>
           </div>
         </div>
 

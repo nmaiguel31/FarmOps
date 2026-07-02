@@ -795,7 +795,7 @@
   font-size: 13px;
 }
 
-.ai-recommendations-panel {
+.field-recommendations-panel {
   display: grid;
   gap: 18px;
   padding: clamp(20px, 2vw, 24px);

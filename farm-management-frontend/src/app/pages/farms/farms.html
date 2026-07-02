@@ -567,34 +567,27 @@
             </article>
           </section>
 
-          <section class="ai-recommendations-panel">
-            <div class="ai-recommendations-header">
+          <section class="field-recommendations-panel">
+            <div class="field-recommendations-header">
               <div>
-                <span class="panel-kicker">AI Recommendations</span>
-                <h4>AI Recommendations</h4>
+                <span class="panel-kicker">Field Recommendations</span>
+                <h4>Recommendations</h4>
                 <p>Rule-based agronomic insights generated from field, weather, lifecycle and vegetation indicators.</p>
               </div>
             </div>
 
             <div class="recommendation-grid">
-              <article
+              <app-recommendation-card
                 *ngFor="let recommendation of selectedFieldRecommendations; trackBy: trackByRecommendation"
-                class="recommendation-card"
-                [ngClass]="getRecommendationPriorityClass(recommendation.priority)"
-              >
-                <div class="recommendation-card-top">
-                  <h5>{{ recommendation.title }}</h5>
-                  <span>{{ recommendation.priority }}</span>
-                </div>
-                <div>
-                  <small>Reason</small>
-                  <p>{{ recommendation.reason }}</p>
-                </div>
-                <div>
-                  <small>Suggested action</small>
-                  <p>{{ recommendation.action }}</p>
-                </div>
-              </article>
+                [title]="recommendation.title"
+                [description]="recommendation.reason"
+                [recommendedAction]="recommendation.action"
+                [priority]="recommendation.priority"
+                source="Field Health"
+                dataSource="Field health, soil moisture, irrigation, lifecycle, NDVI and weather context"
+                [triggerCondition]="recommendation.reason"
+                ruleType="Field recommendation rule">
+              </app-recommendation-card>
             </div>
           </section>
 

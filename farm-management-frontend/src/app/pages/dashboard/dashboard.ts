@@ -39,6 +39,7 @@ import {
   LucideSprout,
   LucideTrendingUp
 } from '@lucide/angular';
+import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
 
 Chart.register(...registerables);
 
@@ -59,7 +60,8 @@ declare const google: any;
     LucideMap,
     LucidePlus,
     LucideSprout,
-    LucideTrendingUp
+    LucideTrendingUp,
+    MetricInfoTooltip
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -222,28 +224,32 @@ export class Dashboard implements OnInit {
         value: this.totalFarms,
         detail: `${this.totalFields} fields monitored`,
         tone: 'farms',
-        icon: 'farms'
+        icon: 'farms',
+        metric: 'activeFarms'
       },
       {
         label: 'Active Fields',
         value: this.activeFields,
         detail: `${this.totalFields} total fields`,
         tone: 'fields',
-        icon: 'fields'
+        icon: 'fields',
+        metric: 'activeFields'
       },
       {
         label: 'Active Crops',
         value: this.activeCrops,
         detail: `${this.totalCrops} assigned crops`,
         tone: 'crops',
-        icon: 'crops'
+        icon: 'crops',
+        metric: 'activeCrops'
       },
       {
         label: 'Active Alerts',
         value: this.openAlerts,
         detail: `${this.criticalHighOperationSignals} critical/high`,
         tone: this.openAlerts ? 'alerts' : 'stable',
-        icon: 'alerts'
+        icon: 'alerts',
+        metric: 'activeAlerts'
       },
       {
         label: 'Net Profit',
@@ -251,6 +257,7 @@ export class Dashboard implements OnInit {
         detail: `${this.profitMargin}% margin`,
         tone: this.netProfit >= 0 ? 'profit' : 'expenses',
         icon: 'profit',
+        metric: 'netProfit',
         currency: true
       }
     ];
@@ -311,31 +318,36 @@ export class Dashboard implements OnInit {
         label: 'Active Alerts',
         value: activeAlerts.length,
         detail: activeAlerts.length ? 'Open operational signals' : 'No active signals',
-        tone: activeAlerts.length ? 'danger' : 'good'
+        tone: activeAlerts.length ? 'danger' : 'good',
+        metric: 'activeAlerts'
       },
       {
         label: 'Weather Risks',
         value: activeAlerts.filter(signal => signal.category === 'Weather').length,
         detail: this.weatherRiskLabel,
-        tone: this.weatherRiskLabel === 'Stable' ? 'good' : 'warning'
+        tone: this.weatherRiskLabel === 'Stable' ? 'good' : 'warning',
+        metric: 'weatherRisk'
       },
       {
         label: 'Critical NDVI Fields',
         value: activeAlerts.filter(signal => signal.category === 'NDVI' && ['Critical', 'High'].includes(signal.priority)).length,
         detail: 'Vegetation risk signals',
-        tone: 'warning'
+        tone: 'warning',
+        metric: 'atRiskFields'
       },
       {
         label: 'Lifecycle Due',
         value: activeAlerts.filter(signal => signal.category === 'Crop Lifecycle').length,
         detail: `${this.upcomingHarvests.length} upcoming harvests`,
-        tone: this.upcomingHarvests.length ? 'warning' : 'good'
+        tone: this.upcomingHarvests.length ? 'warning' : 'good',
+        metric: 'activeOperations'
       },
       {
         label: 'Financial Risks',
         value: activeAlerts.filter(signal => signal.category === 'Financial').length,
         detail: this.netProfit < 0 ? 'Expenses exceed revenue' : 'Financials stable',
-        tone: this.netProfit < 0 ? 'danger' : 'good'
+        tone: this.netProfit < 0 ? 'danger' : 'good',
+        metric: 'profit'
       }
     ];
   }

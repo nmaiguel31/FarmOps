@@ -19,6 +19,8 @@ import { Field } from '../../services/field';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
 import { getCurrentFields, getCurrentSignals } from '../../shared/current-data-scope';
+import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
+import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
 import {
   LucideActivity,
   LucideBadgeDollarSign,
@@ -46,7 +48,9 @@ import {
     LucideLeaf,
     LucideShieldAlert,
     LucideSprout,
-    EmptyStateComponent
+    EmptyStateComponent,
+    MetricInfoTooltip,
+    RecommendationCard
   ],
   templateUrl: './operations-center.html',
   styleUrl: './operations-center.css'
@@ -402,25 +406,29 @@ export class OperationsCenter implements OnInit, OnDestroy {
         label: 'Active Alerts',
         value: this.activeAlerts,
         tone: 'active',
-        icon: 'bell'
+        icon: 'bell',
+        metric: 'activeSignals'
       },
       {
         label: 'Critical',
         value: this.criticalAlerts,
         tone: 'critical',
-        icon: 'critical'
+        icon: 'critical',
+        metric: 'criticalAlerts'
       },
       {
         label: 'High Priority',
         value: this.highPriorityAlerts,
         tone: 'high',
-        icon: 'activity'
+        icon: 'activity',
+        metric: 'highPriority'
       },
       {
         label: 'Resolved',
         value: this.resolvedAlerts,
         tone: 'resolved',
-        icon: 'resolved'
+        icon: 'resolved',
+        metric: 'resolvedSignals'
       }
     ];
   }

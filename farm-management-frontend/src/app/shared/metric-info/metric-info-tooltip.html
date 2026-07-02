@@ -1,0 +1,27 @@
+<span
+  class="metric-info"
+  *ngIf="definition as item"
+  [class.open]="open"
+  [class.align-start]="align === 'start'"
+  [class.align-end]="align === 'end'"
+  (mouseleave)="close()"
+>
+  <button
+    type="button"
+    class="metric-info-trigger"
+    [attr.aria-label]="'About ' + item.name"
+    [attr.aria-expanded]="open"
+    (click)="toggle($event)"
+    (focus)="open = true"
+    (blur)="close()"
+  >
+    i
+  </button>
+
+  <span class="metric-info-card" role="tooltip">
+    <strong>{{ item.name }}</strong>
+    <span>{{ item.meaning }}</span>
+    <span><b>Calculated:</b> {{ item.calculation }}</span>
+    <span><b>Interpretation:</b> {{ item.interpretation }}</span>
+  </span>
+</span>

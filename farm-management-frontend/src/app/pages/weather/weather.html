@@ -152,18 +152,23 @@
           <div class="section-heading">
             <div>
               <span class="panel-kicker">Farm Operations</span>
-              <h2>Recommendations</h2>
+              <h2>Weather Recommendations</h2>
             </div>
           </div>
 
           <div class="recommendation-list">
-            <div class="recommendation-card" *ngFor="let recommendation of recommendations; trackBy: trackByLabel">
-              <svg lucideCheckCircle2></svg>
-              <div>
-                <strong>{{ recommendation.title }}</strong>
-                <span>{{ recommendation.action }}</span>
-              </div>
-            </div>
+            <app-recommendation-card
+              *ngFor="let recommendation of recommendations; trackBy: trackByLabel"
+              [title]="recommendation.title"
+              [recommendedAction]="recommendation.action"
+              description="Weather-driven operational guidance for the selected farm."
+              source="Weather"
+              priority="Operational"
+              dataSource="Current weather, forecast, rain probability, wind, humidity and temperature"
+              [triggerCondition]="recommendation.title"
+              ruleType="Weather decision rule"
+              [compact]="true">
+            </app-recommendation-card>
           </div>
         </article>
 

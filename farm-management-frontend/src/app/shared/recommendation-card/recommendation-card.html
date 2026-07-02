@@ -1,0 +1,27 @@
+<article class="rule-recommendation-card" [class.compact]="compact" [ngClass]="tone">
+  <div class="recommendation-top">
+    <span class="source-badge">{{ source }}</span>
+    <span class="priority-badge">{{ priority }}</span>
+  </div>
+
+  <div class="recommendation-body">
+    <h3>{{ title }}</h3>
+    <p *ngIf="description">{{ description }}</p>
+  </div>
+
+  <div class="recommendation-action" *ngIf="recommendedAction">
+    <span>Recommended action</span>
+    <p>{{ recommendedAction }}</p>
+  </div>
+
+  <details class="recommendation-explain">
+    <summary>How generated?</summary>
+    <div>
+      <span><strong>Method:</strong> Recommendations are generated using FarmOps' rule-based decision engine.</span>
+      <span><strong>Data source:</strong> {{ dataSource }}</span>
+      <span><strong>Rule:</strong> {{ triggerCondition }}</span>
+      <span><strong>Action:</strong> {{ recommendedAction || 'Review the recommendation and current operational context.' }}</span>
+      <span><strong>Rule type:</strong> {{ ruleType }}</span>
+    </div>
+  </details>
+</article>

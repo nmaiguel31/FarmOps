@@ -61,21 +61,21 @@
           <svg lucideLeaf></svg>
         </div>
         <div>
-          <span class="panel-kicker">Average NDVI Score</span>
+          <span class="panel-kicker">Average NDVI Score <app-metric-info metric="ndviScore" align="start"></app-metric-info></span>
           <strong>{{ averageNdvi | number:'1.2-2' }}</strong>
-          <h2>{{ vegetationClassification }}</h2>
+          <h2>{{ vegetationClassification }} <app-metric-info metric="vegetationClassification" align="start"></app-metric-info></h2>
           <p>Overall health status: {{ overallHealthStatus }}</p>
         </div>
       </article>
 
       <article class="summary-stat">
-        <span>Healthy Fields</span>
+        <span>Healthy Fields <app-metric-info metric="healthyFields" align="start"></app-metric-info></span>
         <strong>{{ healthyFields }}</strong>
         <small>Excellent or Good classification</small>
       </article>
 
       <article class="summary-stat">
-        <span>At-Risk Fields</span>
+        <span>At-Risk Fields <app-metric-info metric="atRiskFields" align="start"></app-metric-info></span>
         <strong>{{ atRiskFields }}</strong>
         <small>Poor or Critical classification</small>
       </article>
@@ -125,14 +125,14 @@
                 <span>{{ item.crop }}</span>
               </div>
               <div class="ndvi-score">
-                <span>NDVI</span>
+                <span>NDVI <app-metric-info metric="ndviScore" align="end"></app-metric-info></span>
                 <strong>{{ item.ndvi | number:'1.2-2' }}</strong>
               </div>
               <span class="class-badge" [ngClass]="getClassTone(item.classification)">
                 {{ item.classification }}
               </span>
               <span class="trend-badge" [class.declining]="item.trend === 'Declining'" [class.improving]="item.trend === 'Improving'">
-                {{ item.trend }}
+                {{ item.trend }} <app-metric-info metric="trend" align="end"></app-metric-info>
               </span>
             </article>
           </div>
@@ -151,7 +151,7 @@
           <div class="section-heading">
             <div>
               <span class="panel-kicker">Vegetation Trend</span>
-              <h2>Simulated 30-day NDVI trend</h2>
+              <h2>Simulated 30-day NDVI trend <app-metric-info metric="trend" align="start"></app-metric-info></h2>
             </div>
             <svg lucideLineChart></svg>
           </div>
@@ -165,12 +165,22 @@
         <article class="interpretation-panel">
           <div class="section-heading">
             <div>
-              <span class="panel-kicker">AI Interpretation</span>
+              <span class="panel-kicker">Vegetation Interpretation</span>
               <h2>Rule-based vegetation insight</h2>
             </div>
             <svg lucideBarChart3></svg>
           </div>
-          <p>{{ aiInterpretation }}</p>
+          <app-recommendation-card
+            title="Vegetation Interpretation"
+            [description]="vegetationInterpretation"
+            source="NDVI"
+            priority="Insight"
+            recommendedAction="Use this interpretation to prioritize field review and vegetation monitoring."
+            dataSource="Simulated NDVI, field health, and vegetation classification"
+            [triggerCondition]="vegetationClassification + ' vegetation classification'"
+            ruleType="Vegetation interpretation rule"
+            [compact]="true">
+          </app-recommendation-card>
         </article>
 
         <article class="recommendations-panel">
@@ -181,10 +191,18 @@
             </div>
           </div>
           <div class="recommendation-list">
-            <div class="recommendation-card" *ngFor="let recommendation of recommendations; trackBy: trackByLabel">
-              <svg lucideCheckCircle2></svg>
-              <span>{{ recommendation }}</span>
-            </div>
+            <app-recommendation-card
+              *ngFor="let recommendation of recommendations; trackBy: trackByLabel"
+              title="NDVI Recommendation"
+              [recommendedAction]="recommendation"
+              description="Rule-based vegetation guidance for the selected farm."
+              source="NDVI"
+              priority="Operational"
+              dataSource="Simulated NDVI, field health, vegetation trend and classification"
+              [triggerCondition]="recommendation"
+              ruleType="Vegetation recommendation rule"
+              [compact]="true">
+            </app-recommendation-card>
           </div>
         </article>
 

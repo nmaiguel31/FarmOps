@@ -15,7 +15,6 @@ import {
 import { Subscription, filter } from 'rxjs';
 import {
   LucideAlertTriangle,
-  LucideCheckCircle2,
   LucideCloudRain,
   LucideCloudSun,
   LucideDroplet,
@@ -33,6 +32,7 @@ import {
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { Farm } from '../../services/farm';
 import { OperationSignal } from '../../services/operation-signal';
+import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
 
 type WeatherRisk = {
   label: string;
@@ -49,7 +49,6 @@ type WeatherRisk = {
     FormsModule,
     RouterModule,
     LucideAlertTriangle,
-    LucideCheckCircle2,
     LucideCloudRain,
     LucideCloudSun,
     LucideDroplet,
@@ -58,7 +57,8 @@ type WeatherRisk = {
     LucideThermometer,
     LucideUmbrella,
     LucideWind,
-    EmptyStateComponent
+    EmptyStateComponent,
+    RecommendationCard
   ],
   templateUrl: './weather.html',
   styleUrl: './weather.css'

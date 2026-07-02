@@ -36,6 +36,8 @@ import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
+import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
+import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
 import {
   getCurrentCrops,
   getCurrentFields,
@@ -74,7 +76,9 @@ const REPORT_THEME = {
     LucideLeaf,
     LucideShieldAlert,
     LucideSprout,
-    EmptyStateComponent
+    EmptyStateComponent,
+    MetricInfoTooltip,
+    RecommendationCard
   ],
   templateUrl: './executive-reports.html',
   styleUrl: './executive-reports.css'
@@ -325,6 +329,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.operationalScore,
         helper: this.operationalScoreStatus,
         icon: 'operations',
+        metric: 'operationalScore',
         tone: this.operationalScore >= 75 ? 'good' : this.operationalScore >= 50 ? 'warning' : 'danger'
       },
       {
@@ -332,6 +337,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.averageHealth ? `${this.averageHealth}%` : 'No data',
         helper: 'Average active field health',
         icon: 'health',
+        metric: 'overallFarmHealth',
         tone: this.averageHealth >= 75 ? 'good' : this.averageHealth >= 50 ? 'warning' : 'danger'
       },
       {
@@ -339,6 +345,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.formatCurrency(this.monthlyProfit),
         helper: this.periodLabel,
         icon: 'profit',
+        metric: 'periodProfit',
         tone: this.monthlyProfit >= 0 ? 'good' : 'danger'
       },
       {
@@ -346,6 +353,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.averageNdvi ? this.toNdviDecimal(this.averageNdvi) : 'No data',
         helper: 'Vegetation health signal',
         icon: 'ndvi',
+        metric: 'averageNdvi',
         tone: this.averageNdvi >= 70 ? 'good' : this.averageNdvi >= 50 ? 'warning' : 'danger'
       },
       {
@@ -353,6 +361,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.activeSignals.length,
         helper: 'Unresolved signals',
         icon: 'operations',
+        metric: 'activeOperations',
         tone: this.activeSignals.length ? 'warning' : 'good'
       },
       {
@@ -360,6 +369,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.weatherRisk,
         helper: 'From active weather signals',
         icon: 'weather',
+        metric: 'weatherRisk',
         tone: this.weatherRisk === 'Stable' ? 'good' : 'warning'
       },
       {
@@ -367,6 +377,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.farms.length,
         helper: `${this.fields.length} fields monitored`,
         icon: 'farms',
+        metric: 'totalFarms',
         tone: 'neutral'
       },
       {
@@ -374,6 +385,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         value: this.activeCrops,
         helper: 'Linked to active fields',
         icon: 'crops',
+        metric: 'activeCrops',
         tone: 'neutral'
       }
     ];

@@ -41,6 +41,7 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { getCurrentFields } from '../../shared/current-data-scope';
+import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
 
 @Component({
   selector: 'app-farms',
@@ -62,7 +63,8 @@ import { getCurrentFields } from '../../shared/current-data-scope';
     LucideTractor,
     LucideTrash2,
     LucideWaves,
-    EmptyStateComponent
+    EmptyStateComponent,
+    RecommendationCard
   ],
   templateUrl: './farms.html',
   styleUrl: './farms.css',

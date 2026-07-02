@@ -47,7 +47,7 @@
         <svg *ngSwitchCase="'pending'" lucideClock3></svg>
       </div>
       <div>
-        <span>{{ item.label }}</span>
+        <span>{{ item.label }} <app-metric-info [metric]="item.metric" align="start"></app-metric-info></span>
         <strong *ngIf="!item.plain; else plainSummary">
           {{ item.value | currency:'USD':'symbol':'1.0-0' }}
         </strong>
@@ -264,7 +264,7 @@
     <article class="analytics-card">
       <div class="panel-header">
         <div>
-          <h2>Top Expense Categories</h2>
+          <h2>Top Expense Categories <app-metric-info metric="topExpenseCategories" align="start"></app-metric-info></h2>
           <p>Largest cost drivers in the selected financial scope</p>
         </div>
       </div>
