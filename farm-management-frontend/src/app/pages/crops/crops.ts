@@ -374,17 +374,14 @@ export class Crops implements OnInit {
       Math.min(Math.max(page, 1), this.totalPages);
   }
 
-  trackById(index: number, item: any) {
-    return this.getEntityId(item) || item?.name || item?.label || index;
-  }
+  trackById = (index: number, item: any): string =>
+    String(item?._id || item?.id || item?.name || item?.label || index);
 
-  trackByValue(_index: number, item: any) {
-    return item;
-  }
+  trackByValue = (index: number, item: any): string =>
+    String(item ?? index);
 
-  trackByStage(index: number, stage: any) {
-    return stage?.name || index;
-  }
+  trackByStage = (index: number, stage: any): string =>
+    String(stage?.name || stage?.label || index);
 
   openCreateCrop() {
     this.editingCropId = '';

@@ -147,21 +147,17 @@ export class Dashboard implements OnInit {
     return this.activeOperationSignals.length;
   }
 
-  trackByValue(_index: number, item: any) {
-    return item;
-  }
+  trackByValue = (index: number, item: any): string =>
+    String(item ?? index);
 
-  trackByLabel(_index: number, item: any) {
-    return item?.label || item?.route || item?.title || _index;
-  }
+  trackByLabel = (index: number, item: any): string =>
+    String(item?.label || item?.route || item?.title || item?.name || index);
 
-  trackByFarmHealth(_index: number, row: any) {
-    return this.getEntityId(row?.farm) || row?.farm?.name || _index;
-  }
+  trackByFarmHealth = (index: number, row: any): string =>
+    String(row?.farmId || row?.farm?._id || row?.farm?.id || row?.farm?.name || row?._id || row?.id || index);
 
-  trackByActivity(_index: number, item: any) {
-    return `${item?.type || ''}:${item?.title || ''}:${item?.detail || ''}`;
-  }
+  trackByActivity = (index: number, item: any): string =>
+    String(item?.id || `${item?.type || ''}:${item?.title || ''}:${item?.detail || ''}` || index);
 
   get activeOperationSignals() {
     return this.operationSignals.filter(signal => signal.status === 'Active');

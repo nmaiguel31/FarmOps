@@ -1,13 +1,13 @@
 import {
   Component,
   inject,
-  OnInit,
-  ChangeDetectorRef
+  OnInit
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import { forkJoin } from 'rxjs';
 import { FinancialRecord } from '../../services/financial-record';
 import jsPDF from 'jspdf';
 import {
@@ -126,22 +126,41 @@ export class FinancialRecords implements OnInit {
   readonly skeletonRows = [1, 2, 3, 4, 5];
 
   private financialService = inject(FinancialRecord);
-  private cdr = inject(ChangeDetectorRef);
   private toast = inject(ToastService);
   private confirmation = inject(ConfirmationService);
 
   ngOnInit(): void {
-    this.loadRecords();
-    this.loadFarms();
-    this.loadFields();
-    this.loadCrops();
+    this.loadFinancialData();
+  }
+
+  loadFinancialData() {
+    this.recordsLoading = true;
+
+    forkJoin({
+      records: this.financialService.getRecords(),
+      farms: this.financialService.getFarms(),
+      fields: this.financialService.getFields(),
+      crops: this.financialService.getCrops()
+    }).subscribe({
+      next: ({ records, farms, fields, crops }: any) => {
+        this.records = Array.isArray(records) ? [...records] : [];
+        this.farms = Array.isArray(farms) ? [...farms] : [];
+        this.fields = Array.isArray(fields) ? [...fields] : [];
+        this.crops = Array.isArray(crops) ? [...crops] : [];
+        this.recordsLoading = false;
+        this.renderChartsSoon();
+      },
+      error: (error) => {
+        console.error(error);
+        this.recordsLoading = false;
+      }
+    });
   }
 
   loadFarms() {
     this.financialService.getFarms().subscribe({
       next: (data: any) => {
-        this.farms = [...data];
-        this.cdr.detectChanges();
+        this.farms = Array.isArray(data) ? [...data] : [];
       },
       error: (error) => console.error(error)
     });
@@ -150,9 +169,8 @@ export class FinancialRecords implements OnInit {
   loadFields() {
     this.financialService.getFields().subscribe({
       next: (data: any) => {
-        this.fields = [...data];
+        this.fields = Array.isArray(data) ? [...data] : [];
         this.renderChartsSoon();
-        this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
     });
@@ -161,9 +179,8 @@ export class FinancialRecords implements OnInit {
   loadCrops() {
     this.financialService.getCrops().subscribe({
       next: (data: any) => {
-        this.crops = [...data];
+        this.crops = Array.isArray(data) ? [...data] : [];
         this.renderChartsSoon();
-        this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
     });
@@ -173,15 +190,13 @@ export class FinancialRecords implements OnInit {
     this.recordsLoading = true;
     this.financialService.getRecords().subscribe({
       next: (data: any) => {
-        this.records = [...data];
+        this.records = Array.isArray(data) ? [...data] : [];
         this.recordsLoading = false;
         this.renderChartsSoon();
-        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.recordsLoading = false;
-        this.cdr.detectChanges();
       }
     });
   }
@@ -526,21 +541,17 @@ export class FinancialRecords implements OnInit {
     return this.getCategoryOptions();
   }
 
-  trackById(_index: number, item: any) {
-    return this.getEntityId(item) || item?.name || item?.label || _index;
-  }
+  trackById = (index: number, item: any): string =>
+    String(item?._id || item?.id || item?.name || item?.label || index);
 
-  trackByValue(_index: number, item: any) {
-    return item;
-  }
+  trackByValue = (index: number, item: any): string =>
+    String(item ?? index);
 
-  trackByCropProfit(_index: number, item: any) {
-    return item.crop;
-  }
+  trackByCropProfit = (index: number, item: any): string =>
+    String(item?.crop || item?.name || index);
 
-  trackByLabel(_index: number, item: any) {
-    return item?.label || item?.category || item?.crop || item?.title || _index;
-  }
+  trackByLabel = (index: number, item: any): string =>
+    String(item?.label || item?.category || item?.crop || item?.title || item?.name || index);
 
   getAmountPreview() {
     const calculatedAmount =

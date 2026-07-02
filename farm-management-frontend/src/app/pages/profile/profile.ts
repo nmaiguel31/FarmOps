@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 import {
   LucideBadgeDollarSign,
   LucideBell,
@@ -86,8 +86,8 @@ export class Profile implements OnInit {
       this.profileLoading = false;
     }
 
-    this.loadProfile();
     this.loadStats();
+    this.loadProfile();
   }
 
   get initials() {
@@ -131,33 +131,40 @@ export class Profile implements OnInit {
     this.statsLoading = true;
 
     forkJoin({
-      farms: this.farmService.getFarms(),
-      fields: this.fieldService.getFields(),
-      crops: this.cropService.getCrops(),
-      records: this.financialService.getRecords(),
-      signals: this.signalService.getSignals()
-    }).subscribe({
-      next: (data: any) => {
-        const farms = getCurrentFarms(data.farms || []);
-        const fields = getCurrentFields(farms, data.fields || []);
-        const records = getCurrentRecords(farms, data.records || []);
-        const crops = getCurrentCrops(farms, fields, data.crops || [], records);
-        const signals = getCurrentSignals(farms, fields, data.signals || []);
-
-        this.stats = {
-          farmsManaged: farms.length,
-          fieldsManaged: fields.length,
-          cropsRegistered: crops.length,
-          financialRecords: records.length,
-          reportsGenerated: 'Not tracked',
-          alertsResolved: signals.filter((signal: any) => signal.status === 'Resolved').length
-        };
-
+      farms: this.farmService.getFarms().pipe(catchError(error => this.handleStatsRequestError(error))),
+      fields: this.fieldService.getFields().pipe(catchError(error => this.handleStatsRequestError(error))),
+      crops: this.cropService.getCrops().pipe(catchError(error => this.handleStatsRequestError(error))),
+      records: this.financialService.getRecords().pipe(catchError(error => this.handleStatsRequestError(error))),
+      signals: this.signalService.getSignals().pipe(catchError(error => this.handleStatsRequestError(error)))
+    }).pipe(
+      finalize(() => {
         this.statsLoading = false;
+      })
+    ).subscribe({
+      next: (data: any) => {
+        try {
+          const farms = getCurrentFarms(this.normalizeList(data.farms));
+          const fields = getCurrentFields(farms, this.normalizeList(data.fields));
+          const records = getCurrentRecords(farms, this.normalizeList(data.records));
+          const crops = getCurrentCrops(farms, fields, this.normalizeList(data.crops), records);
+          const signals = getCurrentSignals(farms, fields, this.normalizeList(data.signals));
+
+          this.stats = {
+            farmsManaged: farms.length,
+            fieldsManaged: fields.length,
+            cropsRegistered: crops.length,
+            financialRecords: records.length,
+            reportsGenerated: 'Not tracked',
+            alertsResolved: signals.filter((signal: any) => signal.status === 'Resolved').length
+          };
+        } catch (error) {
+          console.error(error);
+          this.stats = this.getEmptyStats();
+        }
       },
       error: (error) => {
         console.error(error);
-        this.statsLoading = false;
+        this.stats = this.getEmptyStats();
       }
     });
   }
@@ -213,5 +220,25 @@ export class Profile implements OnInit {
   private applyUser(user: FarmOpsUser) {
     this.user = user;
     this.fullName = user.fullName || '';
+  }
+
+  private handleStatsRequestError(error: any) {
+    console.error(error);
+    return of([]);
+  }
+
+  private normalizeList(value: any): any[] {
+    return Array.isArray(value) ? value : [];
+  }
+
+  private getEmptyStats() {
+    return {
+      farmsManaged: 0,
+      fieldsManaged: 0,
+      cropsRegistered: 0,
+      financialRecords: 0,
+      reportsGenerated: 'Not tracked',
+      alertsResolved: 0
+    };
   }
 }
