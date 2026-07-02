@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   inject,
   OnInit
@@ -7,7 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { FinancialRecord } from '../../services/financial-record';
 import jsPDF from 'jspdf';
 import {
@@ -128,6 +129,7 @@ export class FinancialRecords implements OnInit {
   private financialService = inject(FinancialRecord);
   private toast = inject(ToastService);
   private confirmation = inject(ConfirmationService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.loadFinancialData();
@@ -137,22 +139,24 @@ export class FinancialRecords implements OnInit {
     this.recordsLoading = true;
 
     forkJoin({
-      records: this.financialService.getRecords(),
-      farms: this.financialService.getFarms(),
-      fields: this.financialService.getFields(),
-      crops: this.financialService.getCrops()
+      records: this.financialService.getRecords().pipe(catchError(error => this.handleListRequestError(error))),
+      farms: this.financialService.getFarms().pipe(catchError(error => this.handleListRequestError(error))),
+      fields: this.financialService.getFields().pipe(catchError(error => this.handleListRequestError(error))),
+      crops: this.financialService.getCrops().pipe(catchError(error => this.handleListRequestError(error)))
     }).subscribe({
       next: ({ records, farms, fields, crops }: any) => {
-        this.records = Array.isArray(records) ? [...records] : [];
-        this.farms = Array.isArray(farms) ? [...farms] : [];
-        this.fields = Array.isArray(fields) ? [...fields] : [];
-        this.crops = Array.isArray(crops) ? [...crops] : [];
+        this.records = [...this.normalizeList(records)];
+        this.farms = [...this.normalizeList(farms)];
+        this.fields = [...this.normalizeList(fields)];
+        this.crops = [...this.normalizeList(crops)];
         this.recordsLoading = false;
         this.renderChartsSoon();
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.recordsLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -160,7 +164,8 @@ export class FinancialRecords implements OnInit {
   loadFarms() {
     this.financialService.getFarms().subscribe({
       next: (data: any) => {
-        this.farms = Array.isArray(data) ? [...data] : [];
+        this.farms = [...this.normalizeList(data)];
+        this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
     });
@@ -169,8 +174,9 @@ export class FinancialRecords implements OnInit {
   loadFields() {
     this.financialService.getFields().subscribe({
       next: (data: any) => {
-        this.fields = Array.isArray(data) ? [...data] : [];
+        this.fields = [...this.normalizeList(data)];
         this.renderChartsSoon();
+        this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
     });
@@ -179,8 +185,9 @@ export class FinancialRecords implements OnInit {
   loadCrops() {
     this.financialService.getCrops().subscribe({
       next: (data: any) => {
-        this.crops = Array.isArray(data) ? [...data] : [];
+        this.crops = [...this.normalizeList(data)];
         this.renderChartsSoon();
+        this.cdr.detectChanges();
       },
       error: (error) => console.error(error)
     });
@@ -190,13 +197,15 @@ export class FinancialRecords implements OnInit {
     this.recordsLoading = true;
     this.financialService.getRecords().subscribe({
       next: (data: any) => {
-        this.records = Array.isArray(data) ? [...data] : [];
+        this.records = [...this.normalizeList(data)];
         this.recordsLoading = false;
         this.renderChartsSoon();
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error(error);
         this.recordsLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -890,6 +899,36 @@ export class FinancialRecords implements OnInit {
 
   private normalizeSearch(value: any) {
     return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  private handleListRequestError(error: any) {
+    console.error(error);
+    return of([]);
+  }
+
+  private normalizeList(value: any): any[] {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    const collectionKeys = [
+      'records',
+      'financialRecords',
+      'farms',
+      'fields',
+      'crops',
+      'data',
+      'items',
+      'results'
+    ];
+
+    for (const key of collectionKeys) {
+      if (Array.isArray(value?.[key])) {
+        return value[key];
+      }
+    }
+
+    return [];
   }
 
   private matchesDateRange(record: any) {

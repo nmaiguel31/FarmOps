@@ -75,49 +75,19 @@
       </article>
     </section>
 
-    <section class="profile-loading-grid" *ngIf="statsLoading">
-      <div class="skeleton-card" *ngFor="let item of [1,2,3,4,5,6]; trackBy: trackByValue">
-        <span></span>
-        <strong></strong>
-        <small></small>
-      </div>
-    </section>
-
-    <section class="stats-grid" aria-label="Account statistics" *ngIf="!statsLoading">
-      <article class="stat-card">
-        <svg lucideMap></svg>
-        <span>Farms Managed</span>
-        <strong>{{ stats.farmsManaged }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <svg lucideLeaf></svg>
-        <span>Fields Managed</span>
-        <strong>{{ stats.fieldsManaged }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <svg lucideSprout></svg>
-        <span>Crops Registered</span>
-        <strong>{{ stats.cropsRegistered }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <svg lucideBadgeDollarSign></svg>
-        <span>Financial Records</span>
-        <strong>{{ stats.financialRecords }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <svg lucideFileText></svg>
-        <span>Reports Generated</span>
-        <strong class="text-value">{{ stats.reportsGenerated }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <svg lucideBell></svg>
-        <span>Alerts Resolved</span>
-        <strong>{{ stats.alertsResolved }}</strong>
+    <section class="stats-grid" aria-label="Account statistics" [attr.aria-busy]="statsLoading">
+      <article class="stat-card" *ngFor="let stat of accountStats; trackBy: trackByStat">
+        <ng-container [ngSwitch]="stat.icon">
+          <svg *ngSwitchCase="'map'" lucideMap></svg>
+          <svg *ngSwitchCase="'leaf'" lucideLeaf></svg>
+          <svg *ngSwitchCase="'sprout'" lucideSprout></svg>
+          <svg *ngSwitchCase="'wallet'" lucideBadgeDollarSign></svg>
+          <svg *ngSwitchCase="'file-text'" lucideFileText></svg>
+          <svg *ngSwitchCase="'check-circle'" lucideCheckCircle2></svg>
+          <svg *ngSwitchDefault lucideBell></svg>
+        </ng-container>
+        <span>{{ stat.label }}</span>
+        <strong>{{ stat.value }}</strong>
       </article>
     </section>
 

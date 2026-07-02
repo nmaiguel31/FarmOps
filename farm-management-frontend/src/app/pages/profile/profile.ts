@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 import {
   LucideBadgeDollarSign,
   LucideBell,
+  LucideCheckCircle2,
   LucideFileText,
   LucideLeaf,
   LucideLogOut,
@@ -40,6 +41,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     RouterModule,
     LucideBadgeDollarSign,
     LucideBell,
+    LucideCheckCircle2,
     LucideFileText,
     LucideLeaf,
     LucideLogOut,
@@ -56,18 +58,11 @@ export class Profile implements OnInit {
   user: FarmOpsUser | null = null;
   fullName = '';
   profileLoading = true;
-  statsLoading = true;
+  statsLoading = false;
   saving = false;
   loadError = '';
 
-  stats = {
-    farmsManaged: 0,
-    fieldsManaged: 0,
-    cropsRegistered: 0,
-    financialRecords: 0,
-    reportsGenerated: 'Not tracked',
-    alertsResolved: 0
-  };
+  accountStats = this.getEmptyAccountStats();
 
   private authService = inject(Auth);
   private farmService = inject(Farm);
@@ -77,6 +72,7 @@ export class Profile implements OnInit {
   private signalService = inject(OperationSignal);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() {
     const cachedUser = this.authService.getCurrentUser();
@@ -149,23 +145,25 @@ export class Profile implements OnInit {
           const crops = getCurrentCrops(farms, fields, this.normalizeList(data.crops), records);
           const signals = getCurrentSignals(farms, fields, this.normalizeList(data.signals));
 
-          this.stats = {
+          this.accountStats = this.buildAccountStats({
             farmsManaged: farms.length,
             fieldsManaged: fields.length,
             cropsRegistered: crops.length,
             financialRecords: records.length,
-            reportsGenerated: 'Not tracked',
+            reportsGenerated: 0,
             alertsResolved: signals.filter((signal: any) => signal.status === 'Resolved').length
-          };
+          });
         } catch (error) {
           console.error(error);
-          this.stats = this.getEmptyStats();
+          this.accountStats = this.getEmptyAccountStats();
         }
       },
       error: (error) => {
         console.error(error);
-        this.stats = this.getEmptyStats();
+        this.accountStats = this.getEmptyAccountStats();
       }
+    }).add(() => {
+      this.cdr.detectChanges();
     });
   }
 
@@ -199,6 +197,10 @@ export class Profile implements OnInit {
     return item;
   }
 
+  trackByStat(_index: number, stat: any) {
+    return stat?.label || stat?.icon || _index;
+  }
+
   private formatDate(value?: string) {
     if (!value) {
       return 'Not available';
@@ -228,17 +230,92 @@ export class Profile implements OnInit {
   }
 
   private normalizeList(value: any): any[] {
-    return Array.isArray(value) ? value : [];
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    const collectionKeys = [
+      'farms',
+      'fields',
+      'crops',
+      'records',
+      'financialRecords',
+      'signals',
+      'operationSignals',
+      'alerts'
+    ];
+
+    for (const key of collectionKeys) {
+      if (Array.isArray(value?.[key])) {
+        return value[key];
+      }
+    }
+
+    if (Array.isArray(value?.data)) {
+      return value.data;
+    }
+
+    if (Array.isArray(value?.items)) {
+      return value.items;
+    }
+
+    if (Array.isArray(value?.results)) {
+      return value.results;
+    }
+
+    return [];
   }
 
-  private getEmptyStats() {
-    return {
+  private getEmptyAccountStats() {
+    return this.buildAccountStats({
       farmsManaged: 0,
       fieldsManaged: 0,
       cropsRegistered: 0,
       financialRecords: 0,
-      reportsGenerated: 'Not tracked',
+      reportsGenerated: 0,
       alertsResolved: 0
-    };
+    });
+  }
+
+  private buildAccountStats(values: {
+    farmsManaged: number;
+    fieldsManaged: number;
+    cropsRegistered: number;
+    financialRecords: number;
+    reportsGenerated: number;
+    alertsResolved: number;
+  }) {
+    return [
+      {
+        label: 'Farms Managed',
+        value: values.farmsManaged,
+        icon: 'map'
+      },
+      {
+        label: 'Fields Managed',
+        value: values.fieldsManaged,
+        icon: 'leaf'
+      },
+      {
+        label: 'Crops Registered',
+        value: values.cropsRegistered,
+        icon: 'sprout'
+      },
+      {
+        label: 'Financial Records',
+        value: values.financialRecords,
+        icon: 'wallet'
+      },
+      {
+        label: 'Reports Generated',
+        value: values.reportsGenerated,
+        icon: 'file-text'
+      },
+      {
+        label: 'Alerts Resolved',
+        value: values.alertsResolved,
+        icon: 'check-circle'
+      }
+    ];
   }
 }

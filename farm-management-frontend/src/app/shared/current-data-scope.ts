@@ -1,5 +1,13 @@
 export function getEntityId(entity: any): string {
-  return String(entity?._id || entity?.id || entity || '');
+  if (!entity) {
+    return '';
+  }
+
+  if (typeof entity === 'string' || typeof entity === 'number') {
+    return String(entity);
+  }
+
+  return String(entity?._id || entity?.id || entity?.$oid || '');
 }
 
 export function isCurrentRecord(record: any): boolean {
@@ -23,7 +31,7 @@ export function getCurrentFields(farms: any[] = [], fields: any[] = []): any[] {
 
   return fields.filter(field =>
     isCurrentRecord(field) &&
-    farmIds.has(getEntityId(field.farm))
+    farmIds.has(getEntityId(field.farm || field.farmId))
   );
 }
 
@@ -33,7 +41,7 @@ export function getCurrentZones(fields: any[] = [], zones: any[] = []): any[] {
 
   return zones.filter(zone =>
     isCurrentRecord(zone) &&
-    fieldIds.has(getEntityId(zone.field))
+    fieldIds.has(getEntityId(zone.field || zone.fieldId))
   );
 }
 
@@ -43,7 +51,7 @@ export function getCurrentRecords(farms: any[] = [], records: any[] = []): any[]
 
   return records.filter(record =>
     isCurrentRecord(record) &&
-    farmIds.has(getEntityId(record.farm))
+    farmIds.has(getEntityId(record.farm || record.farmId))
   );
 }
 
@@ -51,9 +59,9 @@ export function getCurrentCrops(farms: any[] = [], fields: any[] = [], crops: an
   const farmIds =
     new Set(getCurrentFarms(farms).map(farm => getEntityId(farm)).filter(Boolean));
   const fieldCropIds =
-    new Set(fields.map(field => getEntityId(field.crop)).filter(Boolean));
+    new Set(fields.map(field => getEntityId(field.crop || field.cropId)).filter(Boolean));
   const recordCropIds =
-    new Set(records.map(record => getEntityId(record.crop)).filter(Boolean));
+    new Set(records.map(record => getEntityId(record.crop || record.cropId)).filter(Boolean));
 
   return crops.filter(crop => {
     if (!isCurrentRecord(crop)) {
@@ -61,7 +69,7 @@ export function getCurrentCrops(farms: any[] = [], fields: any[] = [], crops: an
     }
 
     const cropId = getEntityId(crop);
-    const farmId = getEntityId(crop.farm);
+    const farmId = getEntityId(crop.farm || crop.farmId);
 
     return (farmId && farmIds.has(farmId)) ||
       fieldCropIds.has(cropId) ||
@@ -80,8 +88,8 @@ export function getCurrentSignals(farms: any[] = [], fields: any[] = [], signals
       return false;
     }
 
-    const farmId = getEntityId(signal.farm);
-    const fieldId = getEntityId(signal.field);
+    const farmId = getEntityId(signal.farm || signal.farmId);
+    const fieldId = getEntityId(signal.field || signal.fieldId);
 
     if (fieldId && !fieldIds.has(fieldId)) {
       return false;
