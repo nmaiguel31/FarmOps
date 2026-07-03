@@ -2,6 +2,7 @@
 
 const jwt = require('jsonwebtoken');
 const logEvent = require('../utils/logger');
+const { normalizeRole } = require('../config/roles');
 
 const protect = (req, res, next) => {
   let token;
@@ -15,7 +16,10 @@ const protect = (req, res, next) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      req.user = decoded;
+      req.user = {
+        ...decoded,
+        role: normalizeRole(decoded.role)
+      };
 
       return next();
 

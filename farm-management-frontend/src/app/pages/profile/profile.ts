@@ -29,9 +29,11 @@ import {
   getCurrentFields,
   getCurrentRecords,
   getCurrentFarms,
-  getCurrentSignals
+  getCurrentSignals,
+  isCurrentRecord
 } from '../../shared/current-data-scope';
 import { ToastService } from '../../shared/toast/toast.service';
+import { ROLE_LABELS, normalizeRole } from '../../shared/rbac/roles';
 
 @Component({
   selector: 'app-profile',
@@ -97,6 +99,10 @@ export class Profile implements OnInit {
     return this.user?.mfaEnabled ? 'Enabled' : 'Disabled';
   }
 
+  get roleLabel() {
+    return ROLE_LABELS[normalizeRole(this.user?.role)];
+  }
+
   get memberSince() {
     return this.formatDate(this.user?.memberSince);
   }
@@ -130,11 +136,11 @@ export class Profile implements OnInit {
     this.statsLoading = true;
 
     forkJoin({
-      farms: this.farmService.getFarms().pipe(catchError(error => this.handleStatsRequestError(error))),
-      fields: this.fieldService.getFields().pipe(catchError(error => this.handleStatsRequestError(error))),
-      crops: this.cropService.getCrops().pipe(catchError(error => this.handleStatsRequestError(error))),
-      records: this.financialService.getRecords().pipe(catchError(error => this.handleStatsRequestError(error))),
-      signals: this.signalService.getSignals().pipe(catchError(error => this.handleStatsRequestError(error)))
+      farms: this.authService.canAccess('farms') ? this.farmService.getFarms().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      fields: this.authService.canAccess('farms') ? this.fieldService.getFields().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      records: this.authService.canAccess('financial-records') ? this.financialService.getRecords().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      signals: this.authService.canAccess('operations-center') ? this.signalService.getSignals().pipe(catchError(error => this.handleStatsRequestError(error))) : of([])
     }).pipe(
       finalize(() => {
         this.statsLoading = false;
@@ -144,7 +150,10 @@ export class Profile implements OnInit {
         try {
           const farms = getCurrentFarms(this.normalizeList(data.farms));
           const fields = getCurrentFields(farms, this.normalizeList(data.fields));
-          const records = getCurrentRecords(farms, this.normalizeList(data.records));
+          const records =
+            !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+              ? this.normalizeList(data.records).filter(isCurrentRecord)
+              : getCurrentRecords(farms, this.normalizeList(data.records));
           const crops = getCurrentCrops(farms, fields, this.normalizeList(data.crops), records);
           const signals = getCurrentSignals(farms, fields, this.normalizeList(data.signals));
 

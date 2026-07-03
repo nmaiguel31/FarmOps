@@ -1,0 +1,296 @@
+<main class="user-management-page">
+  <section class="page-hero">
+    <div>
+      <span class="eyebrow">Administration</span>
+      <h1>User Management</h1>
+      <p>Manage FarmOps users, roles, and account access.</p>
+    </div>
+
+    <button type="button" class="primary-action" (click)="openCreateModal()">
+      <svg lucideUserPlus></svg>
+      <span>Add User</span>
+    </button>
+  </section>
+
+  <section class="summary-grid" aria-label="User management summary">
+    <article class="summary-card">
+      <span class="summary-icon">
+        <svg lucideUsers></svg>
+      </span>
+      <div>
+        <small>Total Users</small>
+        <strong>{{ loading ? '—' : users.length }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-icon success">
+        <svg lucideShieldCheck></svg>
+      </span>
+      <div>
+        <small>Active</small>
+        <strong>{{ loading ? '—' : activeCount }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-icon admin">
+        <svg lucideUserRound></svg>
+      </span>
+      <div>
+        <small>Administrators</small>
+        <strong>{{ loading ? '—' : adminCount }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-icon warning">
+        <svg lucideKeyRound></svg>
+      </span>
+      <div>
+        <small>Suspended</small>
+        <strong>{{ loading ? '—' : suspendedCount }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="users-card">
+    <div class="card-header">
+      <div>
+        <h2>Workspace Users</h2>
+        <p *ngIf="loading">Loading workspace users</p>
+        <p *ngIf="!loading">Showing {{ filteredUsers.length }} of {{ users.length }} users</p>
+      </div>
+
+      <div class="filter-row">
+        <label class="search-control">
+          <svg lucideSearch></svg>
+          <input
+            type="search"
+            name="userSearch"
+            placeholder="Search users, roles, or status"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilters()"
+          >
+        </label>
+
+        <button type="button" class="ghost-action" (click)="clearFilters()">
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="table-skeleton" aria-label="Loading users">
+      <div *ngFor="let item of skeletonRows; trackBy: trackByValue" class="skeleton-row">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <app-empty-state
+      *ngIf="!loading && !loadError && users.length === 0"
+      icon="security"
+      title="No users yet"
+      description="Create the first invited workspace user and assign their FarmOps role."
+      primaryLabel="Add User"
+      tone="leaf"
+      (primaryAction)="openCreateModal()"
+    ></app-empty-state>
+
+    <app-empty-state
+      *ngIf="!loading && users.length > 0 && filteredUsers.length === 0"
+      icon="search"
+      title="No users match your filters"
+      description="Try adjusting the search term or clearing filters."
+      primaryLabel="Clear filters"
+      tone="neutral"
+      (primaryAction)="clearFilters()"
+    ></app-empty-state>
+
+    <app-empty-state
+      *ngIf="!loading && loadError"
+      icon="alert"
+      title="Could not load users"
+      [description]="loadError"
+      primaryLabel="Try again"
+      tone="danger"
+      (primaryAction)="loadUsers()"
+    ></app-empty-state>
+
+    <div *ngIf="!loading && filteredUsers.length > 0" class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>MFA</th>
+            <th>Created</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers; trackBy: trackByUser">
+            <td>
+              <div class="user-cell">
+                <span class="avatar">{{ getInitials(user) }}</span>
+                <strong>{{ user.fullName }}</strong>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="role-badge" [ngClass]="user.role">
+                {{ getRoleLabel(user.role) }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="user.status">
+                {{ getStatusLabel(user.status) }}
+              </span>
+            </td>
+            <td>{{ user.mfaEnabled ? 'Enabled' : 'Disabled' }}</td>
+            <td>{{ formatDate(user.createdAt) }}</td>
+            <td>{{ formatDate(user.lastLogin) }}</td>
+            <td>
+              <div class="action-cluster">
+                <button type="button" class="icon-button" title="Edit user" (click)="openEditModal(user)">
+                  <svg lucidePencil></svg>
+                </button>
+                <button type="button" class="icon-button" title="Reset password" (click)="openResetModal(user)">
+                  <svg lucideKeyRound></svg>
+                </button>
+                <button type="button" class="text-action" (click)="toggleStatus(user)">
+                  {{ user.status === 'suspended' ? 'Activate' : 'Suspend' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section *ngIf="modalMode" class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">
+            {{ modalMode === 'create' ? 'New account' : modalMode === 'edit' ? 'Edit access' : 'Password reset' }}
+          </span>
+          <h2>
+            {{ modalMode === 'create' ? 'Create User' : modalMode === 'edit' ? 'Edit User' : 'Reset Password' }}
+          </h2>
+        </div>
+
+        <button type="button" class="icon-button" aria-label="Close modal" (click)="closeModal()">
+          <svg lucideX></svg>
+        </button>
+      </div>
+
+      <p *ngIf="formError" class="form-error">{{ formError }}</p>
+
+      <form *ngIf="modalMode === 'create'" (ngSubmit)="submitCreate()" class="user-form">
+        <label>
+          <span>Full Name</span>
+          <input type="text" name="createFullName" [(ngModel)]="createForm.fullName" required>
+        </label>
+
+        <label>
+          <span>Email</span>
+          <div class="input-with-icon">
+            <svg lucideMail></svg>
+            <input type="email" name="createEmail" [(ngModel)]="createForm.email" required>
+          </div>
+        </label>
+
+        <label>
+          <span>Password</span>
+          <input type="password" name="createPassword" [(ngModel)]="createForm.password" required>
+        </label>
+
+        <label>
+          <span>Confirm Password</span>
+          <input type="password" name="createConfirmPassword" [(ngModel)]="createForm.confirmPassword" required>
+        </label>
+
+        <label>
+          <span>Role</span>
+          <select name="createRole" [(ngModel)]="createForm.role" required>
+            <option *ngFor="let role of roleOptions; trackBy: trackByRole" [value]="role.value">
+              {{ role.label }}
+            </option>
+          </select>
+          <small>{{ getRoleDescription(createForm.role) }}</small>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-action" (click)="closeModal()" [disabled]="saving">Cancel</button>
+          <button type="submit" class="primary-action" [disabled]="saving">
+            <svg lucideSave></svg>
+            <span>{{ saving ? 'Creating...' : 'Create User' }}</span>
+          </button>
+        </div>
+      </form>
+
+      <form *ngIf="modalMode === 'edit'" (ngSubmit)="submitEdit()" class="user-form">
+        <label>
+          <span>Full Name</span>
+          <input type="text" name="editFullName" [(ngModel)]="editForm.fullName" required>
+        </label>
+
+        <label>
+          <span>Role</span>
+          <select name="editRole" [(ngModel)]="editForm.role" required>
+            <option *ngFor="let role of roleOptions; trackBy: trackByRole" [value]="role.value">
+              {{ role.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select name="editStatus" [(ngModel)]="editForm.status" required>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-action" (click)="closeModal()" [disabled]="saving">Cancel</button>
+          <button type="submit" class="primary-action" [disabled]="saving">
+            <svg lucideSave></svg>
+            <span>{{ saving ? 'Saving...' : 'Save Changes' }}</span>
+          </button>
+        </div>
+      </form>
+
+      <form *ngIf="modalMode === 'reset'" (ngSubmit)="submitResetPassword()" class="user-form">
+        <p class="modal-note">
+          Set a temporary password for {{ selectedUser?.fullName }}. The current password is never shown.
+        </p>
+
+        <label>
+          <span>Temporary Password</span>
+          <input type="password" name="resetPassword" [(ngModel)]="resetForm.password" required>
+        </label>
+
+        <label>
+          <span>Confirm Password</span>
+          <input type="password" name="resetConfirmPassword" [(ngModel)]="resetForm.confirmPassword" required>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-action" (click)="closeModal()" [disabled]="saving">Cancel</button>
+          <button type="submit" class="primary-action" [disabled]="saving">
+            <svg lucideKeyRound></svg>
+            <span>{{ saving ? 'Resetting...' : 'Reset Password' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>

@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 
 const protect = require('../middleware/authMiddleware');
+const authorizeRoles = require('../middleware/roleMiddleware');
+const { ROLES } = require('../config/roles');
 
 const {
   getOperationSignals,
@@ -19,28 +21,30 @@ const {
   evaluateFieldSignals
 } = require('../controllers/operationSignalController');
 
-router.get('/', protect, getOperationSignals);
+const operationsRoles = [ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER, ROLES.FIELD_OPERATOR];
 
-router.get('/active', protect, getActiveOperationSignals);
+router.get('/', protect, authorizeRoles(...operationsRoles), getOperationSignals);
 
-router.post('/', protect, createOperationSignal);
+router.get('/active', protect, authorizeRoles(...operationsRoles), getActiveOperationSignals);
 
-router.post('/generate', protect, generateOperationSignals);
+router.post('/', protect, authorizeRoles(...operationsRoles), createOperationSignal);
 
-router.post('/evaluate/all', protect, evaluateAllOperationSignals);
+router.post('/generate', protect, authorizeRoles(...operationsRoles), generateOperationSignals);
 
-router.post('/evaluate/weather', protect, evaluateWeatherSignals);
+router.post('/evaluate/all', protect, authorizeRoles(...operationsRoles), evaluateAllOperationSignals);
 
-router.post('/evaluate/ndvi', protect, evaluateNDVISignals);
+router.post('/evaluate/weather', protect, authorizeRoles(...operationsRoles), evaluateWeatherSignals);
 
-router.post('/evaluate/financial', protect, evaluateFinancialSignals);
+router.post('/evaluate/ndvi', protect, authorizeRoles(...operationsRoles), evaluateNDVISignals);
 
-router.post('/evaluate/lifecycle', protect, evaluateLifecycleSignals);
+router.post('/evaluate/financial', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.ACCOUNTANT), evaluateFinancialSignals);
 
-router.post('/evaluate/fields', protect, evaluateFieldSignals);
+router.post('/evaluate/lifecycle', protect, authorizeRoles(...operationsRoles), evaluateLifecycleSignals);
 
-router.patch('/:id/resolve', protect, resolveOperationSignal);
+router.post('/evaluate/fields', protect, authorizeRoles(...operationsRoles), evaluateFieldSignals);
 
-router.delete('/:id', protect, deleteOperationSignal);
+router.patch('/:id/resolve', protect, authorizeRoles(...operationsRoles), resolveOperationSignal);
+
+router.delete('/:id', protect, authorizeRoles(ROLES.ADMINISTRATOR), deleteOperationSignal);
 
 module.exports = router;

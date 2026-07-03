@@ -4,13 +4,37 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const logEvent = require('../utils/logger');
+const { ROLES, normalizeRole, isValidRole } = require('../config/roles');
+
+const getSafeRole = (role) => {
+  const normalizedRole = normalizeRole(role);
+  return isValidRole(normalizedRole) ? normalizedRole : ROLES.ADMINISTRATOR;
+};
+
+const getSafeFullName = (user) => {
+  const fullName =
+    typeof user.fullName === 'string'
+      ? user.fullName.trim()
+      : '';
+
+  if (fullName) {
+    return fullName;
+  }
+
+  const emailPrefix =
+    typeof user.email === 'string'
+      ? user.email.split('@')[0].trim()
+      : '';
+
+  return emailPrefix || 'User';
+};
 
 const buildUserProfile = (user) => ({
-  id: user._id,
+  id: user._id || user.id,
   email: user.email,
-  fullName: user.fullName || '',
-  role: user.role,
-  accountStatus: 'Active',
+  fullName: getSafeFullName(user),
+  role: getSafeRole(user.role),
+  accountStatus: user.status === 'suspended' ? 'Suspended' : 'Active',
   memberSince: user.createdAt,
   lastLogin: user.lastLogin,
   mfaEnabled: user.mfaEnabled
@@ -19,8 +43,16 @@ const buildUserProfile = (user) => ({
 // Register
 exports.register = async (req, res) => {
   const { email, password } = req.body;
+  const fullName =
+    typeof req.body.fullName === 'string'
+      ? req.body.fullName.trim()
+      : '';
 
   try {
+    if (!fullName) {
+      return res.status(400).json({ message: 'Full name is required' });
+    }
+
     const userExists = await User.findOne({ email });
 
     if (userExists) {
@@ -28,11 +60,13 @@ exports.register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userCount = await User.countDocuments();
 
     const user = await User.create({
       email,
-      fullName: req.body.fullName || '',
-      password: hashedPassword
+      fullName,
+      password: hashedPassword,
+      role: userCount === 0 ? ROLES.ADMINISTRATOR : ROLES.FARM_MANAGER
     });
 
     res.status(201).json({ message: 'User created' });
@@ -48,44 +82,84 @@ exports.login = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+    const passwordMatches = user
+      ? await bcrypt.compare(password, user.password)
+      : false;
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!passwordMatches) {
+      logEvent('warn', 'LOGIN_FAILURE', {
+        email: req.body.email,
+        ip: req.ip
+      });
 
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '1d' }
-  );
+      return res.status(401).json({
+        message: 'Invalid credentials'
+      });
+    }
 
-  logEvent('info', 'LOGIN_SUCCESS', {
-    userId: user._id,
-    email: user.email,
-    role: user.role,
-    ip: req.ip
-  });
+    if (user.status === 'suspended') {
+      logEvent('warn', 'LOGIN_BLOCKED_SUSPENDED', {
+        userId: user._id,
+        email: user.email,
+        ip: req.ip
+      });
 
-  user.lastLogin = new Date();
-  await user.save();
+      return res.status(403).json({
+        message: 'This account is suspended. Contact your administrator.'
+      });
+    }
 
-  res.json({
-    token,
-    user: buildUserProfile(user)
-  });
+    const repairedRole = getSafeRole(user.role);
+    const repairedFullName = getSafeFullName(user);
+    const lastLogin = new Date();
+    const repairFields = { lastLogin };
 
-} else {
+    if (user.role !== repairedRole) {
+      repairFields.role = repairedRole;
+    }
 
-  logEvent('warn', 'LOGIN_FAILURE', {
-    email: req.body.email,
-    ip: req.ip
-  });
+    if (user.fullName !== repairedFullName) {
+      repairFields.fullName = repairedFullName;
+    }
 
-  res.status(401).json({
-    message: 'Invalid credentials'
-  });
+    await User.updateOne(
+      { _id: user._id },
+      { $set: repairFields },
+      { runValidators: false }
+    );
 
-}
+    const repairedUser = {
+      ...user.toObject(),
+      fullName: repairedFullName,
+      role: repairedRole,
+      lastLogin
+    };
+
+    const token = jwt.sign(
+      { id: user._id, role: repairedRole },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    logEvent('info', 'LOGIN_SUCCESS', {
+      userId: user._id,
+      email: user.email,
+      role: repairedRole,
+      ip: req.ip
+    });
+
+    return res.json({
+      token,
+      user: buildUserProfile(repairedUser)
+    });
 
   } catch (error) {
+    logEvent('error', 'LOGIN_ERROR', {
+      email,
+      message: error.message,
+      ip: req.ip
+    });
+
     res.status(500).json({ error: error.message });
   }
 };
@@ -110,6 +184,12 @@ exports.updateProfile = async (req, res) => {
       typeof req.body.fullName === 'string'
         ? req.body.fullName.trim()
         : '';
+
+    if (!fullName) {
+      return res.status(400).json({
+        message: 'Full name is required'
+      });
+    }
 
     if (fullName.length > 120) {
       return res.status(400).json({

@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const {
+  ROLES,
+  VALID_ROLES,
+  normalizeRole
+} = require('../config/roles');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -9,7 +14,7 @@ const userSchema = new mongoose.Schema({
   fullName: {
     type: String,
     trim: true,
-    default: ''
+    required: true
   },
   password: {
     type: String,
@@ -17,8 +22,14 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager'],
-    default: 'manager',
+    enum: VALID_ROLES,
+    default: ROLES.FARM_MANAGER,
+    set: normalizeRole
+  },
+  status: {
+    type: String,
+    enum: ['active', 'suspended'],
+    default: 'active'
   },
   farms: [
   {
@@ -38,5 +49,9 @@ const userSchema = new mongoose.Schema({
   type: Date
   }
 }, { timestamps: true });
+
+userSchema.pre('validate', function normalizeUserRole() {
+  this.role = normalizeRole(this.role);
+});
 
 module.exports = mongoose.model('User', userSchema);

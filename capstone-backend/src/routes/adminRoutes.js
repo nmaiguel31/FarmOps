@@ -4,6 +4,7 @@ const router = express.Router();
 
 const protect = require('../middleware/authMiddleware');
 const authorizeRoles = require('../middleware/roleMiddleware');
+const { ROLES } = require('../config/roles');
 
 const {
   getAdminData
@@ -12,7 +13,7 @@ const {
 router.get(
   '/',
   protect,
-  authorizeRoles('admin'),
+  authorizeRoles(ROLES.ADMINISTRATOR),
   getAdminData
 );
 

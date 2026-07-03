@@ -27,13 +27,14 @@ import {
   LucideShieldAlert,
   LucideSprout
 } from '@lucide/angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { Crop } from '../../services/crop';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
 import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
+import { Auth } from '../../services/auth';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
 import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
@@ -44,7 +45,8 @@ import {
   getCurrentRecords,
   getCurrentSignals,
   getCurrentZones,
-  getEntityId as getScopedEntityId
+  getEntityId as getScopedEntityId,
+  isCurrentRecord
 } from '../../shared/current-data-scope';
 
 Chart.register(...registerables);
@@ -117,6 +119,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private zone = inject(NgZone);
   private toast = inject(ToastService);
+  private authService = inject(Auth);
   private pdfLogoDataUrl = '';
   private chartRenderTimer: any = null;
   private viewReady = false;
@@ -148,19 +151,22 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     this.dataReady = false;
 
     forkJoin({
-      farms: this.farmService.getFarms(),
-      fields: this.fieldService.getFields(),
-      zones: this.zoneService.getZones(),
-      crops: this.cropService.getCrops(),
-      records: this.financialService.getRecords(),
-      signals: this.operationSignalService.getSignals({ status: 'All' })
+      farms: this.authService.canAccess('farms') ? this.farmService.getFarms() : of([]),
+      fields: this.authService.canAccess('farms') ? this.fieldService.getFields() : of([]),
+      zones: this.authService.canAccess('farms') ? this.zoneService.getZones() : of([]),
+      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops() : of([]),
+      records: this.authService.canAccess('financial-records') ? this.financialService.getRecords() : of([]),
+      signals: this.authService.canAccess('operations-center') ? this.operationSignalService.getSignals({ status: 'All' }) : of([])
     }).subscribe({
       next: (data: any) => {
         this.zone.run(() => {
           this.farms = [...(data.farms || [])];
           this.fields = getCurrentFields(this.farms, data.fields || []);
           this.zones = getCurrentZones(this.fields, data.zones || []);
-          this.records = getCurrentRecords(this.farms, data.records || []);
+          this.records =
+            !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+              ? (data.records || []).filter(isCurrentRecord)
+              : getCurrentRecords(this.farms, data.records || []);
           this.crops = getCurrentCrops(this.farms, this.fields, data.crops || [], this.records);
           this.signals = getCurrentSignals(this.farms, this.fields, data.signals || []);
           this.loading = false;
@@ -182,7 +188,9 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get hasOperationalData() {
-    return this.farms.length > 0;
+    return this.farms.length > 0 ||
+      this.records.length > 0 ||
+      this.signals.length > 0;
   }
 
   get periodRange() {

@@ -8,7 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
-import { forkJoin } from 'rxjs';
+import { finalize, forkJoin, of } from 'rxjs';
 import { GoogleMapsLoader } from '../../services/google-maps-loader';
 import { Farm } from '../../services/farm';
 import { Field } from '../../services/field';
@@ -24,7 +24,8 @@ import {
   getCurrentRecords,
   getCurrentSignals,
   getCurrentZones,
-  getEntityId as getScopedEntityId
+  getEntityId as getScopedEntityId,
+  isCurrentRecord
 } from '../../shared/current-data-scope';
 import {
   LucideActivity,
@@ -417,14 +418,19 @@ export class Dashboard implements OnInit {
   }
 
   get quickActions() {
+    const role = this.authService.getCurrentRole();
+    const canManageFarms = ['administrator', 'farm_manager'].includes(role);
+    const canManageFields = ['administrator', 'farm_manager', 'field_operator'].includes(role);
+    const canManageCrops = ['administrator', 'farm_manager'].includes(role);
+
     return [
-      { label: 'Add Farm', route: '/farms', icon: 'plus' },
-      { label: 'Add Field', route: '/farms', icon: 'map' },
-      { label: 'Add Crop', route: '/crops', icon: 'crop' },
-      { label: 'Financial Record', route: '/financial-records', icon: 'finance' },
-      { label: 'Operations Center', route: '/operations-center', icon: 'alerts' },
-      { label: 'Reports', route: '/reports', icon: 'report' }
-    ];
+      canManageFarms ? { label: 'Add Farm', route: '/farms', icon: 'plus' } : null,
+      canManageFields ? { label: 'Add Field', route: '/farms', icon: 'map' } : null,
+      canManageCrops ? { label: 'Add Crop', route: '/crops', icon: 'crop' } : null,
+      this.authService.canAccess('financial-records') ? { label: 'Financial Record', route: '/financial-records', icon: 'finance' } : null,
+      this.authService.canAccess('operations-center') ? { label: 'Operations Center', route: '/operations-center', icon: 'alerts' } : null,
+      this.authService.canAccess('reports') ? { label: 'Reports', route: '/reports', icon: 'report' } : null
+    ].filter(Boolean) as Array<{ label: string; route: string; icon: string }>;
   }
 
   get topRecommendations() {
@@ -606,10 +612,10 @@ export class Dashboard implements OnInit {
     return this.recentRecords.slice(0, 4);
   }
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
 
-    await this.mapsLoader.load();
     this.loadDashboardData();
+    this.mapsLoader.load().then(() => this.renderFarmMap());
 
   }
 
@@ -618,12 +624,12 @@ export class Dashboard implements OnInit {
     this.dashboardLoadError = '';
 
     forkJoin({
-      farms: this.farmService.getFarms(),
-      fields: this.fieldService.getFields(),
-      zones: this.zoneService.getZones(),
-      crops: this.cropService.getCrops(),
-      records: this.financialService.getRecords(),
-      signals: this.operationSignalService.getActiveSignals()
+      farms: this.authService.canAccess('farms') ? this.farmService.getFarms() : of([]),
+      fields: this.authService.canAccess('farms') ? this.fieldService.getFields() : of([]),
+      zones: this.authService.canAccess('farms') ? this.zoneService.getZones() : of([]),
+      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops() : of([]),
+      records: this.authService.canAccess('financial-records') ? this.financialService.getRecords() : of([]),
+      signals: this.authService.canAccess('operations-center') ? this.operationSignalService.getActiveSignals() : of([])
     }).subscribe({
       next: (data: any) => {
         this.farms = [...(data.farms || [])];
@@ -679,6 +685,10 @@ export class Dashboard implements OnInit {
   }
 
   private generateWeatherOperationSignals() {
+    if (!this.authService.canAccess('operations-center')) {
+      return;
+    }
+
     this.operationSignalService.evaluateWeatherSignals().subscribe({
       next: () => this.refreshOperationSignals(),
       error: (error) => console.error(error)
@@ -722,15 +732,19 @@ export class Dashboard implements OnInit {
       this.fields = [];
       this.zones = [];
       this.crops = [];
-      this.records = [];
-      this.recentRecords = [];
       this.totalFields = 0;
       this.totalZones = 0;
       this.totalCrops = 0;
-      this.totalRecords = 0;
-      this.totalRevenue = 0;
-      this.totalExpenses = 0;
-      this.netProfit = 0;
+
+      this.records =
+        !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+          ? this.allRecords.filter(isCurrentRecord)
+          : [];
+      this.recentRecords = this.records.slice().reverse().slice(0, 5);
+      this.totalRecords = this.records.length;
+      this.totalRevenue = this.sumRecordsByType('Income');
+      this.totalExpenses = this.sumRecordsByType('Expense');
+      this.netProfit = this.totalRevenue - this.totalExpenses;
       this.averageHealthIndex = 0;
       this.averageNdviScore = 0;
       this.averageSoilMoisture = 0;
@@ -1222,7 +1236,7 @@ export class Dashboard implements OnInit {
   private selectDefaultWeatherFarm() {
 
     const firstFarmWithCoordinates =
-      this.farms.find(farm => farm.latitude && farm.longitude);
+      this.farms.find(farm => this.getFarmCoordinates(farm));
 
     if (firstFarmWithCoordinates && !this.selectedWeatherFarm) {
       this.selectDashboardFarmWeather(firstFarmWithCoordinates);
@@ -1232,7 +1246,12 @@ export class Dashboard implements OnInit {
 
   selectDashboardFarmWeather(farm: any) {
 
-    if (!farm?.latitude || !farm?.longitude) {
+    const coordinates =
+      this.getFarmCoordinates(farm);
+
+    if (!coordinates) {
+      this.weatherSummary = null;
+      this.weatherLoading = false;
       return;
     }
 
@@ -1240,17 +1259,17 @@ export class Dashboard implements OnInit {
     this.weatherLoading = true;
 
     this.weatherService
-      .getWeather(Number(farm.latitude), Number(farm.longitude))
+      .getWeather(coordinates.lat, coordinates.lng)
+      .pipe(
+        finalize(() => this.weatherLoading = false)
+      )
       .subscribe({
         next: (weather: WeatherInsights) => {
           this.weatherSummary = weather;
-          this.weatherLoading = false;
           this.generateWeatherOperationSignals();
-          this.cdr.detectChanges();
         },
         error: () => {
-          this.weatherLoading = false;
-          this.cdr.detectChanges();
+          this.weatherSummary = null;
         }
       });
 
@@ -1260,7 +1279,7 @@ export class Dashboard implements OnInit {
 
     const farmsWithCoordinates =
       this.farms
-        .filter(farm => farm.latitude && farm.longitude)
+        .filter(farm => this.getFarmCoordinates(farm))
         .slice(0, 5);
 
     this.weatherAlerts = [];
@@ -1270,8 +1289,15 @@ export class Dashboard implements OnInit {
     }
 
     farmsWithCoordinates.forEach(farm => {
+      const coordinates =
+        this.getFarmCoordinates(farm);
+
+      if (!coordinates) {
+        return;
+      }
+
       this.weatherService
-        .getWeather(Number(farm.latitude), Number(farm.longitude))
+        .getWeather(coordinates.lat, coordinates.lng)
         .subscribe({
           next: (weather: WeatherInsights) => {
             if (weather.rainProbability > 70) {
@@ -1309,12 +1335,29 @@ export class Dashboard implements OnInit {
 
             this.cdr.detectChanges();
           },
-          error: () => {
-            this.cdr.detectChanges();
-          }
+          error: () => {}
         });
     });
 
+  }
+
+  private getFarmCoordinates(farm: any): { lat: number; lng: number } | null {
+    const lat = Number(farm?.latitude);
+    const lng = Number(farm?.longitude);
+
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180 ||
+      (lat === 0 && lng === 0)
+    ) {
+      return null;
+    }
+
+    return { lat, lng };
   }
 
   private renderChartsSoon() {

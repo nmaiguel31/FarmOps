@@ -1,18 +1,8 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  inject
-} from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  NavigationEnd,
-  Router,
-  RouterModule
-} from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { RouterModule } from '@angular/router';
+import { finalize } from 'rxjs';
 import {
   LucideAlertTriangle,
   LucideCloudRain,
@@ -25,7 +15,6 @@ import {
   LucideWind
 } from '@lucide/angular';
 import {
-  WeatherForecastDay,
   WeatherInsights,
   WeatherService
 } from '../../services/weather';
@@ -63,7 +52,7 @@ type WeatherRisk = {
   templateUrl: './weather.html',
   styleUrl: './weather.css'
 })
-export class Weather implements OnInit, OnDestroy {
+export class Weather implements OnInit {
 
   farms: any[] = [];
   selectedFarmId = '';
@@ -78,74 +67,46 @@ export class Weather implements OnInit, OnDestroy {
   private farmService = inject(Farm);
   private weatherService = inject(WeatherService);
   private operationSignalService = inject(OperationSignal);
-  private router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
-  private routeSubscription?: Subscription;
-  private hasLoadedFarms = false;
-  private farmsRequestInFlight = false;
 
   ngOnInit(): void {
-    this.initializeWeatherPage();
-    this.routeSubscription = this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        if (event.urlAfterRedirects.startsWith('/weather')) {
-          this.initializeWeatherPage();
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.routeSubscription?.unsubscribe();
-  }
-
-  initializeWeatherPage() {
-    if (this.farmsRequestInFlight) {
-      return;
-    }
-
-    if (this.hasLoadedFarms) {
-      if (this.selectedFarm && !this.loadingWeather && !this.weather) {
-        this.loadWeatherForSelectedFarm();
-      }
-      return;
-    }
-
-    queueMicrotask(() => this.loadFarms());
+    this.loadFarms();
   }
 
   loadFarms() {
-    if (this.farmsRequestInFlight) {
-      return;
-    }
-
-    this.farmsRequestInFlight = true;
     this.loadingFarms = true;
-    this.cdr.detectChanges();
+    this.weatherError = '';
+    this.weather = null;
+    this.weatherSignals = [];
 
-    this.farmService.getFarms().subscribe({
+    this.farmService.getFarms().pipe(
+      finalize(() => this.loadingFarms = false)
+    ).subscribe({
       next: (data: any) => {
         this.farms = Array.isArray(data) ? data : [];
-        this.loadingFarms = false;
-        this.farmsRequestInFlight = false;
-        this.hasLoadedFarms = true;
         const firstFarmWithCoordinates =
-          this.farms.find(farm => this.hasCoordinates(farm));
+          this.farms.find(farm => this.getFarmCoordinates(farm));
 
         if (firstFarmWithCoordinates) {
           this.selectedFarmId = firstFarmWithCoordinates._id;
           this.selectFarm();
-        } else {
-          this.cdr.detectChanges();
+          return;
+        }
+
+        this.selectedFarmId = this.farms[0]?._id || '';
+        this.selectedFarm =
+          this.farms.find(farm => farm._id === this.selectedFarmId) || null;
+
+        if (this.selectedFarm) {
+          this.weatherError =
+            'This farm needs saved latitude and longitude before weather can be loaded.';
+          this.loadRelatedWeatherSignals();
         }
       },
-      error: (error) => {
-        console.error(error);
+      error: () => {
         this.farms = [];
-        this.loadingFarms = false;
-        this.farmsRequestInFlight = false;
+        this.selectedFarm = null;
+        this.selectedFarmId = '';
         this.weatherError = 'Unable to load farms.';
-        this.cdr.detectChanges();
       }
     });
   }
@@ -156,17 +117,17 @@ export class Weather implements OnInit, OnDestroy {
     this.weather = null;
     this.weatherSignals = [];
     this.weatherError = '';
-    this.cdr.detectChanges();
 
     if (!this.selectedFarm) {
       return;
     }
 
-    if (!this.hasCoordinates(this.selectedFarm)) {
+    const coordinates = this.getFarmCoordinates(this.selectedFarm);
+
+    if (!coordinates) {
       this.weatherError =
         'This farm needs saved latitude and longitude before weather can be loaded.';
       this.loadRelatedWeatherSignals();
-      this.cdr.detectChanges();
       return;
     }
 
@@ -182,30 +143,30 @@ export class Weather implements OnInit, OnDestroy {
   }
 
   loadWeatherForSelectedFarm() {
-    if (!this.selectedFarm) {
+    const coordinates =
+      this.getFarmCoordinates(this.selectedFarm);
+
+    if (!this.selectedFarm || !coordinates) {
       return;
     }
 
     this.loadingWeather = true;
     this.weatherError = '';
-    this.cdr.detectChanges();
 
     this.weatherService
-      .getWeather(Number(this.selectedFarm.latitude), Number(this.selectedFarm.longitude))
+      .getWeather(coordinates.lat, coordinates.lng)
+      .pipe(
+        finalize(() => this.loadingWeather = false)
+      )
       .subscribe({
         next: (weather) => {
           this.weather = weather;
-          this.loadingWeather = false;
-          this.cdr.detectChanges();
           this.refreshWeatherSignals();
         },
-        error: (error) => {
-          console.error(error);
+        error: () => {
           this.weather = null;
-          this.loadingWeather = false;
           this.weatherError =
             'Weather data is temporarily unavailable for this farm.';
-          this.cdr.detectChanges();
           this.loadRelatedWeatherSignals();
         }
       });
@@ -213,21 +174,16 @@ export class Weather implements OnInit, OnDestroy {
 
   refreshWeatherSignals() {
     this.signalLoading = true;
-    this.cdr.detectChanges();
 
     this.operationSignalService.evaluateWeatherSignals().subscribe({
       next: () => this.loadRelatedWeatherSignals(),
-      error: (error) => {
-        console.error(error);
-        this.loadRelatedWeatherSignals();
-      }
+      error: () => this.loadRelatedWeatherSignals()
     });
   }
 
   loadRelatedWeatherSignals() {
     if (!this.selectedFarm) {
       this.signalLoading = false;
-      this.cdr.detectChanges();
       return;
     }
 
@@ -239,13 +195,10 @@ export class Weather implements OnInit, OnDestroy {
       next: (signals: any) => {
         this.weatherSignals = Array.isArray(signals) ? signals : [];
         this.signalLoading = false;
-        this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error(error);
+      error: () => {
         this.weatherSignals = [];
         this.signalLoading = false;
-        this.cdr.detectChanges();
       }
     });
   }
@@ -317,8 +270,26 @@ export class Weather implements OnInit, OnDestroy {
   }
 
   hasCoordinates(farm: any) {
-    return Number.isFinite(Number(farm?.latitude)) &&
-      Number.isFinite(Number(farm?.longitude));
+    return Boolean(this.getFarmCoordinates(farm));
+  }
+
+  getFarmCoordinates(farm: any): { lat: number; lng: number } | null {
+    const lat = Number(farm?.latitude);
+    const lng = Number(farm?.longitude);
+
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180 ||
+      (lat === 0 && lng === 0)
+    ) {
+      return null;
+    }
+
+    return { lat, lng };
   }
 
   formatNumber(value: any, suffix = '') {

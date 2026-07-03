@@ -10,54 +10,25 @@
   </a>
 
   <nav class="menu" aria-label="Application pages">
-    <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <svg class="nav-icon" lucideLayoutDashboard></svg>
-      <span>Dashboard</span>
-    </a>
-
-    <a routerLink="/farms" routerLinkActive="active">
-      <svg class="nav-icon" lucideMap></svg>
-      <span>Farms</span>
-    </a>
-
-    <a routerLink="/crops" routerLinkActive="active">
-      <svg class="nav-icon" lucideSprout></svg>
-      <span>Crops</span>
-    </a>
-
-    <a routerLink="/financial-records" routerLinkActive="active">
-      <svg class="nav-icon" lucideBadgeDollarSign></svg>
-      <span>Financial Records</span>
-    </a>
-
-    <a routerLink="/operations-center" routerLinkActive="active">
-      <svg class="nav-icon" lucideShieldAlert></svg>
-      <span>Operations</span>
-    </a>
-
-    <a routerLink="/weather" routerLinkActive="active">
-      <svg class="nav-icon" lucideCloudSun></svg>
-      <span>Weather</span>
-    </a>
-
-    <a routerLink="/ndvi" routerLinkActive="active">
-      <svg class="nav-icon" lucideLeaf></svg>
-      <span>NDVI Analysis</span>
-    </a>
-
-    <a routerLink="/reports" routerLinkActive="active">
-      <svg class="nav-icon" lucideFileText></svg>
-      <span>Reports</span>
-    </a>
-
-    <a routerLink="/profile" routerLinkActive="active">
-      <svg class="nav-icon" lucideUserRound></svg>
-      <span>Profile</span>
-    </a>
-
-    <a routerLink="/mfa" routerLinkActive="active">
-      <svg class="nav-icon" lucideShieldCheck></svg>
-      <span>Security</span>
+    <a
+      *ngFor="let item of navItems; trackBy: trackByRoute"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+    >
+      <ng-container [ngSwitch]="item.icon">
+        <svg *ngSwitchCase="'dashboard'" class="nav-icon" lucideLayoutDashboard></svg>
+        <svg *ngSwitchCase="'farms'" class="nav-icon" lucideMap></svg>
+        <svg *ngSwitchCase="'crops'" class="nav-icon" lucideSprout></svg>
+        <svg *ngSwitchCase="'finance'" class="nav-icon" lucideBadgeDollarSign></svg>
+        <svg *ngSwitchCase="'operations'" class="nav-icon" lucideShieldAlert></svg>
+        <svg *ngSwitchCase="'weather'" class="nav-icon" lucideCloudSun></svg>
+        <svg *ngSwitchCase="'ndvi'" class="nav-icon" lucideLeaf></svg>
+        <svg *ngSwitchCase="'reports'" class="nav-icon" lucideFileText></svg>
+        <svg *ngSwitchCase="'security'" class="nav-icon" lucideShieldCheck></svg>
+        <svg *ngSwitchDefault class="nav-icon" lucideUserRound></svg>
+      </ng-container>
+      <span>{{ item.label }}</span>
     </a>
   </nav>
 
@@ -65,7 +36,7 @@
     <span class="profile-avatar">{{ displayInitials }}</span>
     <div>
       <strong>{{ displayName }}</strong>
-      <small>View profile</small>
+      <small>{{ roleLabel }}</small>
     </div>
   </a>
 

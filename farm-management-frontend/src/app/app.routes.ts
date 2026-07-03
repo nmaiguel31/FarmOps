@@ -10,10 +10,13 @@ import { Weather } from './pages/weather/weather';
 import { NdviAnalysis } from './pages/ndvi-analysis/ndvi-analysis';
 import { ExecutiveReports } from './pages/executive-reports/executive-reports';
 import { Profile } from './pages/profile/profile';
+import { UserManagement } from './pages/user-management/user-management';
+import { AccessDenied } from './pages/access-denied/access-denied';
 import {
   authGuard,
   mfaAccessGuard,
-  publicAuthGuard
+  publicAuthGuard,
+  roleGuard
 } from './guards/auth-guard';
 import { MfaComponent } from './pages/mfa/mfa';
 
@@ -34,54 +37,72 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: Dashboard,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
   
   {
     path: 'farms',
     component: Farms,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'crops',
     component: Crops,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'financial-records',
     component: FinancialRecords,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'operations-center',
     component: OperationsCenter,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'weather',
     component: Weather,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'ndvi',
     component: NdviAnalysis,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
   },
 
   {
     path: 'reports',
     component: ExecutiveReports,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard]
+  },
+
+  {
+    path: 'users',
+    component: UserManagement,
+    canActivate: [authGuard, roleGuard]
+  },
+
+  {
+    path: 'admin/users',
+    redirectTo: 'users',
+    pathMatch: 'full'
   },
 
   {
     path: 'profile',
     component: Profile,
+    canActivate: [authGuard, roleGuard]
+  },
+
+  {
+    path: 'access-denied',
+    component: AccessDenied,
     canActivate: [authGuard]
   },
 
