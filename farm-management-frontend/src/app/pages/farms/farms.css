@@ -392,15 +392,15 @@
 
 .map-insight-card {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
+  right: 14px;
+  bottom: 14px;
   z-index: 6;
   display: grid;
-  gap: 16px;
-  align-content: start;
-  width: min(320px, calc(100% - 36px));
-  min-width: 0;
-  padding: 22px;
+  gap: 10px;
+  width: min(280px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  padding: 16px;
+  overflow: auto;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -409,24 +409,26 @@
 
 .map-insight-card h3 {
   margin: 4px 0 0;
-  font-size: 26px;
+  font-size: 21px;
+  line-height: 1.1;
 }
 
 .map-insight-card p {
   margin: 0;
   color: var(--color-muted-strong);
+  font-size: 13px;
 }
 
 .mini-monitoring {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
 }
 
 .mini-monitoring article {
   min-width: 0;
-  padding: 16px;
+  padding: 11px;
   background: #f8faf7;
   border: 1px solid #e5ece4;
   border-radius: var(--radius-sm);
@@ -436,23 +438,22 @@
 .mini-monitoring span {
   display: block;
   color: var(--color-muted-strong);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .mini-monitoring strong {
   display: block;
-  margin-top: 6px;
-  font-size: clamp(18px, 1.7vw, 28px);
+  margin-top: 4px;
+  font-size: clamp(16px, 1.35vw, 21px);
   line-height: 1.08;
   max-width: 100%;
   overflow-wrap: anywhere;
-  word-break: normal;
 }
 
 .mini-monitoring .vegetation-status-value {
-  font-size: clamp(13px, 1vw, 16px);
+  font-size: clamp(12px, .95vw, 14px);
   line-height: 1.2;
   white-space: normal;
 }

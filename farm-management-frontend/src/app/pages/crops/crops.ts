@@ -82,6 +82,7 @@ export class Crops implements OnInit {
 
   cropName = '';
   cropType = '';
+  customCropType = '';
   cropStatus = 'Active';
   cropSeason = '';
   cropLifecycleDays: number | null = 120;
@@ -92,19 +93,18 @@ export class Crops implements OnInit {
   cropExpectedYield = '';
   cropPlantingSeason = '';
   cropDescription = '';
-  cropIcon = '';
   selectedFarm = '';
   cropGrowthStages: GrowthStageForm[] = [];
 
   readonly cropTypes = [
-    'Grain',
+    'Cereal',
     'Legume',
-    'Fiber',
-    'Oilseed',
-    'Cash Crop',
     'Vegetable',
+    'Fruit Crop',
     'Tree Crop',
-    'Fruit',
+    'Industrial Crop',
+    'Cash Crop',
+    'Specialty Crop',
     'Other'
   ];
 
@@ -386,7 +386,8 @@ export class Crops implements OnInit {
   openCreateCrop() {
     this.editingCropId = '';
     this.cropName = '';
-    this.cropType = '';
+    this.cropType = 'Cereal';
+    this.customCropType = '';
     this.cropStatus = 'Active';
     this.cropSeason = '';
     this.cropLifecycleDays = 120;
@@ -397,7 +398,6 @@ export class Crops implements OnInit {
     this.cropExpectedYield = '';
     this.cropPlantingSeason = '';
     this.cropDescription = '';
-    this.cropIcon = '';
     this.selectedFarm = this.farms[0]?._id || '';
     this.resetGrowthStages();
     this.cropFormOpen = true;
@@ -406,7 +406,7 @@ export class Crops implements OnInit {
   editCrop(crop: any) {
     this.editingCropId = crop._id;
     this.cropName = crop.name || '';
-    this.cropType = crop.type || '';
+    this.setCropTypeForForm(crop.type || '');
     this.cropStatus = this.getCropStatus(crop);
     this.cropSeason = crop.season || crop.plantingSeason || '';
     this.cropLifecycleDays = crop.lifecycleDays || 120;
@@ -417,7 +417,6 @@ export class Crops implements OnInit {
     this.cropExpectedYield = crop.expectedYield || '';
     this.cropPlantingSeason = crop.plantingSeason || crop.season || '';
     this.cropDescription = crop.description || '';
-    this.cropIcon = crop.icon || this.getCropIcon(crop);
     this.selectedFarm = crop.farm?._id || crop.farm || this.farms[0]?._id || '';
     this.cropGrowthStages =
       this.normalizeGrowthStages(crop.growthStages, crop.lifecycleDays || 120);
@@ -819,15 +818,45 @@ export class Crops implements OnInit {
     return getScopedEntityId(entity);
   }
 
+  private setCropTypeForForm(type: string) {
+    const normalizedType =
+      String(type || '').trim();
+
+    if (!normalizedType) {
+      this.cropType = 'Cereal';
+      this.customCropType = '';
+      return;
+    }
+
+    if (this.cropTypes.includes(normalizedType)) {
+      this.cropType = normalizedType;
+      this.customCropType = '';
+      return;
+    }
+
+    this.cropType = 'Other';
+    this.customCropType = normalizedType;
+  }
+
+  private getCropTypeForPayload() {
+    if (this.cropType === 'Other') {
+      return this.customCropType.trim() || 'Other';
+    }
+
+    return this.cropType.trim() || 'Other';
+  }
+
   private buildCropPayload() {
     const lifecycleDays =
       Number(this.cropLifecycleDays) || 120;
+    const cropType =
+      this.getCropTypeForPayload();
 
     return {
       name: this.cropName.trim(),
-      type: this.cropType.trim(),
+      type: cropType,
       status: this.cropStatus,
-      icon: this.cropIcon || this.getCropIcon({ name: this.cropName, type: this.cropType }),
+      icon: this.getCropIcon({ name: this.cropName, type: cropType }),
       season: this.cropSeason || this.cropPlantingSeason || 'Year-round',
       farm: this.selectedFarm,
       lifecycleDays,

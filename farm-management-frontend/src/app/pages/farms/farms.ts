@@ -2673,6 +2673,7 @@ finishFarmBoundary() {
 
   this.isDrawingFarmBoundary = false;
   this.updateFarmBoundaryFromPolygon();
+  this.fitMapToBoundary(this.farmFormMap, this.farmBoundaryCoordinates);
   this.cdr.detectChanges();
 
 }
@@ -2701,7 +2702,7 @@ finishFieldBoundary() {
 
   this.isDrawingFieldBoundary = false;
   this.updateFieldBoundaryFromPolygon();
-  this.renderFieldFormBoundary();
+  this.renderFieldFormBoundary(true);
   this.cdr.detectChanges();
 
 }
@@ -2730,7 +2731,7 @@ finishZoneBoundary() {
 
   this.isDrawingZoneBoundary = false;
   this.updateZoneBoundaryFromPolygon();
-  this.renderZoneFormBoundary();
+  this.renderZoneFormBoundary(true);
   this.cdr.detectChanges();
 
 }
@@ -2807,11 +2808,11 @@ private initializeFarmFormMap() {
     }, false, true);
   });
 
-  this.renderFarmFormBoundary();
+  this.renderFarmFormBoundary(true);
 
 }
 
-private renderFarmFormBoundary() {
+private renderFarmFormBoundary(fitToBoundary = false) {
 
   this.clearFarmBoundaryOverlays(false);
 
@@ -2834,13 +2835,10 @@ private renderFarmFormBoundary() {
 
   this.renderFarmBoundaryVertexMarkers();
 
-  const bounds = new google.maps.LatLngBounds();
+  if (fitToBoundary) {
+    this.fitMapToBoundary(this.farmFormMap, this.farmBoundaryCoordinates);
+  }
 
-  this.farmBoundaryCoordinates.forEach(point => {
-    bounds.extend(point);
-  });
-
-  this.farmFormMap.fitBounds(bounds);
   this.watchFarmPolygonEdits();
 
 }
@@ -2861,6 +2859,22 @@ private renderFarmBoundaryOnMap(map: any, coordinates: any[]) {
     clickable: false,
     map
   });
+
+  const bounds = new google.maps.LatLngBounds();
+
+  coordinates.forEach(point => {
+    bounds.extend(point);
+  });
+
+  map.fitBounds(bounds);
+
+}
+
+private fitMapToBoundary(map: any, coordinates: any[]) {
+
+  if (!map || !coordinates?.length) {
+    return;
+  }
 
   const bounds = new google.maps.LatLngBounds();
 
@@ -3509,7 +3523,7 @@ private initializeFieldBoundaryMap() {
     });
   });
 
-  this.renderFieldFormBoundary();
+  this.renderFieldFormBoundary(true);
 
 }
 
@@ -3539,7 +3553,7 @@ private renderExistingFieldsForForm() {
 
 }
 
-private renderFieldFormBoundary() {
+private renderFieldFormBoundary(fitToBoundary = false) {
 
   this.clearFieldBoundaryOverlays(false);
 
@@ -3562,13 +3576,10 @@ private renderFieldFormBoundary() {
 
   this.renderFieldBoundaryVertexMarkers();
 
-  const bounds = new google.maps.LatLngBounds();
+  if (fitToBoundary) {
+    this.fitMapToBoundary(this.fieldBoundaryMap, this.fieldBoundaryCoordinates);
+  }
 
-  this.fieldBoundaryCoordinates.forEach(point => {
-    bounds.extend(point);
-  });
-
-  this.fieldBoundaryMap.fitBounds(bounds);
   this.watchFieldPolygonEdits();
 
 }
@@ -3721,7 +3732,7 @@ private initializeZoneBoundaryMap() {
     });
   });
 
-  this.renderZoneFormBoundary();
+  this.renderZoneFormBoundary(true);
 
 }
 
@@ -3773,7 +3784,7 @@ private renderExistingZonesForForm() {
 
 }
 
-private renderZoneFormBoundary() {
+private renderZoneFormBoundary(fitToBoundary = false) {
 
   this.clearZoneBoundaryOverlays(false);
 
@@ -3796,13 +3807,10 @@ private renderZoneFormBoundary() {
 
   this.renderZoneBoundaryVertexMarkers();
 
-  const bounds = new google.maps.LatLngBounds();
+  if (fitToBoundary) {
+    this.fitMapToBoundary(this.zoneBoundaryMap, this.zoneBoundaryCoordinates);
+  }
 
-  this.zoneBoundaryCoordinates.forEach(point => {
-    bounds.extend(point);
-  });
-
-  this.zoneBoundaryMap.fitBounds(bounds);
   this.watchZonePolygonEdits();
 
 }
@@ -4034,6 +4042,8 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field' | 'zone') {
     this.createMapControlButton(drawLabel, true);
   const finishButton =
     this.createMapControlButton('Finish', true);
+  const fitButton =
+    this.createMapControlButton('Fit boundary', false);
   const clearButton =
     this.createMapControlButton('Clear', false);
 
@@ -4066,6 +4076,18 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field' | 'zone') {
     }
   });
 
+  fitButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+
+    if (mode === 'farm') {
+      this.fitMapToBoundary(this.farmFormMap, this.farmBoundaryCoordinates);
+    } else if (mode === 'field') {
+      this.fitMapToBoundary(this.fieldBoundaryMap, this.fieldBoundaryCoordinates);
+    } else {
+      this.fitMapToBoundary(this.zoneBoundaryMap, this.zoneBoundaryCoordinates);
+    }
+  });
+
   clearButton.addEventListener('click', (event) => {
     event.stopPropagation();
 
@@ -4080,7 +4102,7 @@ private addMapBoundaryControls(map: any, mode: 'farm' | 'field' | 'zone') {
     this.cdr.detectChanges();
   });
 
-  control.append(drawButton, finishButton, clearButton);
+  control.append(drawButton, finishButton, fitButton, clearButton);
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(control);
 
 }

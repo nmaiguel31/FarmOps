@@ -324,12 +324,14 @@
 
         <label>
           Crop Type
-          <input type="text" [(ngModel)]="cropType" name="cropType" placeholder="Grain">
+          <select [(ngModel)]="cropType" name="cropType">
+            <option *ngFor="let type of cropTypes; trackBy: trackByValue" [value]="type">{{ type }}</option>
+          </select>
         </label>
 
-        <label>
-          Crop Icon
-          <input type="text" [(ngModel)]="cropIcon" name="cropIcon" placeholder="🌽">
+        <label *ngIf="cropType === 'Other'">
+          Custom Crop Type
+          <input type="text" [(ngModel)]="customCropType" name="customCropType" placeholder="Enter crop type">
         </label>
 
         <label>

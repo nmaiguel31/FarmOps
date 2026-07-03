@@ -34,8 +34,6 @@ const normalizePolygonCoordinates = (coordinates) => {
 const createFarm = async (req, res) => {
   try {
 
-    console.log(req.body);
-
     const farm = await Farm.create({
       name: req.body.name,
       location: req.body.location,
