@@ -4,6 +4,7 @@ const Field = require('../models/Field');
 const Crop = require('../models/Crop');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
+const { FINANCIAL_ROLES, roleIs } = require('../config/roles');
 
 const populateRecord = [
   {
@@ -26,12 +27,12 @@ const evaluateFinancialOperationSignals = async (user) => {
 };
 
 const userCanAccessFarm = (user, farm) => {
-  return user.role === 'admin' ||
+  return roleIs(user.role, FINANCIAL_ROLES) ||
     farm.owner.toString() === user.id;
 };
 
 const getAccessibleFarmIds = async (user) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, FINANCIAL_ROLES)) {
     const farms = await Farm.find();
     return farms.map(farm => farm._id);
   }
@@ -203,7 +204,7 @@ const getFinancialRecords = async (req, res) => {
   try {
     let records;
 
-    if (req.user.role === 'admin') {
+    if (roleIs(req.user.role, FINANCIAL_ROLES)) {
       records = await FinancialRecord.find()
         .populate(populateRecord);
     } else {

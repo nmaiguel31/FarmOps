@@ -4,7 +4,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, shareReplay, tap } from 'rxjs/operators';
 import { APP_CONFIG } from '../config/app-config';
-import { canAccessRoute, normalizeRole, ROLE_LABELS } from '../shared/rbac/roles';
+import { canAccessRoute, FarmOpsPermission, hasPermission, normalizeRole, ROLE_LABELS } from '../shared/rbac/roles';
 
 export interface FarmOpsUser {
   id?: string;
@@ -128,6 +128,10 @@ export class Auth {
 
   canAccess(route: string) {
     return canAccessRoute(this.getCurrentRole(), route);
+  }
+
+  hasPermission(permission: FarmOpsPermission) {
+    return hasPermission(this.getCurrentRole(), permission);
   }
 
   getInitials() {

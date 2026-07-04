@@ -113,12 +113,12 @@
               <th>Farm</th>
               <th>Area</th>
               <th>Fields</th>
-              <th>Average NDVI</th>
-              <th>Active Alerts</th>
-              <th>Revenue</th>
-              <th>Expenses</th>
-              <th>Profit</th>
-              <th>Operational Status</th>
+              <th *ngIf="canViewOperationalReports">Average NDVI</th>
+              <th *ngIf="canViewOperationalReports">Active Alerts</th>
+              <th *ngIf="canViewFinancialReports">Revenue</th>
+              <th *ngIf="canViewFinancialReports">Expenses</th>
+              <th *ngIf="canViewFinancialReports">Profit</th>
+              <th *ngIf="canViewOperationalReports">Operational Status</th>
             </tr>
           </thead>
           <tbody>
@@ -129,12 +129,12 @@
               </td>
               <td>{{ row.area }} ha</td>
               <td>{{ row.fields }}</td>
-              <td>{{ row.averageNdvi }}</td>
-              <td>{{ row.activeAlerts }}</td>
-              <td>{{ formatCurrency(row.revenue) }}</td>
-              <td>{{ formatCurrency(row.expenses) }}</td>
-              <td [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
-              <td><span class="status-pill" [class]="getStatusClass(row.status)">{{ row.status }}</span></td>
+              <td *ngIf="canViewOperationalReports">{{ row.averageNdvi }}</td>
+              <td *ngIf="canViewOperationalReports">{{ row.activeAlerts }}</td>
+              <td *ngIf="canViewFinancialReports">{{ formatCurrency(row.revenue) }}</td>
+              <td *ngIf="canViewFinancialReports">{{ formatCurrency(row.expenses) }}</td>
+              <td *ngIf="canViewFinancialReports" [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
+              <td *ngIf="canViewOperationalReports"><span class="status-pill" [class]="getStatusClass(row.status)">{{ row.status }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -158,24 +158,24 @@
             <tr>
               <th>Crop</th>
               <th>Farm</th>
-              <th>Revenue</th>
-              <th>Expenses</th>
-              <th>Profit</th>
-              <th>Average Health</th>
-              <th>NDVI</th>
-              <th>Lifecycle Stage</th>
+              <th *ngIf="canViewFinancialReports">Revenue</th>
+              <th *ngIf="canViewFinancialReports">Expenses</th>
+              <th *ngIf="canViewFinancialReports">Profit</th>
+              <th *ngIf="canViewOperationalReports">Average Health</th>
+              <th *ngIf="canViewOperationalReports">NDVI</th>
+              <th *ngIf="canViewOperationalReports">Lifecycle Stage</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of filteredCropPerformanceRows; trackBy: trackById">
               <td><strong>{{ row.crop.name }}</strong><small>{{ row.crop.type || 'Crop' }}</small></td>
               <td>{{ row.farm }}</td>
-              <td>{{ formatCurrency(row.revenue) }}</td>
-              <td>{{ formatCurrency(row.expenses) }}</td>
-              <td [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
-              <td>{{ row.averageHealth }}</td>
-              <td>{{ row.ndvi }}</td>
-              <td>{{ row.stage }}</td>
+              <td *ngIf="canViewFinancialReports">{{ formatCurrency(row.revenue) }}</td>
+              <td *ngIf="canViewFinancialReports">{{ formatCurrency(row.expenses) }}</td>
+              <td *ngIf="canViewFinancialReports" [class.negative]="row.profit < 0">{{ formatCurrency(row.profit) }}</td>
+              <td *ngIf="canViewOperationalReports">{{ row.averageHealth }}</td>
+              <td *ngIf="canViewOperationalReports">{{ row.ndvi }}</td>
+              <td *ngIf="canViewOperationalReports">{{ row.stage }}</td>
             </tr>
           </tbody>
         </table>
@@ -185,7 +185,7 @@
       </div>
     </section>
 
-    <section class="report-grid two-column">
+    <section class="report-grid two-column" *ngIf="canViewFinancialReports">
       <article class="report-card">
         <div class="section-heading compact">
           <div>
@@ -201,7 +201,7 @@
         </ng-template>
       </article>
 
-      <article class="report-card">
+      <article class="report-card" *ngIf="canViewFinancialReports">
         <div class="section-heading compact">
           <div>
             <span class="eyebrow">Revenue, expenses, profit</span>
@@ -217,15 +217,15 @@
       </article>
     </section>
 
-    <section class="report-grid two-column">
-      <article class="report-card">
+    <section class="report-grid two-column" *ngIf="canViewOperationalReports || canViewFinancialReports">
+      <article class="report-card" *ngIf="canViewOperationalReports">
         <div class="section-heading compact">
           <div>
             <span class="eyebrow">Operations distribution</span>
             <h2>Signals by Category</h2>
           </div>
         </div>
-        <div *ngIf="hasOperationsData; else noOperationsChart" class="chart-wrap">
+        <div *ngIf="canViewOperationalReports && hasOperationsData; else noOperationsChart" class="chart-wrap">
           <canvas id="executiveOperationsChart"></canvas>
         </div>
         <ng-template #noOperationsChart>
@@ -233,14 +233,14 @@
         </ng-template>
       </article>
 
-      <article class="report-card">
+      <article class="report-card" *ngIf="canViewFinancialReports">
         <div class="section-heading compact">
           <div>
             <span class="eyebrow">Crop profitability</span>
             <h2>Profit by Crop</h2>
           </div>
         </div>
-        <div *ngIf="profitByCropEntries.length; else noCropProfitChart" class="chart-wrap">
+        <div *ngIf="canViewFinancialReports && profitByCropEntries.length; else noCropProfitChart" class="chart-wrap">
           <canvas id="executiveCropProfitChart"></canvas>
         </div>
         <ng-template #noCropProfitChart>
@@ -249,15 +249,15 @@
       </article>
     </section>
 
-    <section class="report-grid operations-layout">
-      <article class="report-card">
+    <section class="report-grid operations-layout" *ngIf="canViewOperationalReports || visibleExecutiveRecommendations.length">
+      <article class="report-card" *ngIf="canViewOperationalReports">
         <div class="section-heading compact">
           <div>
             <span class="eyebrow">Operations summary</span>
             <h2>Signal Status by Category</h2>
           </div>
         </div>
-        <div class="operations-grid">
+        <div class="operations-grid" *ngIf="canViewOperationalReports">
           <div class="operation-tile" *ngFor="let item of operationsSummary; trackBy: trackByLabel" [class]="item.tone">
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
@@ -265,7 +265,7 @@
         </div>
       </article>
 
-      <article class="report-card recommendations-card">
+      <article class="report-card recommendations-card" *ngIf="visibleExecutiveRecommendations.length">
         <div class="section-heading compact">
           <div>
             <span class="eyebrow">Executive recommendations</span>
@@ -273,7 +273,7 @@
           </div>
         </div>
         <div class="recommendation-groups">
-          <section class="recommendation-group" *ngFor="let group of executiveRecommendations; trackBy: trackByLabel">
+          <section class="recommendation-group" *ngFor="let group of visibleExecutiveRecommendations; trackBy: trackByLabel">
             <h3>{{ group.category }}</h3>
             <div class="recommendation-list">
               <app-recommendation-card

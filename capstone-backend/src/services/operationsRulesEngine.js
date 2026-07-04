@@ -4,11 +4,12 @@ const Field = require('../models/Field');
 const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
+const { READ_ALL_FARM_ROLES, ROLES, roleIs } = require('../config/roles');
 
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
 const getAccessibleFarmIds = async (user) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, READ_ALL_FARM_ROLES)) {
     const farms = await Farm.find().select('_id');
     return farms.map(farm => farm._id);
   }
@@ -18,7 +19,7 @@ const getAccessibleFarmIds = async (user) => {
 };
 
 const getAccessQuery = (user, farmIds) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, [ROLES.ADMINISTRATOR])) {
     return {
       $or: [
         { farm: { $in: farmIds } },

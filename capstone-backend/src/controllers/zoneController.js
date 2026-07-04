@@ -7,6 +7,7 @@ const {
   normalizePolygon,
   polygonsOverlap
 } = require('../utils/polygonValidation');
+const { READ_ALL_FARM_ROLES, roleIs } = require('../config/roles');
 
 const populateZone = [
   {
@@ -27,12 +28,12 @@ const populateZone = [
 ];
 
 const userCanAccessFarm = (user, farm) => {
-  return user.role === 'admin' ||
+  return roleIs(user.role, READ_ALL_FARM_ROLES) ||
     farm.owner.toString() === user.id;
 };
 
 const getAccessibleFieldIds = async (user) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, READ_ALL_FARM_ROLES)) {
     const fields = await Field.find();
     return fields.map(field => field._id);
   }

@@ -4,7 +4,7 @@ const router = express.Router();
 
 const protect = require('../middleware/authMiddleware');
 const authorizeRoles = require('../middleware/roleMiddleware');
-const { ROLES } = require('../config/roles');
+const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES } = require('../config/roles');
 
 const {
   createCrop,
@@ -14,12 +14,12 @@ const {
 } = require('../controllers/cropController');
 
 // Protected routes
-router.post('/', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), createCrop);
+router.post('/', protect, authorizeRoles(...FARM_WRITE_ROLES), createCrop);
 
-router.get('/', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER, ROLES.FIELD_OPERATOR), getCrops);
+router.get('/', protect, authorizeRoles(...READ_ALL_FARM_ROLES), getCrops);
 
-router.delete('/:id', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), deleteCrop);
+router.delete('/:id', protect, authorizeRoles(...FARM_WRITE_ROLES), deleteCrop);
 
-router.put('/:id', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), updateCrop);
+router.put('/:id', protect, authorizeRoles(...FARM_WRITE_ROLES), updateCrop);
 
 module.exports = router;

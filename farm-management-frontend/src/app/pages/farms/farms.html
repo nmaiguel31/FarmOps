@@ -19,7 +19,7 @@
       </div>
 
       <div class="hero-cta-row">
-        <button type="button" class="primary-btn" (click)="openCreateFarm()">Create Farm</button>
+        <button *ngIf="canManageFarms" type="button" class="primary-btn" (click)="openCreateFarm()">Create Farm</button>
       </div>
     </div>
   </section>
@@ -170,8 +170,8 @@
 
           <div class="farm-row-actions">
             <button type="button" class="secondary-btn" (click)="searchByLocation(group.farm.location)">Similar</button>
-            <button type="button" class="edit-btn" (click)="editFarm(group.farm)">Edit Farm</button>
-            <button type="button" class="delete-btn" (click)="deleteFarm(group.farm._id)">Delete</button>
+            <button *ngIf="canManageFarms" type="button" class="edit-btn" (click)="editFarm(group.farm)">Edit Farm</button>
+            <button *ngIf="canManageFarms" type="button" class="delete-btn" (click)="deleteFarm(group.farm._id)">Delete</button>
           </div>
 
           <div class="field-list nested" *ngIf="isFarmExpanded(group.farm)">
@@ -200,7 +200,7 @@
           tone="leaf"
           [title]="farms.length ? 'No results found' : 'No farms yet'"
           [description]="farms.length ? 'Try adjusting your search or filters.' : 'Create your first farm to start monitoring fields, crops, weather, and operations.'"
-          primaryLabel="Add Farm"
+          [primaryLabel]="!farms.length && canManageFarms ? 'Add Farm' : ''"
           (primaryAction)="openCreateFarm()"
           [compact]="true">
         </app-empty-state>
@@ -382,7 +382,7 @@
               <span class="panel-kicker">Fields / Parcels</span>
               <h3>Operational plots</h3>
             </div>
-            <button type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
+            <button *ngIf="canDeleteFields" type="button" class="primary-btn" (click)="openCreateField()">Add Field</button>
           </div>
 
           <div class="field-list" *ngIf="selectedFarmFields.length > 0; else noFields">
@@ -407,7 +407,7 @@
               tone="leaf"
               title="No fields yet"
               description="Add a field to start tracking crop cycles, weather context, NDVI, and operational recommendations."
-              primaryLabel="Add Field"
+              [primaryLabel]="canDeleteFields ? 'Add Field' : ''"
               (primaryAction)="openCreateField()"
               [compact]="true">
             </app-empty-state>
@@ -423,14 +423,14 @@
             </div>
 
             <div class="card-actions">
-              <button type="button" class="secondary-btn" (click)="openCreateZone()">
+              <button *ngIf="canManageZones" type="button" class="secondary-btn" (click)="openCreateZone()">
                 Create Zone
               </button>
-              <button type="button" class="edit-btn" (click)="editField(selectedField)">
+              <button *ngIf="canManageFields" type="button" class="edit-btn" (click)="editField(selectedField)">
                 <svg lucidePencil aria-hidden="true"></svg>
                 Edit Field
               </button>
-              <button type="button" class="delete-btn" (click)="deleteField(selectedField._id)">
+              <button *ngIf="canDeleteFields" type="button" class="delete-btn" (click)="deleteField(selectedField._id)">
                 <svg lucideTrash2 aria-hidden="true"></svg>
                 Delete Field
               </button>
@@ -507,7 +507,7 @@
                 <h4>Localized field zones</h4>
                 <p>Create smaller operational areas inside this field for future monitoring and recommendations.</p>
               </div>
-              <button type="button" class="secondary-btn" (click)="openCreateZone()">Create Zone</button>
+              <button *ngIf="canManageZones" type="button" class="secondary-btn" (click)="openCreateZone()">Create Zone</button>
             </div>
 
             <div class="zone-grid" *ngIf="selectedFieldZones.length; else noZones">
@@ -536,7 +536,7 @@
                 icon="map"
                 title="No management zones yet"
                 description="Create zones inside this field when you are ready to manage localized operations."
-                primaryLabel="Create Zone"
+                [primaryLabel]="canManageZones ? 'Create Zone' : ''"
                 (primaryAction)="openCreateZone()"
                 [compact]="true">
               </app-empty-state>
@@ -557,10 +557,10 @@
               </div>
               <p *ngIf="selectedZone.notes">{{ selectedZone.notes }}</p>
               <div class="card-actions">
-                <button type="button" class="edit-btn" (click)="editZone(selectedZone)">
+                <button *ngIf="canManageZones" type="button" class="edit-btn" (click)="editZone(selectedZone)">
                   Edit Zone
                 </button>
-                <button type="button" class="delete-btn" (click)="deleteZone(selectedZone._id)">
+                <button *ngIf="canManageZones" type="button" class="delete-btn" (click)="deleteZone(selectedZone._id)">
                   Delete Zone
                 </button>
               </div>
@@ -792,7 +792,7 @@
         <input class="farmops-field" type="text" [value]="selectedFarm?.name || ''" disabled>
       </label>
 
-      <label>
+      <label *ngIf="canDeleteFields">
         Field name
         <input class="farmops-field" type="text" placeholder="North Parcel" [(ngModel)]="fieldName" name="fieldName">
       </label>
@@ -834,7 +834,8 @@
 
       <div class="coordinate-grid">
         <label>
-          Calculated area (hectares)
+          <ng-container *ngIf="canDeleteFields; else existingFieldAreaLabel">Calculated area (hectares)</ng-container>
+          <ng-template #existingFieldAreaLabel>Field area</ng-template>
           <input class="farmops-field" type="number" placeholder="Draw boundary to calculate" [(ngModel)]="fieldArea" name="fieldArea" readonly>
         </label>
 
@@ -848,7 +849,7 @@
         </label>
       </div>
 
-      <section class="farm-map-selector">
+      <section class="farm-map-selector" *ngIf="canDeleteFields">
         <div>
           <span class="panel-kicker">Field Boundary</span>
           <p>Draw this field or parcel inside the selected farm boundary.</p>
@@ -887,21 +888,21 @@
         <textarea class="farmops-field" rows="4" placeholder="Optional notes from scouting, satellite review or sensor observations" [(ngModel)]="fieldNotes" name="fieldNotes"></textarea>
       </label>
 
-      <div class="coordinate-preview">
+      <div class="coordinate-preview" *ngIf="canDeleteFields">
         <span>Field area</span>
         <strong>{{ formatArea(fieldArea) }} hectares</strong>
       </div>
 
-      <div class="coordinate-preview">
+      <div class="coordinate-preview" *ngIf="canDeleteFields">
         <span>Boundary points</span>
         <strong>{{ fieldBoundaryCoordinates.length }} saved points</strong>
       </div>
 
-      <button *ngIf="editingFieldId === ''" class="primary-btn" type="button" (click)="createField()" [disabled]="fieldActionLoading">
+      <button *ngIf="editingFieldId === '' && canDeleteFields" class="primary-btn" type="button" (click)="createField()" [disabled]="fieldActionLoading">
         {{ fieldActionLoading ? 'Adding...' : 'Add Field' }}
       </button>
 
-      <button *ngIf="editingFieldId !== ''" class="primary-btn" type="button" (click)="updateField()" [disabled]="fieldActionLoading">
+      <button *ngIf="editingFieldId !== '' && canManageFields" class="primary-btn" type="button" (click)="updateField()" [disabled]="fieldActionLoading">
         {{ fieldActionLoading ? 'Updating...' : 'Update Field' }}
       </button>
     </form>
@@ -998,11 +999,11 @@
         <strong>{{ zoneBoundaryCoordinates.length }} saved points</strong>
       </div>
 
-      <button *ngIf="editingZoneId === ''" class="primary-btn" type="button" (click)="createZone()" [disabled]="zoneActionLoading">
+      <button *ngIf="editingZoneId === '' && canManageZones" class="primary-btn" type="button" (click)="createZone()" [disabled]="zoneActionLoading">
         {{ zoneActionLoading ? 'Creating...' : 'Create Zone' }}
       </button>
 
-      <button *ngIf="editingZoneId !== ''" class="primary-btn" type="button" (click)="updateZone()" [disabled]="zoneActionLoading">
+      <button *ngIf="editingZoneId !== '' && canManageZones" class="primary-btn" type="button" (click)="updateZone()" [disabled]="zoneActionLoading">
         {{ zoneActionLoading ? 'Updating...' : 'Update Zone' }}
       </button>
     </form>

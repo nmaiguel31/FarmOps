@@ -12,6 +12,29 @@ const LEGACY_ROLE_MAP = {
 
 const VALID_ROLES = Object.values(ROLES);
 
+const READ_ALL_FARM_ROLES = [
+  ROLES.ADMINISTRATOR,
+  ROLES.FARM_MANAGER,
+  ROLES.FIELD_OPERATOR,
+  ROLES.ACCOUNTANT
+];
+
+const FARM_WRITE_ROLES = [
+  ROLES.ADMINISTRATOR,
+  ROLES.FARM_MANAGER
+];
+
+const FIELD_WRITE_ROLES = [
+  ROLES.ADMINISTRATOR,
+  ROLES.FARM_MANAGER,
+  ROLES.FIELD_OPERATOR
+];
+
+const FINANCIAL_ROLES = [
+  ROLES.ADMINISTRATOR,
+  ROLES.ACCOUNTANT
+];
+
 const normalizeRole = (role) => {
   if (!role) {
     return ROLES.ADMINISTRATOR;
@@ -22,9 +45,17 @@ const normalizeRole = (role) => {
 
 const isValidRole = (role) => VALID_ROLES.includes(normalizeRole(role));
 
+const roleIs = (role, allowedRoles) =>
+  allowedRoles.includes(normalizeRole(role));
+
 module.exports = {
   ROLES,
   VALID_ROLES,
   normalizeRole,
-  isValidRole
+  isValidRole,
+  roleIs,
+  READ_ALL_FARM_ROLES,
+  FARM_WRITE_ROLES,
+  FIELD_WRITE_ROLES,
+  FINANCIAL_ROLES
 };

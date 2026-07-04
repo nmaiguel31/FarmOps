@@ -136,9 +136,9 @@ export class Profile implements OnInit {
     this.statsLoading = true;
 
     forkJoin({
-      farms: this.authService.canAccess('farms') ? this.farmService.getFarms().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
-      fields: this.authService.canAccess('farms') ? this.fieldService.getFields().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
-      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      farms: this.authService.hasPermission('farms.read') ? this.farmService.getFarms().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      fields: this.authService.hasPermission('fields.read') ? this.fieldService.getFields().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
+      crops: this.authService.hasPermission('crops.read') ? this.cropService.getCrops().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
       records: this.authService.canAccess('financial-records') ? this.financialService.getRecords().pipe(catchError(error => this.handleStatsRequestError(error))) : of([]),
       signals: this.authService.canAccess('operations-center') ? this.signalService.getSignals().pipe(catchError(error => this.handleStatsRequestError(error))) : of([])
     }).pipe(
@@ -151,7 +151,7 @@ export class Profile implements OnInit {
           const farms = getCurrentFarms(this.normalizeList(data.farms));
           const fields = getCurrentFields(farms, this.normalizeList(data.fields));
           const records =
-            !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+            !this.authService.hasPermission('farms.read') && this.authService.canAccess('financial-records')
               ? this.normalizeList(data.records).filter(isCurrentRecord)
               : getCurrentRecords(farms, this.normalizeList(data.records));
           const crops = getCurrentCrops(farms, fields, this.normalizeList(data.crops), records);

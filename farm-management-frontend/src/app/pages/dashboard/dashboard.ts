@@ -420,12 +420,12 @@ export class Dashboard implements OnInit {
   get quickActions() {
     const role = this.authService.getCurrentRole();
     const canManageFarms = ['administrator', 'farm_manager'].includes(role);
-    const canManageFields = ['administrator', 'farm_manager', 'field_operator'].includes(role);
+    const canCreateFields = ['administrator', 'farm_manager'].includes(role);
     const canManageCrops = ['administrator', 'farm_manager'].includes(role);
 
     return [
       canManageFarms ? { label: 'Add Farm', route: '/farms', icon: 'plus' } : null,
-      canManageFields ? { label: 'Add Field', route: '/farms', icon: 'map' } : null,
+      canCreateFields ? { label: 'Add Field', route: '/farms', icon: 'map' } : null,
       canManageCrops ? { label: 'Add Crop', route: '/crops', icon: 'crop' } : null,
       this.authService.canAccess('financial-records') ? { label: 'Financial Record', route: '/financial-records', icon: 'finance' } : null,
       this.authService.canAccess('operations-center') ? { label: 'Operations Center', route: '/operations-center', icon: 'alerts' } : null,
@@ -624,10 +624,10 @@ export class Dashboard implements OnInit {
     this.dashboardLoadError = '';
 
     forkJoin({
-      farms: this.authService.canAccess('farms') ? this.farmService.getFarms() : of([]),
-      fields: this.authService.canAccess('farms') ? this.fieldService.getFields() : of([]),
+      farms: this.authService.hasPermission('farms.read') ? this.farmService.getFarms() : of([]),
+      fields: this.authService.hasPermission('fields.read') ? this.fieldService.getFields() : of([]),
       zones: this.authService.canAccess('farms') ? this.zoneService.getZones() : of([]),
-      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops() : of([]),
+      crops: this.authService.hasPermission('crops.read') ? this.cropService.getCrops() : of([]),
       records: this.authService.canAccess('financial-records') ? this.financialService.getRecords() : of([]),
       signals: this.authService.canAccess('operations-center') ? this.operationSignalService.getActiveSignals() : of([])
     }).subscribe({
@@ -737,7 +737,7 @@ export class Dashboard implements OnInit {
       this.totalCrops = 0;
 
       this.records =
-        !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+        !this.authService.hasPermission('farms.read') && this.authService.canAccess('financial-records')
           ? this.allRecords.filter(isCurrentRecord)
           : [];
       this.recentRecords = this.records.slice().reverse().slice(0, 5);

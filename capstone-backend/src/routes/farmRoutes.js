@@ -4,7 +4,7 @@ const router = express.Router();
 
 const protect = require('../middleware/authMiddleware');
 const authorizeRoles = require('../middleware/roleMiddleware');
-const { ROLES } = require('../config/roles');
+const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES } = require('../config/roles');
 
 const {
   createFarm,
@@ -15,12 +15,12 @@ const {
 
 // Protected routes
 
-router.post('/', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), createFarm);
+router.post('/', protect, authorizeRoles(...FARM_WRITE_ROLES), createFarm);
 
-router.get('/', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER, ROLES.FIELD_OPERATOR), getFarms);
+router.get('/', protect, authorizeRoles(...READ_ALL_FARM_ROLES), getFarms);
 
-router.delete('/:id', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), deleteFarm);
+router.delete('/:id', protect, authorizeRoles(...FARM_WRITE_ROLES), deleteFarm);
 
-router.put('/:id', protect, authorizeRoles(ROLES.ADMINISTRATOR, ROLES.FARM_MANAGER), updateFarm);
+router.put('/:id', protect, authorizeRoles(...FARM_WRITE_ROLES), updateFarm);
 
 module.exports = router;

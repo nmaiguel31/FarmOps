@@ -42,6 +42,7 @@ import { ConfirmationService } from '../../shared/confirm/confirmation.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { getCurrentFields } from '../../shared/current-data-scope';
 import { RecommendationCard } from '../../shared/recommendation-card/recommendation-card';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-farms',
@@ -213,6 +214,7 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
   private cropService = inject(CropService);
   private weatherService = inject(WeatherService);
   private operationSignalService = inject(OperationSignal);
+  private authService = inject(Auth);
   private cdr = inject(ChangeDetectorRef);
   private toast = inject(ToastService);
   private confirmation = inject(ConfirmationService);
@@ -239,6 +241,22 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
       this.refreshSelectedFieldViewModel();
       this.cdr.detectChanges();
     }, 60000);
+  }
+
+  get canManageFarms() {
+    return this.authService.hasPermission('farms.write');
+  }
+
+  get canManageFields() {
+    return this.authService.hasPermission('fields.write');
+  }
+
+  get canDeleteFields() {
+    return ['administrator', 'farm_manager'].includes(this.authService.getCurrentRole());
+  }
+
+  get canManageZones() {
+    return ['administrator', 'farm_manager'].includes(this.authService.getCurrentRole());
   }
 
   ngOnDestroy(): void {
@@ -286,6 +304,10 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
 }
 
   createFarm() {
+  if (!this.canManageFarms) {
+    return;
+  }
+
   if (this.farmActionLoading) {
     return;
   }
@@ -329,6 +351,9 @@ export class Farms implements OnInit, AfterViewInit, OnDestroy {
 }
 
 editFarm(farm: any) {
+  if (!this.canManageFarms) {
+    return;
+  }
 
   this.editingFarmId = farm._id;
   this.farmName = farm.name;
@@ -345,6 +370,10 @@ editFarm(farm: any) {
 }
 
 updateFarm() {
+  if (!this.canManageFarms) {
+    return;
+  }
+
   if (this.farmActionLoading) {
     return;
   }
@@ -1153,6 +1182,10 @@ updateFarm() {
   }
 
   deleteFarm(id: string) {
+    if (!this.canManageFarms) {
+      return;
+    }
+
 
     const confirmed = this.confirmation.confirmDestructive(
       'Delete this farm?',
@@ -1251,6 +1284,10 @@ updateFarm() {
   }
 
   createField() {
+    if (!this.canDeleteFields) {
+      return;
+    }
+
 
     if (!this.selectedFarm) {
       return;
@@ -1264,7 +1301,7 @@ updateFarm() {
       return;
     }
 
-    if (!this.validateFieldBoundaryBeforeSave()) {
+    if (this.canDeleteFields && !this.validateFieldBoundaryBeforeSave()) {
       return;
     }
 
@@ -1299,6 +1336,10 @@ updateFarm() {
   }
 
   editField(field: any) {
+    if (!this.canManageFields) {
+      return;
+    }
+
 
     const allowedFieldStatuses =
       ['Active', 'Resting', 'Harvested'];
@@ -1323,13 +1364,19 @@ updateFarm() {
     this.onFieldCropAssignmentChange();
     this.fieldFormOpen = true;
 
-    setTimeout(() => {
-      this.initializeFieldBoundaryMap();
-    }, 150);
+    if (this.canDeleteFields) {
+      setTimeout(() => {
+        this.initializeFieldBoundaryMap();
+      }, 150);
+    }
 
   }
 
   updateField() {
+    if (!this.canManageFields) {
+      return;
+    }
+
     if (this.fieldActionLoading) {
       return;
     }
@@ -1338,7 +1385,7 @@ updateFarm() {
       return;
     }
 
-    if (!this.validateFieldBoundaryBeforeSave()) {
+    if (this.canDeleteFields && !this.validateFieldBoundaryBeforeSave()) {
       return;
     }
 
@@ -1372,6 +1419,10 @@ updateFarm() {
   }
 
   deleteField(id: string) {
+    if (!this.canDeleteFields) {
+      return;
+    }
+
 
     const confirmed = this.confirmation.confirmDestructive(
       'Delete this field?',
@@ -1407,6 +1458,9 @@ updateFarm() {
   }
 
   createZone() {
+    if (!this.canManageZones) {
+      return;
+    }
 
     if (!this.selectedField) {
       return;
@@ -1445,6 +1499,9 @@ updateFarm() {
   }
 
   editZone(zone: any) {
+    if (!this.canManageZones) {
+      return;
+    }
 
     this.editingZoneId = zone._id;
     this.zoneName = zone.name;
@@ -1465,6 +1522,9 @@ updateFarm() {
   }
 
   updateZone() {
+    if (!this.canManageZones) {
+      return;
+    }
 
     if (!this.editingZoneId) {
       return;
@@ -1504,6 +1564,9 @@ updateFarm() {
   }
 
   deleteZone(id: string) {
+    if (!this.canManageZones) {
+      return;
+    }
 
     if (!this.confirmation.confirmDestructive(
       'Delete this management zone?',
@@ -1534,7 +1597,7 @@ updateFarm() {
 
   openCreateField() {
 
-    if (!this.selectedFarm) {
+    if (!this.selectedFarm || !this.canDeleteFields) {
       return;
     }
 
@@ -1549,7 +1612,7 @@ updateFarm() {
 
   openCreateZone() {
 
-    if (!this.selectedField) {
+    if (!this.selectedField || !this.canManageZones) {
       return;
     }
 
@@ -2638,6 +2701,10 @@ searchByOwner(ownerEmail: string) {
 }
 
 openCreateFarm() {
+  if (!this.canManageFarms) {
+    return;
+  }
+
   this.editingFarmId = '';
   this.farmName = '';
   this.farmLocation = '';

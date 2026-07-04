@@ -5,6 +5,7 @@ const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
+const { READ_ALL_FARM_ROLES, ROLES, roleIs } = require('../config/roles');
 
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
@@ -29,7 +30,7 @@ const userCanAccessFarm = (user, farm) => {
     return false;
   }
 
-  return user.role === 'admin' ||
+  return roleIs(user.role, READ_ALL_FARM_ROLES) ||
     farm.owner.toString() === user.id;
 };
 
@@ -38,12 +39,12 @@ const userCanAccessSignal = (user, signal) => {
     return userCanAccessFarm(user, signal.farm);
   }
 
-  return user.role === 'admin' ||
+  return roleIs(user.role, [ROLES.ADMINISTRATOR]) ||
     signal.owner?.toString?.() === user.id;
 };
 
 const getAccessibleFarmIds = async (user) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, READ_ALL_FARM_ROLES)) {
     const farms = await Farm.find();
     return farms.map(farm => farm._id);
   }
@@ -127,7 +128,7 @@ const getOperationSignals = async (req, res) => {
     const farmIds =
       await getAccessibleFarmIds(req.user);
     const accessQuery =
-      req.user.role === 'admin'
+      roleIs(req.user.role, [ROLES.ADMINISTRATOR])
         ? {
           $or: [
             { farm: { $in: farmIds } },

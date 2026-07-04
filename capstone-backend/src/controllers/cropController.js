@@ -3,6 +3,7 @@ const Farm = require('../models/Farm');
 const Field = require('../models/Field');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
+const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES, roleIs } = require('../config/roles');
 
 const lifecycleDurationDays = 120;
 
@@ -302,8 +303,7 @@ const createCrop = async (req, res) => {
     
     // Ownership validation
     if (
-      req.user.role !== 'admin' &&
-      farm.owner.toString() !== req.user.id
+      !roleIs(req.user.role, FARM_WRITE_ROLES)
     ) {
 
       logEvent('warn', 'FORBIDDEN_ACCESS', {
@@ -383,42 +383,23 @@ const getCrops = async (req, res) => {
     let crops;
     let farms = [];
 
-    // Admin can see all crops
-    if (req.user.role === 'admin') {
-      farms = await Farm.find();
-      await seedDefaultCropsForFarms(farms);
+    farms = roleIs(req.user.role, READ_ALL_FARM_ROLES)
+      ? await Farm.find()
+      : await Farm.find({ owner: req.user.id });
 
-      crops = await Crop.find()
-        .populate({
-          path: 'farm',
-          populate: {
-            path: 'owner',
-            select: 'email role'
-          }
-        });
+    await seedDefaultCropsForFarms(farms);
 
-    } else {
+    const farmIds = farms.map(farm => farm._id);
 
-      // Managers only see crops from their farms
-      farms = await Farm.find({
-        owner: req.user.id
-      });
-
-      await seedDefaultCropsForFarms(farms);
-
-      const farmIds = farms.map(farm => farm._id);
-
-      crops = await Crop.find({
-        farm: { $in: farmIds }
-      }).populate({
-        path: 'farm',
-        populate: {
-          path: 'owner',
-          select: 'email role'
-        }
-      });
-
-    }
+    crops = await Crop.find({
+      farm: { $in: farmIds }
+    }).populate({
+      path: 'farm',
+      populate: {
+        path: 'owner',
+        select: 'email role'
+      }
+    });
 
     const cropsWithFieldCounts = await attachFieldCounts(crops);
 
@@ -451,8 +432,7 @@ const deleteCrop = async (req, res) => {
     }
 
     if (
-      req.user.role !== 'admin' &&
-      crop.farm.owner.toString() !== req.user.id
+      !roleIs(req.user.role, FARM_WRITE_ROLES)
     ) {
 
       logEvent('warn', 'FORBIDDEN_ACCESS', {
@@ -524,8 +504,7 @@ const updateCrop = async (req, res) => {
     }
 
     if (
-      req.user.role !== 'admin' &&
-      crop.farm.owner.toString() !== req.user.id
+      !roleIs(req.user.role, FARM_WRITE_ROLES)
     ) {
 
       logEvent('warn', 'FORBIDDEN_ACCESS', {

@@ -4,6 +4,7 @@ const Crop = require('../models/Crop');
 const Zone = require('../models/Zone');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
+const { READ_ALL_FARM_ROLES, ROLES, roleIs } = require('../config/roles');
 const {
   isPolygonInsidePolygon,
   normalizePolygon,
@@ -42,12 +43,12 @@ const evaluateFieldOperationSignals = async (user) => {
 };
 
 const userCanAccessFarm = (user, farm) => {
-  return user.role === 'admin' ||
+  return roleIs(user.role, READ_ALL_FARM_ROLES) ||
     farm.owner.toString() === user.id;
 };
 
 const getAccessibleFarmIds = async (user) => {
-  if (user.role === 'admin') {
+  if (roleIs(user.role, READ_ALL_FARM_ROLES)) {
     const farms = await Farm.find();
     return farms.map(farm => farm._id);
   }
@@ -489,18 +490,11 @@ const createField = async (req, res) => {
 
 const getFields = async (req, res) => {
   try {
-    let fields;
+    const farmIds = await getAccessibleFarmIds(req.user);
 
-    if (req.user.role === 'admin') {
-      fields = await Field.find()
-        .populate(populateField);
-    } else {
-      const farmIds = await getAccessibleFarmIds(req.user);
-
-      fields = await Field.find({
-        farm: { $in: farmIds }
-      }).populate(populateField);
-    }
+    const fields = await Field.find({
+      farm: { $in: farmIds }
+    }).populate(populateField);
 
     res.json(fields);
   } catch (error) {
@@ -561,10 +555,19 @@ const updateField = async (req, res) => {
       });
     }
 
+    const isFieldOperator =
+      roleIs(req.user.role, [ROLES.FIELD_OPERATOR]);
+
     if (
       req.body.farm &&
       req.body.farm !== field.farm._id.toString()
     ) {
+      if (isFieldOperator) {
+        return res.status(403).json({
+          message: 'Field operators cannot move fields between farms'
+        });
+      }
+
       const nextFarm = await Farm.findById(req.body.farm);
 
       if (!nextFarm) {
@@ -619,19 +622,25 @@ const updateField = async (req, res) => {
     }
 
     await validateFieldBoundary({
-      polygonCoordinates: req.body.polygonCoordinates,
+      polygonCoordinates: isFieldOperator
+        ? field.polygonCoordinates
+        : req.body.polygonCoordinates,
       farm: nextFarm,
       excludeFieldId: field._id
     });
 
-    field.name = req.body.name;
+    if (!isFieldOperator) {
+      field.name = req.body.name;
+      field.area = req.body.area;
+      field.polygonCoordinates = req.body.polygonCoordinates || [];
+    }
+
     field.cropType = req.body.cropType || '';
     field.crop = crop;
     field.currentStage = lifecycleInput.currentStage;
     field.stageStartedAt = lifecycleInput.stageStartedAt;
     field.plantingDate = lifecycleInput.plantingDate;
     field.expectedHarvestDate = lifecycleInput.expectedHarvestDate;
-    field.area = req.body.area;
     field.status = req.body.status || 'Active';
     field.healthStatus = req.body.healthStatus || 'Good';
     field.healthIndex = req.body.healthIndex ?? field.healthIndex ?? null;
@@ -640,7 +649,6 @@ const updateField = async (req, res) => {
     field.soilMoisture = req.body.soilMoisture ?? field.soilMoisture ?? null;
     field.irrigationStatus = req.body.irrigationStatus || 'Scheduled';
     field.notes = req.body.notes || '';
-    field.polygonCoordinates = req.body.polygonCoordinates || [];
     field.ndviHistory = Array.isArray(req.body.ndviHistory)
       ? req.body.ndviHistory
       : field.ndviHistory || [];

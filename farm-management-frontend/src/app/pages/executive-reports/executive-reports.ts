@@ -151,10 +151,10 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     this.dataReady = false;
 
     forkJoin({
-      farms: this.authService.canAccess('farms') ? this.farmService.getFarms() : of([]),
-      fields: this.authService.canAccess('farms') ? this.fieldService.getFields() : of([]),
-      zones: this.authService.canAccess('farms') ? this.zoneService.getZones() : of([]),
-      crops: this.authService.canAccess('crops') || this.authService.canAccess('farms') ? this.cropService.getCrops() : of([]),
+      farms: this.authService.hasPermission('farms.read') ? this.farmService.getFarms() : of([]),
+      fields: this.authService.hasPermission('fields.read') ? this.fieldService.getFields() : of([]),
+      zones: this.canViewOperationalReports ? this.zoneService.getZones() : of([]),
+      crops: this.authService.hasPermission('crops.read') ? this.cropService.getCrops() : of([]),
       records: this.authService.canAccess('financial-records') ? this.financialService.getRecords() : of([]),
       signals: this.authService.canAccess('operations-center') ? this.operationSignalService.getSignals({ status: 'All' }) : of([])
     }).subscribe({
@@ -164,7 +164,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
           this.fields = getCurrentFields(this.farms, data.fields || []);
           this.zones = getCurrentZones(this.fields, data.zones || []);
           this.records =
-            !this.authService.canAccess('farms') && this.authService.canAccess('financial-records')
+            !this.authService.hasPermission('farms.read') && this.authService.canAccess('financial-records')
               ? (data.records || []).filter(isCurrentRecord)
               : getCurrentRecords(this.farms, data.records || []);
           this.crops = getCurrentCrops(this.farms, this.fields, data.crops || [], this.records);
@@ -191,6 +191,16 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     return this.farms.length > 0 ||
       this.records.length > 0 ||
       this.signals.length > 0;
+  }
+
+  get canViewOperationalReports() {
+    return this.authService.hasPermission('reports.read.all') ||
+      this.authService.hasPermission('reports.read.farm');
+  }
+
+  get canViewFinancialReports() {
+    return this.authService.hasPermission('reports.read.all') ||
+      this.authService.hasPermission('reports.read.financial');
   }
 
   get periodRange() {
@@ -331,7 +341,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get summaryCards() {
-    return [
+    const cards = [
       {
         label: 'Operational Score',
         value: this.operationalScore,
@@ -397,6 +407,18 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
         tone: 'neutral'
       }
     ];
+
+    return cards.filter(card => {
+      if (['Period Profit'].includes(card.label)) {
+        return this.canViewFinancialReports;
+      }
+
+      if (['Operational Score', 'Overall Farm Health', 'Average NDVI', 'Active Operations', 'Weather Risk', 'Total Farms', 'Active Crops'].includes(card.label)) {
+        return this.canViewOperationalReports;
+      }
+
+      return true;
+    });
   }
 
   get operationalScore() {
@@ -648,6 +670,16 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     return recommendations.slice(0, 5);
   }
 
+  get visibleExecutiveRecommendations() {
+    return this.executiveRecommendations.filter(group => {
+      if (group.category === 'Financial') {
+        return this.canViewFinancialReports;
+      }
+
+      return this.canViewOperationalReports;
+    });
+  }
+
   get hasFinancialData() {
     return this.periodRecords.length > 0;
   }
@@ -691,48 +723,73 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     }
     this.exportActionLoading = true;
 
-    const sections = [
+    const farmHeaders = ['Farm', 'Area', 'Fields'];
+    if (this.canViewOperationalReports) {
+      farmHeaders.push('Average NDVI', 'Active Alerts', 'Operational Status');
+    }
+    if (this.canViewFinancialReports) {
+      farmHeaders.push('Revenue', 'Expenses', 'Profit');
+    }
+
+    const cropHeaders = ['Crop', 'Farm'];
+    if (this.canViewFinancialReports) {
+      cropHeaders.push('Revenue', 'Expenses', 'Profit');
+    }
+    if (this.canViewOperationalReports) {
+      cropHeaders.push('Average Health', 'NDVI', 'Lifecycle Stage');
+    }
+
+    const sections: any[][] = [
       ['Executive Summary'],
       ['Metric', 'Value', 'Notes'],
       ...this.summaryCards.map(card => [card.label, card.value, card.helper]),
       [],
       ['Farm Performance'],
-      ['Farm', 'Area', 'Fields', 'Average NDVI', 'Active Alerts', 'Revenue', 'Expenses', 'Profit', 'Operational Status'],
-      ...this.farmPerformanceRows.map(row => [
-        row.farm.name,
-        row.area,
-        row.fields,
-        row.averageNdvi,
-        row.activeAlerts,
-        row.revenue,
-        row.expenses,
-        row.profit,
-        row.status
-      ]),
+      farmHeaders,
+      ...this.farmPerformanceRows.map(row => {
+        const values: any[] = [row.farm.name, row.area, row.fields];
+        if (this.canViewOperationalReports) {
+          values.push(row.averageNdvi, row.activeAlerts, row.status);
+        }
+        if (this.canViewFinancialReports) {
+          values.push(row.revenue, row.expenses, row.profit);
+        }
+        return values;
+      }),
       [],
       ['Crop Performance'],
-      ['Crop', 'Farm', 'Revenue', 'Expenses', 'Profit', 'Average Health', 'NDVI', 'Lifecycle Stage'],
-      ...this.cropPerformanceRows.map(row => [
-        row.crop.name,
-        row.farm,
-        row.revenue,
-        row.expenses,
-        row.profit,
-        row.averageHealth,
-        row.ndvi,
-        row.stage
-      ]),
-      [],
-      ['Operations Summary'],
-      ['Metric', 'Value'],
-      ...this.operationsSummary.map(item => [item.label, item.value]),
-      [],
-      ['Executive Recommendations'],
-      ...this.executiveRecommendations.flatMap(group => [
-        [group.category],
-        ...group.items.map(item => [item])
-      ])
+      cropHeaders,
+      ...this.cropPerformanceRows.map(row => {
+        const values: any[] = [row.crop.name, row.farm];
+        if (this.canViewFinancialReports) {
+          values.push(row.revenue, row.expenses, row.profit);
+        }
+        if (this.canViewOperationalReports) {
+          values.push(row.averageHealth, row.ndvi, row.stage);
+        }
+        return values;
+      })
     ];
+
+    if (this.canViewOperationalReports) {
+      sections.push(
+        [],
+        ['Operations Summary'],
+        ['Metric', 'Value'],
+        ...this.operationsSummary.map(item => [item.label, item.value])
+      );
+    }
+
+    if (this.visibleExecutiveRecommendations.length) {
+      sections.push(
+        [],
+        ['Executive Recommendations'],
+        ...this.visibleExecutiveRecommendations.flatMap(group => [
+          [group.category],
+          ...group.items.map(item => [item])
+        ])
+      );
+    }
 
     const csvContent = sections
       .map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
@@ -772,21 +829,25 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     y += 8;
     y = this.drawPdfSummaryCards(doc, y);
 
-    y += 6;
-    y = this.ensurePdfSpace(doc, y, 44);
-    doc.setFontSize(13);
-    doc.text('Financial Visual Summary', 20, y);
-    y += 8;
-    y = this.drawPdfFinancialBars(doc, y);
+    if (this.canViewFinancialReports) {
+      y += 6;
+      y = this.ensurePdfSpace(doc, y, 44);
+      doc.setFontSize(13);
+      doc.text('Financial Visual Summary', 20, y);
+      y += 8;
+      y = this.drawPdfFinancialBars(doc, y);
+    }
 
-    y += 6;
-    y = this.ensurePdfSpace(doc, y, 44);
-    doc.setFontSize(13);
-    doc.text('Operations Distribution', 20, y);
-    y += 8;
-    y = this.drawPdfOperationsBars(doc, y);
+    if (this.canViewOperationalReports) {
+      y += 6;
+      y = this.ensurePdfSpace(doc, y, 44);
+      doc.setFontSize(13);
+      doc.text('Operations Distribution', 20, y);
+      y += 8;
+      y = this.drawPdfOperationsBars(doc, y);
+    }
 
-    if (this.profitByCropEntries.length) {
+    if (this.canViewFinancialReports && this.profitByCropEntries.length) {
       y += 6;
       y = this.ensurePdfSpace(doc, y, 44);
       doc.setFontSize(13);
@@ -802,9 +863,16 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     y += 8;
     doc.setFontSize(8);
     this.farmPerformanceRows.forEach(row => {
+      const parts = [`${row.farm.name}`, `${row.area} ha`, `${row.fields} fields`];
+      if (this.canViewOperationalReports) {
+        parts.push(`NDVI ${row.averageNdvi}`, row.status);
+      }
+      if (this.canViewFinancialReports) {
+        parts.push(`Profit ${this.formatCurrency(row.profit)}`);
+      }
       y = this.writePdfLine(
         doc,
-        `${row.farm.name} | ${row.area} ha | ${row.fields} fields | NDVI ${row.averageNdvi} | Profit ${this.formatCurrency(row.profit)} | ${row.status}`,
+        parts.join(' | '),
         y
       );
     });
@@ -819,35 +887,46 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
       y = this.writePdfLine(doc, 'No crop performance data for the selected period.', y);
     }
     this.cropPerformanceRows.slice(0, 20).forEach(row => {
+      const parts = [`${row.crop.name}`, row.farm];
+      if (this.canViewFinancialReports) {
+        parts.push(`Profit ${this.formatCurrency(row.profit)}`);
+      }
+      if (this.canViewOperationalReports) {
+        parts.push(`Health ${row.averageHealth}`, `NDVI ${row.ndvi}`, row.stage);
+      }
       y = this.writePdfLine(
         doc,
-        `${row.crop.name} | ${row.farm} | Profit ${this.formatCurrency(row.profit)} | Health ${row.averageHealth} | NDVI ${row.ndvi} | ${row.stage}`,
+        parts.join(' | '),
         y
       );
     });
 
-    y += 6;
-    y = this.ensurePdfSpace(doc, y, 42);
-    doc.setFontSize(13);
-    doc.text('Operations Summary', 20, y);
-    y += 8;
-    doc.setFontSize(8);
-    this.operationsSummary.forEach(item => {
-      y = this.writePdfLine(doc, `${item.label}: ${item.value}`, y);
-    });
-
-    y += 6;
-    y = this.ensurePdfSpace(doc, y, 42);
-    doc.setFontSize(13);
-    doc.text('Executive Recommendations', 20, y);
-    y += 8;
-    doc.setFontSize(8);
-    this.executiveRecommendations.forEach(group => {
-      y = this.writePdfLine(doc, group.category, y);
-      group.items.forEach(item => {
-        y = this.writePdfLine(doc, `- ${item}`, y);
+    if (this.canViewOperationalReports) {
+      y += 6;
+      y = this.ensurePdfSpace(doc, y, 42);
+      doc.setFontSize(13);
+      doc.text('Operations Summary', 20, y);
+      y += 8;
+      doc.setFontSize(8);
+      this.operationsSummary.forEach(item => {
+        y = this.writePdfLine(doc, `${item.label}: ${item.value}`, y);
       });
-    });
+    }
+
+    if (this.visibleExecutiveRecommendations.length) {
+      y += 6;
+      y = this.ensurePdfSpace(doc, y, 42);
+      doc.setFontSize(13);
+      doc.text('Executive Recommendations', 20, y);
+      y += 8;
+      doc.setFontSize(8);
+      this.visibleExecutiveRecommendations.forEach(group => {
+        y = this.writePdfLine(doc, group.category, y);
+        group.items.forEach(item => {
+          y = this.writePdfLine(doc, `- ${item}`, y);
+        });
+      });
+    }
 
     addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Executive-Report.pdf');

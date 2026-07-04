@@ -4,6 +4,7 @@ const Zone = require('../models/Zone');
 const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
+const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES, roleIs } = require('../config/roles');
 
 const normalizePolygonCoordinates = (coordinates) => {
   if (!Array.isArray(coordinates)) {
@@ -64,22 +65,14 @@ const createFarm = async (req, res) => {
 const getFarms = async (req, res) => {
   try {
 
-    let farms;
-
-if (req.user.role === 'admin') {
-
-  farms = await Farm.find()
-    .populate('owner', 'email role')
-    .lean();
-
-} else {
-
-  farms = await Farm.find({
-    owner: req.user.id
-  }).populate('owner', 'email role')
-    .lean();
-
-}
+    const query =
+      roleIs(req.user.role, READ_ALL_FARM_ROLES)
+        ? {}
+        : { owner: req.user.id };
+    let farms =
+      await Farm.find(query)
+        .populate('owner', 'email role')
+        .lean();
 
     farms = farms.map(farm => ({
       ...farm,
@@ -111,8 +104,7 @@ const deleteFarm = async (req, res) => {
     }
 
     if (
-      req.user.role !== 'admin' &&
-      farm.owner.toString() !== req.user.id
+      !roleIs(req.user.role, FARM_WRITE_ROLES)
     ) {
 
       logEvent('warn', 'FORBIDDEN_ACCESS', {
@@ -202,8 +194,7 @@ const updateFarm = async (req, res) => {
     }
 
     if (
-      req.user.role !== 'admin' &&
-      farm.owner.toString() !== req.user.id
+      !roleIs(req.user.role, FARM_WRITE_ROLES)
     ) {
 
       logEvent('warn', 'FORBIDDEN_ACCESS', {
