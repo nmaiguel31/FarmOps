@@ -1,6 +1,7 @@
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const User = require('../models/User');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const setupMFA = async (req, res) => {
 
@@ -63,6 +64,17 @@ const verifyMFA = async (req, res) => {
 
     await user.save();
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'MFA enabled',
+      module: 'Security',
+      entityType: 'User',
+      entityName: user.fullName || user.email,
+      entityId: user._id,
+      details: 'User enabled multi-factor authentication',
+      severity: 'success'
+    });
+
     res.json({
       message: 'MFA enabled successfully'
     });
@@ -112,6 +124,17 @@ const disableMFA = async (req, res) => {
     user.mfaSecret = '';
 
     await user.save();
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'MFA disabled',
+      module: 'Security',
+      entityType: 'User',
+      entityName: user.fullName || user.email,
+      entityId: user._id,
+      details: 'User disabled multi-factor authentication',
+      severity: 'warning'
+    });
 
     res.json({
       message: 'MFA disabled'

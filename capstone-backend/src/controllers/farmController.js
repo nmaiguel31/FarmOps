@@ -5,6 +5,7 @@ const Crop = require('../models/Crop');
 const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
 const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES, roleIs } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const normalizePolygonCoordinates = (coordinates) => {
   if (!Array.isArray(coordinates)) {
@@ -50,6 +51,16 @@ const createFarm = async (req, res) => {
     owner: req.user.id,
     role: req.user.role
 });
+    await writeAuditLog({
+      user: req.user,
+      action: 'Farm created',
+      module: 'Farms',
+      entityType: 'Farm',
+      entityName: farm.name,
+      entityId: farm._id,
+      details: `Created farm at ${farm.location || 'unspecified location'}`,
+      severity: 'success'
+    });
     res.status(201).json(farm);
 
   } catch (error) {
@@ -162,6 +173,17 @@ const deleteFarm = async (req, res) => {
       cascadeDeleted: deleteSummary
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Farm deleted',
+      module: 'Farms',
+      entityType: 'Farm',
+      entityName: farm.name,
+      entityId: farm._id,
+      details: `Deleted farm and cascaded ${deleteSummary.fields} fields, ${deleteSummary.zones} zones, ${deleteSummary.crops} crops, ${deleteSummary.financialRecords} financial records`,
+      severity: 'warning'
+    });
+
     res.json({
       message: 'Farm deleted successfully',
       cascadeDeleted: deleteSummary
@@ -226,6 +248,17 @@ const updateFarm = async (req, res) => {
       farmName: farm.name,
       updatedBy: req.user.id,
       role: req.user.role
+    });
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Farm updated',
+      module: 'Farms',
+      entityType: 'Farm',
+      entityName: farm.name,
+      entityId: farm._id,
+      details: 'Farm details or boundary were updated',
+      severity: 'success'
     });
 
     res.json(farm);

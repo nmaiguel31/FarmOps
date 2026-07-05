@@ -18,6 +18,7 @@ const financialRoutes = require('./routes/financialRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const operationSignalRoutes = require('./routes/operationSignalRoutes');
 const userRoutes = require('./routes/userRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
 
 
 // Config
@@ -54,6 +55,7 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/financial-records', financialRoutes);
 app.use('/api/operation-signals', operationSignalRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api', systemRoutes);
 
 // Start server

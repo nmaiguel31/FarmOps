@@ -186,6 +186,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .search-control {
@@ -198,6 +199,28 @@ h2 {
   border: 1px solid #dbe7dd;
   border-radius: 10px;
   background: #ffffff;
+}
+
+.select-control {
+  display: grid;
+  gap: 4px;
+}
+
+.select-control span {
+  color: #486050;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.select-control select {
+  min-height: 42px;
+  padding: 0 12px;
+  color: #122019;
+  background: #fff;
+  border: 1px solid #dbe7dd;
+  border-radius: 10px;
+  font: inherit;
 }
 
 .search-control svg,
@@ -272,18 +295,18 @@ th {
 }
 
 .role-badge.administrator {
-  color: #1d4ed8;
-  background: #dbeafe;
-}
-
-.role-badge.farm_manager {
   color: #047857;
   background: #dcfce7;
 }
 
+.role-badge.farm_manager {
+  color: #3f6212;
+  background: #ecfccb;
+}
+
 .role-badge.accountant {
-  color: #7c3aed;
-  background: #ede9fe;
+  color: #1d4ed8;
+  background: #dbeafe;
 }
 
 .role-badge.field_operator {

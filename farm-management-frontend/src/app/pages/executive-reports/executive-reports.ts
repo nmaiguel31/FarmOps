@@ -35,6 +35,7 @@ import { FinancialRecord } from '../../services/financial-record';
 import { OperationSignal } from '../../services/operation-signal';
 import { Zone } from '../../services/zone';
 import { Auth } from '../../services/auth';
+import { AuditLogService } from '../../services/audit-log';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { ToastService } from '../../shared/toast/toast.service';
 import { MetricInfoTooltip } from '../../shared/metric-info/metric-info-tooltip';
@@ -120,6 +121,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   private zone = inject(NgZone);
   private toast = inject(ToastService);
   private authService = inject(Auth);
+  private auditLogService = inject(AuditLogService);
   private pdfLogoDataUrl = '';
   private chartRenderTimer: any = null;
   private viewReady = false;
@@ -803,6 +805,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     link.click();
     window.URL.revokeObjectURL(url);
     this.toast.success('Report CSV exported', 'Executive report data is ready.');
+    this.recordReportExport('CSV');
     this.exportActionLoading = false;
   }
 
@@ -931,7 +934,23 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     addFarmOpsPdfFooters(doc);
     doc.save('FarmOps-Executive-Report.pdf');
     this.toast.success('Report PDF exported', 'Executive report PDF is ready.');
+    this.recordReportExport('PDF');
     this.exportActionLoading = false;
+  }
+
+  private recordReportExport(format: 'CSV' | 'PDF') {
+    this.auditLogService.recordAuditEvent({
+      action: 'Report exported',
+      module: 'Reports',
+      entityType: 'Report',
+      entityName: 'Executive Reports',
+      details: `${format} export generated for ${this.getReportingPeriodLabel()}`,
+      severity: 'success'
+    }).subscribe({
+      error: () => {
+        // Export should not fail if audit logging is temporarily unavailable.
+      }
+    });
   }
 
   formatCurrency(value: any) {

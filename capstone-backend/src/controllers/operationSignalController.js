@@ -6,6 +6,7 @@ const FinancialRecord = require('../models/FinancialRecord');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
 const { READ_ALL_FARM_ROLES, ROLES, roleIs } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
@@ -200,6 +201,17 @@ const createOperationSignal = async (req, res) => {
       createdBy: req.user.id
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Alert created',
+      module: 'Operations Center',
+      entityType: 'OperationSignal',
+      entityName: signal.title,
+      entityId: signal._id,
+      details: `${signal.category} signal created with ${signal.priority} priority`,
+      severity: 'success'
+    });
+
     const populatedSignal =
       await OperationSignal.findById(signal._id)
         .populate(populateSignal);
@@ -237,6 +249,17 @@ const resolveOperationSignal = async (req, res) => {
     logEvent('info', 'OPERATION_SIGNAL_RESOLVED', {
       signalId: signal._id,
       resolvedBy: req.user.id
+    });
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Alert resolved',
+      module: 'Operations Center',
+      entityType: 'OperationSignal',
+      entityName: signal.title,
+      entityId: signal._id,
+      details: `${signal.category} signal marked as resolved`,
+      severity: 'success'
     });
 
     const populatedSignal =

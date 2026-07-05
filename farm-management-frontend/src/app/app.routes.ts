@@ -11,6 +11,7 @@ import { NdviAnalysis } from './pages/ndvi-analysis/ndvi-analysis';
 import { ExecutiveReports } from './pages/executive-reports/executive-reports';
 import { Profile } from './pages/profile/profile';
 import { UserManagement } from './pages/user-management/user-management';
+import { AuditLog } from './pages/audit-log/audit-log';
 import { AccessDenied } from './pages/access-denied/access-denied';
 import {
   authGuard,
@@ -89,8 +90,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'audit-log',
+    component: AuditLog,
+    canActivate: [authGuard, roleGuard]
+  },
+
+  {
     path: 'admin/users',
     redirectTo: 'users',
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'admin/audit-log',
+    redirectTo: 'audit-log',
     pathMatch: 'full'
   },
 

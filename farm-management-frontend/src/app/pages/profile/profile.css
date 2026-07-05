@@ -130,6 +130,35 @@ h2 {
   color: var(--color-primary-strong);
 }
 
+.summary-list strong.role-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.role-badge.administrator {
+  color: #047857;
+  background: #dcfce7;
+}
+
+.role-badge.farm_manager {
+  color: #3f6212;
+  background: #ecfccb;
+}
+
+.role-badge.field_operator {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.role-badge.accountant {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
 .section-heading {
   margin-bottom: 20px;
 }

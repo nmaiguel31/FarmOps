@@ -42,7 +42,7 @@
           <span>Member Since <strong>{{ memberSince }}</strong></span>
           <span>Last Login <strong>{{ lastLogin }}</strong></span>
           <span>MFA Status <strong [class.enabled]="user.mfaEnabled">{{ mfaStatus }}</strong></span>
-          <span>Role <strong>{{ roleLabel }}</strong></span>
+          <span>Role <strong class="role-badge" [ngClass]="roleAccentClass">{{ roleLabel }}</strong></span>
         </div>
       </article>
 

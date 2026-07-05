@@ -105,6 +105,31 @@
   box-shadow: 0 14px 34px rgba(31, 54, 40, .08);
 }
 
+.profile-status {
+  border-top: 4px solid var(--role-accent, var(--color-primary));
+}
+
+.profile-status.role-administrator {
+  --role-accent: #16a34a;
+}
+
+.profile-status.role-farm_manager {
+  --role-accent: #65a30d;
+}
+
+.profile-status.role-field_operator {
+  --role-accent: #b45309;
+}
+
+.profile-status.role-accountant {
+  --role-accent: #2563eb;
+}
+
+.sidebar-role-label {
+  color: var(--role-accent, var(--color-muted));
+  font-weight: 900;
+}
+
 .status-dot {
   width: 10px;
   height: 10px;

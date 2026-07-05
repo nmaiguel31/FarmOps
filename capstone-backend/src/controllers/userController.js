@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { VALID_ROLES, normalizeRole, isValidRole } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const VALID_STATUSES = ['active', 'suspended'];
 
@@ -148,6 +149,17 @@ exports.createUser = async (req, res) => {
 
     await user.save();
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'User created',
+      module: 'User Management',
+      entityType: 'User',
+      entityName: fullName,
+      entityId: user._id,
+      details: `Created user ${email} with role ${role}`,
+      severity: 'success'
+    });
+
     res.status(201).json(sanitizeUser(user));
   } catch (error) {
     if (isDuplicateKeyError(error)) {
@@ -186,6 +198,12 @@ exports.updateUser = async (req, res) => {
       });
     }
 
+    const previousUser = await User.findById(req.params.id).select('-password -mfaSecret');
+
+    if (!previousUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       {
@@ -201,9 +219,32 @@ exports.updateUser = async (req, res) => {
       }
     ).select('-password -mfaSecret');
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const changes = [];
+
+    if (previousUser.role !== role) {
+      changes.push(`role changed from ${previousUser.role} to ${role}`);
     }
+
+    if ((previousUser.status || 'active') !== status) {
+      changes.push(`status changed from ${previousUser.status || 'active'} to ${status}`);
+    }
+
+    if ((previousUser.fullName || '') !== fullName) {
+      changes.push('full name updated');
+    }
+
+    await writeAuditLog({
+      user: req.user,
+      action: previousUser.status !== status
+        ? status === 'active' ? 'User activated' : 'User deactivated'
+        : previousUser.role !== role ? 'User role changed' : 'User updated',
+      module: 'User Management',
+      entityType: 'User',
+      entityName: user.fullName,
+      entityId: user._id,
+      details: changes.join('; ') || 'User profile updated',
+      severity: status === 'suspended' ? 'warning' : 'success'
+    });
 
     res.json(sanitizeUser(user));
   } catch (error) {
@@ -238,6 +279,17 @@ exports.resetPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Password reset',
+      module: 'User Management',
+      entityType: 'User',
+      entityName: user.fullName,
+      entityId: user._id,
+      details: 'Administrator set a temporary password. Password value was not logged.',
+      severity: 'warning'
+    });
 
     res.json(sanitizeUser(user));
   } catch (error) {

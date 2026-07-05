@@ -269,6 +269,64 @@ export class Dashboard implements OnInit {
     return name ? `${name} 👋` : '👋';
   }
 
+  get dynamicGreeting() {
+    const hour = new Date().getHours();
+    const name = this.authService.getDisplayName();
+    const suffix = name ? `, ${name}` : '';
+
+    if (hour >= 5 && hour < 12) {
+      return `Good morning${suffix} 👋`;
+    }
+
+    if (hour >= 12 && hour < 18) {
+      return `Good afternoon${suffix} 👋`;
+    }
+
+    if (hour >= 18 && hour < 22) {
+      return `Good evening${suffix} 👋`;
+    }
+
+    return name ? `Working late, ${name}? 🌙` : 'Working late? 🌙';
+  }
+
+  get roleAccentClass() {
+    return `role-${this.authService.getCurrentRole()}`;
+  }
+
+  get roleDashboardSubtitle() {
+    const role = this.authService.getCurrentRole();
+
+    if (role === 'administrator') {
+      return "Here's the enterprise overview across users, farms, operations, and business activity.";
+    }
+
+    if (role === 'farm_manager') {
+      return "Here's what's happening across your farms, fields, crops, and operations today.";
+    }
+
+    if (role === 'field_operator') {
+      return "Here's what needs attention in field operations, weather, and active signals today.";
+    }
+
+    if (role === 'accountant') {
+      return "Here's the financial picture and reporting context for your farm operation today.";
+    }
+
+    return "Here's what's happening across your farms today.";
+  }
+
+  get canOpenOperationsCenter() {
+    return this.authService.canAccess('operations-center');
+  }
+
+  get canOpenFieldOperations() {
+    return this.authService.canAccess('farms');
+  }
+
+  get canOpenFinancialRecords() {
+    return this.authService.canAccess('financial-records');
+  }
+
   get commandBriefs() {
     const briefs: Array<{ label: string; value: string; tone: string; icon: string }> = [];
 

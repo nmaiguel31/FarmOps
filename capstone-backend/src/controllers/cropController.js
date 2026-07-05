@@ -4,6 +4,7 @@ const Field = require('../models/Field');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
 const { FARM_WRITE_ROLES, READ_ALL_FARM_ROLES, roleIs } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const lifecycleDurationDays = 120;
 
@@ -361,6 +362,17 @@ const createCrop = async (req, res) => {
       createdBy: req.user.id
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Crop created',
+      module: 'Crops',
+      entityType: 'Crop',
+      entityName: crop.name,
+      entityId: crop._id,
+      details: `Created ${crop.type || 'crop'} template for ${farm.name}`,
+      severity: 'success'
+    });
+
     await evaluateLifecycleOperationSignals(req.user);
 
     res.status(201).json(crop);
@@ -470,6 +482,17 @@ const deleteCrop = async (req, res) => {
       detachedFields: fieldResult.modifiedCount || 0
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Crop deleted',
+      module: 'Crops',
+      entityType: 'Crop',
+      entityName: crop.name,
+      entityId: crop._id,
+      details: `Deleted crop and detached ${fieldResult.modifiedCount || 0} fields`,
+      severity: 'warning'
+    });
+
     await evaluateLifecycleOperationSignals(req.user);
 
     res.json({
@@ -570,6 +593,17 @@ const updateCrop = async (req, res) => {
       cropName: crop.name,
       updatedBy: req.user.id,
       role: req.user.role
+    });
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Crop updated',
+      module: 'Crops',
+      entityType: 'Crop',
+      entityName: crop.name,
+      entityId: crop._id,
+      details: 'Crop lifecycle template or status was updated',
+      severity: 'success'
     });
 
     await evaluateLifecycleOperationSignals(req.user);

@@ -1,17 +1,20 @@
 <main class="dashboard-page command-dashboard">
-  <section class="dashboard-hero">
+  <section class="dashboard-hero" [ngClass]="roleAccentClass">
     <div>
       <p class="eyebrow">FarmOps Command Center</p>
-      <h1>Good morning, {{ greetingName }}</h1>
-      <p class="hero-subtitle">Here's what's happening across your farms today.</p>
+      <h1>{{ dynamicGreeting }}</h1>
+      <p class="hero-subtitle">{{ roleDashboardSubtitle }}</p>
     </div>
 
     <div class="hero-actions">
-      <a routerLink="/operations-center" class="action-button ghost-action">
+      <a *ngIf="canOpenOperationsCenter" routerLink="/operations-center" class="action-button ghost-action">
         Operations Center
       </a>
-      <a routerLink="/farms" class="action-button primary-action">
+      <a *ngIf="canOpenFieldOperations" routerLink="/farms" class="action-button primary-action">
         Open Field Operations
+      </a>
+      <a *ngIf="!canOpenFieldOperations && canOpenFinancialRecords" routerLink="/financial-records" class="action-button primary-action">
+        Open Financial Records
       </a>
     </div>
 

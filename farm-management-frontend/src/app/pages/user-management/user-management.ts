@@ -61,6 +61,8 @@ export class UserManagement implements OnInit {
   saving = false;
   loadError = '';
   searchTerm = '';
+  roleFilter = 'All';
+  statusFilter = 'All';
 
   modalMode: UserFormMode | null = null;
   selectedUser: ManagedUser | null = null;
@@ -154,6 +156,14 @@ export class UserManagement implements OnInit {
     const query = this.searchTerm.trim().toLowerCase();
 
     this.filteredUsers = this.users.filter(user => {
+      if (this.roleFilter !== 'All' && user.role !== this.roleFilter) {
+        return false;
+      }
+
+      if (this.statusFilter !== 'All' && user.status !== this.statusFilter) {
+        return false;
+      }
+
       if (!query) {
         return true;
       }
@@ -169,6 +179,8 @@ export class UserManagement implements OnInit {
 
   clearFilters() {
     this.searchTerm = '';
+    this.roleFilter = 'All';
+    this.statusFilter = 'All';
     this.applyFilters();
   }
 

@@ -5,6 +5,7 @@ const Crop = require('../models/Crop');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
 const { FINANCIAL_ROLES, roleIs } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 
 const populateRecord = [
   {
@@ -186,6 +187,17 @@ const createFinancialRecord = async (req, res) => {
       createdBy: req.user.id
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Financial record created',
+      module: 'Financial Records',
+      entityType: 'FinancialRecord',
+      entityName: record.description || record.category,
+      entityId: record._id,
+      details: `${record.type} ${record.category} for ${record.amount}`,
+      severity: record.type === 'Expense' ? 'warning' : 'success'
+    });
+
     const populatedRecord = await FinancialRecord.findById(record._id)
       .populate(populateRecord);
 
@@ -260,6 +272,17 @@ const deleteFinancialRecord = async (req, res) => {
       role: req.user.role
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Financial record deleted',
+      module: 'Financial Records',
+      entityType: 'FinancialRecord',
+      entityName: record.description || record.category,
+      entityId: record._id,
+      details: `Deleted ${record.type} ${record.category} for ${record.amount}`,
+      severity: 'warning'
+    });
+
     await evaluateFinancialOperationSignals(req.user);
 
     res.json({
@@ -311,6 +334,17 @@ const updateFinancialRecord = async (req, res) => {
       amount: record.amount,
       updatedBy: req.user.id,
       role: req.user.role
+    });
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Financial record updated',
+      module: 'Financial Records',
+      entityType: 'FinancialRecord',
+      entityName: record.description || record.category,
+      entityId: record._id,
+      details: `${record.type} ${record.category} updated to ${record.amount}`,
+      severity: 'success'
     });
 
     const populatedRecord = await FinancialRecord.findById(record._id)

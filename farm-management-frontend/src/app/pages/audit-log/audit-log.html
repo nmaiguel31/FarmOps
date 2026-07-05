@@ -1,0 +1,155 @@
+<main class="audit-log-page">
+  <section class="page-hero">
+    <div>
+      <span class="eyebrow">Administration</span>
+      <h1>Audit Log</h1>
+      <p>Review important FarmOps account, operations, security, and business actions.</p>
+    </div>
+
+    <span class="hero-badge">
+      <svg lucideShieldCheck></svg>
+      Administrator only
+    </span>
+  </section>
+
+  <section class="audit-card">
+    <div class="card-header">
+      <div>
+        <h2>System Activity</h2>
+        <p *ngIf="loading">Loading audit events</p>
+        <p *ngIf="!loading">Showing {{ filteredLogs.length }} of {{ logs.length }} audit events</p>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <label class="search-control">
+        <svg lucideSearch></svg>
+        <input
+          type="search"
+          placeholder="Search by user name or email"
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="loadAuditLogs()">
+      </label>
+
+      <label>
+        <span>Role</span>
+        <select [(ngModel)]="roleFilter" (ngModelChange)="loadAuditLogs()">
+          <option>All</option>
+          <option value="administrator">Administrator</option>
+          <option value="farm_manager">Farm Manager</option>
+          <option value="field_operator">Field Operator</option>
+          <option value="accountant">Accountant</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Module</span>
+        <select [(ngModel)]="moduleFilter" (ngModelChange)="loadAuditLogs()">
+          <option>All</option>
+          <option *ngFor="let module of moduleOptions; trackBy: trackByValue" [value]="module">{{ module }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Action</span>
+        <select [(ngModel)]="actionFilter" (ngModelChange)="loadAuditLogs()">
+          <option>All</option>
+          <option *ngFor="let action of actionOptions; trackBy: trackByValue" [value]="action">{{ action }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Severity</span>
+        <select [(ngModel)]="severityFilter" (ngModelChange)="loadAuditLogs()">
+          <option>All</option>
+          <option value="success">Success</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="danger">Danger</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Start</span>
+        <input type="date" [(ngModel)]="startDate" (ngModelChange)="loadAuditLogs()">
+      </label>
+
+      <label>
+        <span>End</span>
+        <input type="date" [(ngModel)]="endDate" (ngModelChange)="loadAuditLogs()">
+      </label>
+
+      <button type="button" class="ghost-action" (click)="clearFilters()">
+        <svg lucideFilter></svg>
+        Clear filters
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="table-skeleton" aria-label="Loading audit logs">
+      <div *ngFor="let item of skeletonRows; trackBy: trackByValue" class="skeleton-row">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <app-empty-state
+      *ngIf="!loading && loadError"
+      icon="alert"
+      title="Could not load audit logs"
+      [description]="loadError"
+      primaryLabel="Try again"
+      tone="danger"
+      (primaryAction)="loadAuditLogs()">
+    </app-empty-state>
+
+    <app-empty-state
+      *ngIf="!loading && !loadError && filteredLogs.length === 0"
+      icon="security"
+      title="No audit events found"
+      description="Important user, security, operations, and business actions will appear here."
+      tone="leaf">
+    </app-empty-state>
+
+    <div *ngIf="!loading && filteredLogs.length" class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Module</th>
+            <th>Entity</th>
+            <th>Details</th>
+            <th>Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of filteredLogs; trackBy: trackById">
+            <td>
+              <span class="date-cell">
+                <svg lucideCalendar></svg>
+                {{ formatDate(log.timestamp) }}
+              </span>
+            </td>
+            <td>
+              <strong>{{ log.userName || 'System' }}</strong>
+              <small>{{ log.userEmail || 'No email' }}</small>
+            </td>
+            <td><span class="role-badge" [ngClass]="log.userRole">{{ getRoleLabel(log.userRole) }}</span></td>
+            <td><strong>{{ log.action }}</strong></td>
+            <td>{{ log.module }}</td>
+            <td>
+              <strong>{{ log.entityName || log.entityType || 'N/A' }}</strong>
+              <small>{{ log.entityType }}</small>
+            </td>
+            <td>{{ log.details || 'No additional details' }}</td>
+            <td><span class="severity-badge" [ngClass]="log.severity || 'info'">{{ log.severity || 'info' }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

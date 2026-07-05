@@ -5,6 +5,7 @@ const Zone = require('../models/Zone');
 const logEvent = require('../utils/logger');
 const OperationsRulesEngine = require('../services/operationsRulesEngine');
 const { READ_ALL_FARM_ROLES, ROLES, roleIs } = require('../config/roles');
+const { writeAuditLog } = require('../services/auditLogService');
 const {
   isPolygonInsidePolygon,
   normalizePolygon,
@@ -475,6 +476,17 @@ const createField = async (req, res) => {
       createdBy: req.user.id
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Field created',
+      module: 'Field Operations',
+      entityType: 'Field',
+      entityName: field.name,
+      entityId: field._id,
+      details: `Created field in ${farm.name}`,
+      severity: 'success'
+    });
+
     const populatedField = await Field.findById(field._id)
       .populate(populateField);
 
@@ -662,6 +674,19 @@ const updateField = async (req, res) => {
       role: req.user.role
     });
 
+    await writeAuditLog({
+      user: req.user,
+      action: 'Field updated',
+      module: 'Field Operations',
+      entityType: 'Field',
+      entityName: field.name,
+      entityId: field._id,
+      details: isFieldOperator
+        ? 'Operational field data updated'
+        : 'Field details, lifecycle, or boundary were updated',
+      severity: 'success'
+    });
+
     const populatedField = await Field.findById(field._id)
       .populate(populateField);
 
@@ -714,6 +739,17 @@ const deleteField = async (req, res) => {
       cascadeDeleted: {
         zones: zoneResult.deletedCount || 0
       }
+    });
+
+    await writeAuditLog({
+      user: req.user,
+      action: 'Field deleted',
+      module: 'Field Operations',
+      entityType: 'Field',
+      entityName: field.name,
+      entityId: field._id,
+      details: `Deleted field and ${zoneResult.deletedCount || 0} related zones`,
+      severity: 'warning'
     });
 
     await evaluateFieldOperationSignals(req.user);

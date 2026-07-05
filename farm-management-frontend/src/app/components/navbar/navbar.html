@@ -25,6 +25,7 @@
         <svg *ngSwitchCase="'weather'" class="nav-icon" lucideCloudSun></svg>
         <svg *ngSwitchCase="'ndvi'" class="nav-icon" lucideLeaf></svg>
         <svg *ngSwitchCase="'reports'" class="nav-icon" lucideFileText></svg>
+        <svg *ngSwitchCase="'audit'" class="nav-icon" lucideScrollText></svg>
         <svg *ngSwitchCase="'security'" class="nav-icon" lucideShieldCheck></svg>
         <svg *ngSwitchDefault class="nav-icon" lucideUserRound></svg>
       </ng-container>
@@ -32,11 +33,11 @@
     </a>
   </nav>
 
-  <a class="farm-status profile-status" routerLink="/profile" aria-label="User profile">
+  <a class="farm-status profile-status" [ngClass]="roleAccentClass" routerLink="/profile" aria-label="User profile">
     <span class="profile-avatar">{{ displayInitials }}</span>
     <div>
       <strong>{{ displayName }}</strong>
-      <small>{{ roleLabel }}</small>
+      <small class="sidebar-role-label">{{ roleLabel }}</small>
     </div>
   </a>
 

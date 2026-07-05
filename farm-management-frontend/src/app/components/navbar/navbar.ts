@@ -15,6 +15,7 @@ import {
   LucideLeaf,
   LucideLogOut,
   LucideMap,
+  LucideScrollText,
   LucideUserRound,
   LucideShieldAlert,
   LucideShieldCheck,
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'NDVI Analysis', route: '/ndvi', routeKey: 'ndvi', icon: 'ndvi' },
   { label: 'Reports', route: '/reports', routeKey: 'reports', icon: 'reports' },
   { label: 'User Management', route: '/users', routeKey: 'users', icon: 'profile' },
+  { label: 'Audit Log', route: '/audit-log', routeKey: 'audit-log', icon: 'audit' },
   { label: 'Profile', route: '/profile', routeKey: 'profile', icon: 'profile' },
   { label: 'Security', route: '/mfa', routeKey: 'mfa', icon: 'security' }
 ];
@@ -54,6 +56,7 @@ const NAV_ITEMS: NavItem[] = [
     LucideLeaf,
     LucideLogOut,
     LucideMap,
+    LucideScrollText,
     LucideUserRound,
     LucideShieldAlert,
     LucideShieldCheck,
@@ -77,6 +80,10 @@ export class Navbar {
 
   get roleLabel() {
     return ROLE_LABELS[this.authService.getCurrentRole()];
+  }
+
+  get roleAccentClass() {
+    return `role-${this.authService.getCurrentRole()}`;
   }
 
   get navItems() {

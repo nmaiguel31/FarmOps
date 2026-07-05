@@ -74,6 +74,25 @@
           >
         </label>
 
+        <label class="select-control">
+          <span>Role</span>
+          <select [(ngModel)]="roleFilter" name="roleFilter" (ngModelChange)="applyFilters()">
+            <option>All</option>
+            <option *ngFor="let role of roleOptions; trackBy: trackByRole" [value]="role.value">
+              {{ role.label }}
+            </option>
+          </select>
+        </label>
+
+        <label class="select-control">
+          <span>Status</span>
+          <select [(ngModel)]="statusFilter" name="statusFilter" (ngModelChange)="applyFilters()">
+            <option>All</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </label>
+
         <button type="button" class="ghost-action" (click)="clearFilters()">
           Clear filters
         </button>

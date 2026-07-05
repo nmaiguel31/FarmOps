@@ -103,6 +103,10 @@ export class Profile implements OnInit {
     return ROLE_LABELS[normalizeRole(this.user?.role)];
   }
 
+  get roleAccentClass() {
+    return normalizeRole(this.user?.role);
+  }
+
   get memberSince() {
     return this.formatDate(this.user?.memberSince);
   }

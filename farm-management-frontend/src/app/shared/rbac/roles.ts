@@ -35,6 +35,7 @@ export const ROUTE_ROLES: Record<string, FarmOpsRole[]> = {
   ndvi: ['administrator', 'farm_manager'],
   reports: ['administrator', 'farm_manager', 'accountant', 'field_operator'],
   users: ['administrator'],
+  'audit-log': ['administrator'],
   profile: ['administrator', 'farm_manager', 'accountant', 'field_operator'],
   mfa: ['administrator', 'farm_manager', 'accountant', 'field_operator']
 };
