@@ -11,6 +11,7 @@ import jsPDF from 'jspdf';
 import {
   addFarmOpsPdfFooters,
   drawFarmOpsPdfHeader,
+  formatFarmOpsGeneratedDateTime,
   loadFarmOpsPdfLogo
 } from '../../shared/pdf-branding';
 import {
@@ -539,7 +540,14 @@ export class Crops implements OnInit {
       crop.description || ''
     ]);
 
-    const csv = [headers, ...rows]
+    const csv = [
+      ['FarmOps Crop Catalog Report'],
+      ['Generated', formatFarmOpsGeneratedDateTime()],
+      ['Period', 'All Crops'],
+      [],
+      headers,
+      ...rows
+    ]
       .map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
       .join('\n');
 
@@ -711,7 +719,7 @@ export class Crops implements OnInit {
       logoDataUrl,
       {
         title,
-        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        generatedLabel: `Generated: ${formatFarmOpsGeneratedDateTime()}`,
         periodLabel: 'All Crops'
       }
     );

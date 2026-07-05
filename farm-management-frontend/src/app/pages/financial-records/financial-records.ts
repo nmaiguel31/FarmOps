@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import {
   addFarmOpsPdfFooters,
   drawFarmOpsPdfHeader,
+  formatFarmOpsGeneratedDateTime,
   loadFarmOpsPdfLogo
 } from '../../shared/pdf-branding';
 import {
@@ -720,7 +721,14 @@ export class FinancialRecords implements OnInit {
     ]);
 
     const csvContent =
-      [headers, ...rows]
+      [
+        ['FarmOps Financial Report'],
+        ['Generated', formatFarmOpsGeneratedDateTime()],
+        ['Period', this.selectedFarmContext],
+        [],
+        headers,
+        ...rows
+      ]
         .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
         .join('\n');
 
@@ -1002,7 +1010,7 @@ export class FinancialRecords implements OnInit {
       logoDataUrl,
       {
         title,
-        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        generatedLabel: `Generated: ${formatFarmOpsGeneratedDateTime()}`,
         periodLabel: this.selectedFarmContext
       }
     );

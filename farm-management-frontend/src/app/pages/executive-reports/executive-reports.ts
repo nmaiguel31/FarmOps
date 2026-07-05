@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import {
   addFarmOpsPdfFooters,
   drawFarmOpsPdfHeader,
+  formatFarmOpsGeneratedDateTime,
   loadFarmOpsPdfLogo
 } from '../../shared/pdf-branding';
 import {
@@ -271,7 +272,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get generatedOnLabel() {
-    return this.formatDate(new Date());
+    return formatFarmOpsGeneratedDateTime();
   }
 
   get periodRecords() {
@@ -741,7 +742,14 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
       cropHeaders.push('Average Health', 'NDVI', 'Lifecycle Stage');
     }
 
+    const generatedAt =
+      formatFarmOpsGeneratedDateTime();
+
     const sections: any[][] = [
+      ['FarmOps Executive Report'],
+      ['Generated', generatedAt],
+      ['Reporting Period', this.getReportingPeriodLabel()],
+      [],
       ['Executive Summary'],
       ['Metric', 'Value', 'Notes'],
       ...this.summaryCards.map(card => [card.label, card.value, card.helper]),
@@ -822,7 +830,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
     doc.setTextColor(REPORT_THEME.text);
     doc.setFontSize(10);
     doc.text(`Reporting period: ${this.getReportingPeriodLabel()}`, 20, y);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 130, y);
+    doc.text(`Generated: ${formatFarmOpsGeneratedDateTime()}`, 130, y, { maxWidth: 66 });
     y += 12;
 
     y = this.ensurePdfSpace(doc, y, 58);
@@ -1612,7 +1620,7 @@ export class ExecutiveReports implements OnInit, AfterViewInit, OnDestroy {
       this.pdfLogoDataUrl,
       {
         title: 'Executive Reports',
-        generatedLabel: `Generated: ${new Date().toLocaleDateString('en-US')}`,
+        generatedLabel: `Generated: ${formatFarmOpsGeneratedDateTime()}`,
         periodLabel: this.getReportingPeriodLabel()
       }
     );

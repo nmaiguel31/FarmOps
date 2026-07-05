@@ -13,6 +13,19 @@ export const FARMOPS_PDF_COLORS = {
 const FARMOPS_PDF_LOGO_PATH = '/brand/farmops-report-logo.png';
 let cachedLogoDataUrl = '';
 
+export function formatFarmOpsGeneratedDateTime(date = new Date()) {
+  return new Intl.DateTimeFormat(
+    'en-US',
+    {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    }
+  ).format(date);
+}
+
 export type FarmOpsPdfHeaderOptions = {
   title: string;
   generatedLabel?: string;
@@ -48,7 +61,7 @@ export function drawFarmOpsPdfHeader(
   options: FarmOpsPdfHeaderOptions
 ) {
   const generatedLabel =
-    options.generatedLabel || `Generated: ${new Date().toLocaleDateString('en-US')}`;
+    options.generatedLabel || `Generated: ${formatFarmOpsGeneratedDateTime()}`;
 
   doc.setFillColor(FARMOPS_PDF_COLORS.headerSurface);
   doc.rect(0, 0, 210, 38, 'F');
