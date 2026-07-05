@@ -1,4 +1,4 @@
-<main class="login-page">
+<main class="login-page" [style.--login-hero-image]="heroBackgroundImage">
   <section class="login-visual">
     <div class="brand-lockup">
       <img class="brand-logo" src="/brand/farmops-login-logo-inversed.png" alt="FarmOps Agricultural Decision Support Platform">
@@ -6,9 +6,9 @@
 
     <div class="visual-copy">
       <h1>
-        <span>Manage smarter.</span>
-        <span>Farm <em>better.</em></span>
-        <span>Grow <em>sustainably.</em></span>
+        @for (line of selectedSlogan.lines; track line.text) {
+          <span>{{ line.text }}@if (line.accent) {<em>{{ line.accent }}</em>}</span>
+        }
       </h1>
 
       <div class="secure-copy">

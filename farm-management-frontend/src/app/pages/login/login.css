@@ -8,7 +8,7 @@
   padding: 0;
   overflow: hidden;
   color: #132033;
-  background: #ffffff;
+  background: #041a12;
   border: 0;
   border-radius: 0;
 }
@@ -29,15 +29,42 @@
   padding: 0;
   grid-template-columns: 60% 40%;
   overflow: hidden;
-  background: #ffffff;
+  background-color: #041a12;
+  background-image: var(--login-hero-image, url("/assets/login-heroes/hero-wheat-sunrise.png"));
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   border: 0;
   border-radius: 0;
   animation: loginFadeIn .28s ease both;
 }
 
+.login-page::before,
+.login-page::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.login-page::before {
+  z-index: 0;
+  background:
+    radial-gradient(circle at 82% 50%, rgba(3, 20, 14, .42) 0%, rgba(3, 20, 14, .30) 24%, rgba(3, 20, 14, .12) 52%, rgba(3, 20, 14, 0) 72%),
+    linear-gradient(90deg, rgba(3, 38, 27, .82) 0%, rgba(3, 45, 31, .66) 28%, rgba(4, 55, 37, .40) 58%, rgba(4, 42, 29, .26) 78%, rgba(3, 20, 14, .40) 100%);
+}
+
+.login-page::after {
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(0, 18, 12, .12) 0%, rgba(0, 18, 12, .02) 40%, rgba(0, 18, 12, .34) 100%),
+    linear-gradient(90deg, rgba(22, 163, 74, .12) 0%, rgba(22, 163, 74, .05) 42%, rgba(22, 163, 74, .02) 100%);
+}
+
 .login-visual {
   position: relative;
   display: flex;
+  z-index: 2;
   height: 100vh;
   width: 100%;
   margin: 0;
@@ -50,31 +77,12 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  background: #062419;
+  background: transparent;
 }
 
 .login-visual::before,
 .login-visual::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-}
-
-.login-visual::before {
-  z-index: 0;
-  background-image: url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1500&q=84");
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-}
-
-.login-visual::after {
-  z-index: 1;
-  background:
-    linear-gradient(90deg, rgba(248, 250, 252, 0) calc(100% - 240px), rgba(248, 250, 252, .08) calc(100% - 156px), rgba(248, 250, 252, .18) calc(100% - 96px), rgba(248, 250, 252, .35) calc(100% - 48px), rgba(248, 250, 252, .55) 100%),
-    linear-gradient(90deg, rgba(5, 55, 40, .75) 0%, rgba(5, 55, 40, .60) 25%, rgba(5, 55, 40, .35) 55%, rgba(5, 55, 40, .10) 80%, rgba(5, 55, 40, 0) 100%),
-    linear-gradient(180deg, rgba(0, 18, 14, .14) 0%, rgba(0, 22, 16, .12) 48%, rgba(0, 20, 14, .38) 100%);
-  pointer-events: none;
+  content: none;
 }
 
 .brand-lockup {
@@ -160,12 +168,14 @@
 
 .login-card {
   display: grid;
+  position: relative;
+  z-index: 2;
   height: 100vh;
   min-width: 0;
   place-items: center;
   overflow: visible;
   padding: 32px;
-  background: #ffffff;
+  background: transparent;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -175,11 +185,23 @@
   display: grid;
   width: min(100%, 420px);
   gap: 26px;
+  padding: 34px;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(4, 28, 20, .78), rgba(2, 18, 13, .66)),
+    rgba(3, 22, 16, .68);
+  border: 1px solid rgba(213, 255, 226, .18);
+  border-radius: 22px;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, .35),
+    inset 0 1px 0 rgba(255, 255, 255, .10);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
 }
 
 .login-heading h2 {
   margin: 0;
-  color: #15243a;
+  color: #ffffff;
   font-size: 32px;
   font-weight: 900;
   letter-spacing: 0;
@@ -188,7 +210,7 @@
 
 .login-heading p {
   margin: 12px 0 0;
-  color: #697589;
+  color: rgba(235, 249, 240, .78);
   font-size: 16px;
   line-height: 1.45;
 }
@@ -201,7 +223,7 @@
 .login-form label {
   display: grid;
   gap: 9px;
-  color: #18263a;
+  color: rgba(245, 255, 248, .92);
   font-size: 14px;
   font-weight: 800;
 }
@@ -219,7 +241,7 @@
   width: 18px;
   height: 18px;
   fill: none;
-  stroke: #667386;
+  stroke: rgba(225, 246, 232, .70);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
@@ -231,22 +253,22 @@
   width: 100%;
   min-height: 50px;
   padding: 0 14px 0 44px;
-  color: #15243a;
-  background: #ffffff;
-  border: 1px solid #cfd5dc;
+  color: #ffffff;
+  background: rgba(255, 255, 255, .10);
+  border: 1px solid rgba(228, 255, 238, .18);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(18, 31, 51, .03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
   font-size: 15px;
   transition: border-color .16s ease, box-shadow .16s ease;
 }
 
 .login-form .farmops-field::placeholder {
-  color: #7b8494;
+  color: rgba(233, 247, 238, .56);
 }
 
 .login-form .farmops-field:focus {
-  border-color: #15975b;
-  box-shadow: 0 0 0 4px rgba(21, 151, 91, .12);
+  border-color: rgba(76, 221, 116, .78);
+  box-shadow: 0 0 0 4px rgba(21, 151, 91, .22);
   outline: none;
 }
 
@@ -279,8 +301,8 @@
   gap: 12px;
   align-items: start;
   padding: 15px 16px;
-  background: linear-gradient(90deg, #eef8f2, #f4fbf6);
-  border: 1px solid rgba(21, 151, 91, .08);
+  background: rgba(236, 255, 243, .10);
+  border: 1px solid rgba(213, 255, 226, .14);
   border-radius: 10px;
 }
 
@@ -293,14 +315,14 @@
 
 .security-card strong {
   display: block;
-  color: #18382a;
+  color: #f6fff8;
   font-size: 14px;
   font-weight: 900;
 }
 
 .security-card p {
   margin: 5px 0 0;
-  color: #334b43;
+  color: rgba(232, 247, 238, .76);
   font-size: 13px;
   line-height: 1.45;
 }
